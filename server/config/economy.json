@@ -1,5 +1,5 @@
 {
-  "revision": "2026-10-22.relic-1",
+  "revision": "2026-10-24.knight-1",
   "rarities": ["common", "uncommon", "rare", "epic", "legendary"],
   "severities": ["slight", "heavy", "broken"],
   "parts": ["body", "lid", "latch"],
@@ -31,7 +31,8 @@
       { "id": "traveler-pickaxe", "title": "Каменная кирка с рунами", "rarity": "rare", "glyph": "pickaxe" },
       { "id": "traveler-wick", "title": "Фонарь вечного фитиля", "rarity": "rare", "glyph": "lantern" },
       { "id": "traveler-tracker-eye", "title": "Глаз следопыта", "rarity": "epic", "glyph": "eye" },
-      { "id": "traveler-map", "title": "Карта дальних земель", "rarity": "legendary", "glyph": "map" }
+      { "id": "traveler-map", "title": "Карта дальних земель", "rarity": "legendary", "glyph": "map" },
+      { "id": "privilege-knight", "title": "Привилегия «Рыцарь»", "rarity": "legendary", "glyph": "helmet" }
     ]},
     { "id": "deep-mine", "collection": "deep-mines", "pool": [
       { "id": "mine-crystal", "title": "Кристалл глубин", "rarity": "common", "glyph": "crystal" },

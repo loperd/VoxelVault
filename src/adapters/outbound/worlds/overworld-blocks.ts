@@ -5,7 +5,7 @@ import {
   BlockRegistry, BlockWorld, blockAtlas, computeLight, meshWorld, raw, worldMeshes, type Living, type Stage, type StageBuilder,
 } from '../../../../packages/blockworld/src/index.ts';
 import type { ChestHandles } from '../../../application/ports/chest-handles.ts';
-import { happenings, shadedBox } from './overworld-life.ts';
+import { happenings, mobMaterial, shadedBox } from './overworld-life.ts';
 
 /**
  * The Overworld at dusk ("Дороги Верхнего мира"), built by the rules of the game: every block one
@@ -220,7 +220,7 @@ function storm(root: Group): Living<ChestHandles> {
 
 /** Sheep, sized by the game's model (1/16 a pixel): they wander the meadow, stop, graze. */
 function sheep(root: Group, rand: () => number): Living<ChestHandles> {
-  const px = 1 / 16, material = new MeshBasicMaterial({ vertexColors: true });
+  const px = 1 / 16, material = mobMaterial();
   const wool = shadedBox(10 * px, 9 * px, 15 * px, '#e9e4dc', DUSK), headWool = shadedBox(7 * px, 7 * px, 7 * px, '#e9e4dc', DUSK);
   const face = shadedBox(6 * px, 6 * px, 2 * px, '#c9a991', DUSK), leg = shadedBox(4 * px, 12 * px, 4 * px, '#c9a991', DUSK);
   leg.translate(0, -6 * px, 0);

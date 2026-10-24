@@ -553,3 +553,20 @@ body:has(.game-viewport .roulette-scene:not([hidden])) .scene-status { top: calc
   .wallet-screen__transactions li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .wallet-screen__transactions li > span { justify-self: end; font-size: 18px; max-width: 100%; }
 }
+
+/* Phone: the sections move to a fixed bottom tab bar; the header keeps brand and tools. */
+.tab-bar { display: none; }
+@media (max-width: 560px) {
+  .screen-header__nav { display: none; }
+  .tab-bar { --tab-bar-height: 56px; position: fixed; z-index: 20; inset: auto 0 0; display: grid; grid-template-columns: repeat(4, 1fr); height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom)); padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); border-top: 1px solid #ffffff1a; background: #0a1517f2; backdrop-filter: blur(12px); }
+  .tab-bar button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 44px; min-height: 44px; padding: 0; border: 0; background: transparent; color: #91a69b; font: inherit; font-size: 11px; line-height: 1.1; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .tab-bar button:active { background: #ffffff0f; }
+  .tab-bar button:focus-visible { outline: 2px solid var(--case-accent, #86ead0); outline-offset: -4px; }
+  .tab-bar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+  .tab-bar button[aria-current='page'] { color: var(--case-accent-highlight, #c5fff0); }
+  .tab-bar button[aria-current='page']::before { content: ''; position: absolute; inset: 0 22% auto; height: 2px; background: var(--case-accent, #86ead0); box-shadow: 0 0 10px var(--case-accent-glow, #42e6b65c); }
+  .tab-bar b { position: absolute; top: 5px; left: calc(50% + 6px); min-width: 16px; padding: 1px 4px; border-radius: 8px; background: var(--case-accent, #86ead0); color: #04100e; font-size: 10px; line-height: 14px; text-align: center; font-variant-numeric: tabular-nums; }
+  /* Nothing sits under the bar: scrolling pages and the intro's fixed bottom panel both clear it. */
+  .page-shell { padding-bottom: calc(56px + env(safe-area-inset-bottom) + 16px); }
+  .intro-scene__bottom { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+}

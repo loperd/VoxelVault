@@ -1,5 +1,5 @@
 import {
-  BoxGeometry, BufferAttribute, BufferGeometry, Group, Line, LineBasicMaterial, Mesh, MeshBasicMaterial, Points, PointsMaterial, type Object3D,
+  BoxGeometry, BufferAttribute, BufferGeometry, DataTexture, Group, Line, LineBasicMaterial, Mesh, MeshBasicMaterial, NearestFilter, Points, PointsMaterial, RepeatWrapping, type Object3D,
 } from 'three';
 import { raw, type Living, type StageContext } from '../../../../packages/blockworld/src/index.ts';
 import type { ChestHandles } from '../../../application/ports/chest-handles.ts';
@@ -19,9 +19,26 @@ export interface Place {
   readonly road: (z: number) => number;
   /** The evening light that tints everything. */
   readonly tint: readonly [number, number, number];
+  /** Where the creeper stops, from the chest (x mirrored to its side, z); by default right under it. */
+  readonly stand?: readonly [number, number];
 }
 
 const PX = 1 / 16;
+const TILE = 8;
+
+/** Mottled pixels, one texel to a pixel of a mob's model: a grey that vertex colours tint (the game's mobs are never flat). */
+export const MOB_PIXELS = (() => {
+  const data = new Uint8Array(TILE * TILE * 4);
+  for (let i = 0; i < TILE * TILE; i++) {
+    const h = Math.sin(i * 12.9898) * 43758.5453, shade = 200 + Math.floor((h - Math.floor(h)) * 56);
+    data.set([shade, shade, shade, 255], i * 4);
+  }
+  const texture = new DataTexture(data, TILE, TILE);
+  texture.wrapS = texture.wrapT = RepeatWrapping; texture.magFilter = texture.minFilter = NearestFilter; texture.needsUpdate = true;
+  return texture;
+})();
+/** The material every mob part shares. */
+export const mobMaterial = () => new MeshBasicMaterial({ vertexColors: true, map: MOB_PIXELS });
 
 /** A box shaded like a block (top 1, north/south .8, east/west .6, bottom .5) under the world's light. */
 export function shadedBox(w: number, h: number, d: number, hex: string, tint: readonly [number, number, number], light = .86): BoxGeometry {
@@ -29,6 +46,11 @@ export function shadedBox(w: number, h: number, d: number, hex: string, tint: re
   // BoxGeometry faces in order: +x, -x, +y, -y, +z, -z; four vertices each.
   for (const shade of [.6, .6, 1, .5, .8, .8]) for (let v = 0; v < 4; v++) colors.push(base.r * shade * light * tint[0], base.g * shade * light * tint[1], base.b * shade * light * tint[2]);
   box.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3));
+  // A tile covers TILE pixels of the model: each face's UVs span its size in pixels.
+  const uv = box.getAttribute('uv'), faces = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]] as const;
+  for (const [face, [a, b]] of faces.entries()) for (let v = 0; v < 4; v++) {
+    const i = face * 4 + v; uv.setXY(i, uv.getX(i) * a * 16 / TILE, uv.getY(i) * b * 16 / TILE);
+  }
   return box;
 }
 
@@ -78,7 +100,7 @@ function dispose(group: Object3D): void {
 
 /** Sss… A creeper comes for the chest, swells, flashes and goes off right under it. */
 const creeper: Start = (root, place, context) => {
-  const side = context.rand() < .5 ? -1 : 1, material = new MeshBasicMaterial({ vertexColors: true });
+  const side = context.rand() < .5 ? -1 : 1, material = mobMaterial();
   const body = new Group(), green = '#5aa845', dark = '#1d2a1a';
   part(body, [8, 12, 4], green, place, [0, 12, 0], material);
   const head = part(body, [8, 8, 8], green, place, [0, 22, 0], material);
@@ -87,7 +109,7 @@ const creeper: Start = (root, place, context) => {
   const legs = [[-2, -4], [2, -4], [-2, 4], [2, 4]].map(([x, z]) => part(body, [4, 6, 4], green, place, [x!, 6, z! * .75], material, [0, -3, 0]));
   body.position.set(place.chest[0] + side * 14, place.ground, place.chest[2] - 7);
   root.add(body);
-  const stand: [number, number] = [place.chest[0] + side * 1.2, place.chest[2] - 1.5];
+  const [standX, standZ] = place.stand ?? [1.2, -1.5], stand: [number, number] = [place.chest[0] + side * standX, place.chest[2] + standZ];
   let phase: 'creep' | 'fuse' | 'boom' = 'creep', clock = 0, step = 0, blast: ReturnType<typeof explosion> | undefined;
   return {
     update(ctx, dt) {
@@ -163,7 +185,7 @@ function explosion(root: Group, at: readonly [number, number, number]) {
 
 /** A rabbit hops across the meadow in short bounds, stopping to look around. */
 const rabbit: Start = (root, place, context) => {
-  const side = context.rand() < .5 ? -1 : 1, material = new MeshBasicMaterial({ vertexColors: true });
+  const side = context.rand() < .5 ? -1 : 1, material = mobMaterial();
   const fur = context.rand() < .5 ? '#9b7653' : '#d8d2c6';
   const body = new Group();
   part(body, [4, 4, 6], fur, place, [0, 3, 0], material);
@@ -220,7 +242,7 @@ const flock: Start = (root, place, context) => {
 
 /** A villager walks down the road, stops to look at the chest, hmms, and turns off into the meadow. */
 const villager: Start = (root, place, context) => {
-  const material = new MeshBasicMaterial({ vertexColors: true }), robe = context.rand() < .5 ? '#6b4b2e' : '#4d5f3a';
+  const material = mobMaterial(), robe = context.rand() < .5 ? '#6b4b2e' : '#4d5f3a';
   const body = new Group();
   const head = part(body, [8, 10, 8], '#b4846a', place, [0, 29, 0], material);
   part(head, [2, 4, 2], '#9c6d55', place, [0, -2, 5], material);

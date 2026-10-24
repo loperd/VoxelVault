@@ -19,6 +19,7 @@ var itemShapes = map[string]string{
 	"crown":   `<path d="m16 28 28 20 20-32 20 32 28-20-12 68H28z" fill="#c79e48"/><path d="M28 76h72v20H28z" fill="#edcd7d"/><path d="M56 56h16v20H56z" fill="#5bc7c8"/>`,
 	"heart":   `<path d="M20 32h32l12 12 12-12h32v36l-44 44-44-44z" fill="#b66586"/><path d="M28 40h20l12 12-8 12H28z" fill="#f1b5c0"/><path d="m64 56 36-16v24l-36 36z" fill="#7d4d85"/>`,
 	"egg":     `<path d="M52 16h24l16 20 12 36-8 28-20 12H52l-20-12-8-28 12-36z" fill="#6b5386"/><path d="M52 24h16L52 64 36 76l-4-12 12-28z" fill="#ab8fc0"/><path d="M68 72h20v16H68zM44 88h12v12H44z" fill="#b0a5d7"/>`,
+	"helmet":  `<path d="M40 16h48l12 12v56l-12 16v12H40v-12L28 84V28z" fill="#9aa3ad"/><path d="M44 20h20v84H44z" fill="#c9d0d6"/><path d="M36 48h56v8H36zm24 8h8v36h-8z" fill="#1d2329"/><path d="M60 4h8v12h-8z" fill="#d9b24a"/><path d="M52 100h24v12H52z" fill="#d9b24a"/>`,
 	"scale":   `<path d="m64 16 40 24-8 44-32 32-32-32-8-44z" fill="#5d917c"/><path d="m24 40 40 24 40-24M32 64l32 24 32-24" fill="none" stroke="#a3c4a0" stroke-width="6"/>`,
 }
 

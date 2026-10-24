@@ -10,7 +10,7 @@ export interface CasePresentation {
   readonly theme: CaseVisualTheme;
 }
 /** The worlds a chest can live in. */
-export type WorldId = 'overworld' | 'deep-mine' | 'end' | 'dragon' | 'relic-vault';
+export type WorldId = 'overworld' | 'shrine' | 'deep-mine' | 'end' | 'dragon' | 'relic-vault';
 export interface CaseVisualTheme { readonly accent: string; readonly highlight: string; readonly deep: string; readonly glow: string }
 export interface ChestModelDefinition {
   readonly revision: string; readonly path: string; readonly body: string; readonly lid: string; readonly key?: string;
@@ -67,7 +67,7 @@ export const ENDER_CASE: CaseDefinition = Object.freeze({
 });
 const COMMON_CASE = makeCase('traveler', 'overworld', 'common', 'Дороги Верхнего мира', 'Сундук Путника',
   'Дорожные трофеи, простые инструменты и находки после долгих странствий.',
-  { shell: '#493a2b', panel: '#72583a', metal: '#928267', accent: '#9aa9a0' }, rarityTheme('common'), 'overworld');
+  { shell: '#493a2b', panel: '#72583a', metal: '#928267', accent: '#9aa9a0' }, rarityTheme('common'), 'shrine');
 const UNCOMMON_CASE = makeCase('deep-mine', 'deep-mines', 'uncommon', 'Глубинные шахты', 'Кладовая Шахтёра',
   'Снаряжение и редкие минералы из забытых подземных залов.',
   { shell: '#343c3b', panel: '#405c58', metal: '#7b8984', accent: '#5fc78e' }, rarityTheme('uncommon'), 'deep-mine',

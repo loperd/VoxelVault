@@ -1,6 +1,7 @@
-import { AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, Color, Group, Line, LineBasicMaterial, Mesh, MeshBasicMaterial, Points, PointsMaterial, Vector3 } from 'three';
+import { AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, Color, Group, IcosahedronGeometry, Line, LineBasicMaterial, Mesh, MeshBasicMaterial, Points, PointsMaterial, Vector3 } from 'three';
 import { BlockRegistry, BlockWorld, blockAtlas, computeLight, meshWorld, worldMeshes, type Living, type Stage, type StageBuilder } from '../../../../packages/blockworld/src/index.ts';
 import type { ChestHandles } from '../../../application/ports/chest-handles.ts';
+import { dragonFlight, dragonModel } from './dragon-actor.ts';
 
 type EndActor = Living<ChestHandles>;
 
@@ -56,7 +57,7 @@ function build(seed: number): Stage<ChestHandles> {
       grid.set(gx, y, gz, B.Stone);
     }
   }
-  const pillars: { x: number; z: number; h: number }[] = [[-47, -43, 31], [43, -53, 38], [-48, 9, 25], [48, 4, 33], [-5, -99, 42], [12, 29, 24]]
+  const pillars: { x: number; z: number; h: number; crown?: number }[] = [[-47, -43, 31], [43, -53, 38], [-48, 9, 25], [48, 4, 33], [-5, -99, 42], [12, 29, 24]]
     .map(([x, z, h]) => ({ x: x!, z: z!, h: h! }));
   for (const p of pillars) {
     const gx = p.x - OX, gz = p.z - OZ;
@@ -66,6 +67,7 @@ function build(seed: number): Stage<ChestHandles> {
     for (let y = base; y < base + p.h; y++) for (let dx = -radius; dx <= radius; dx++) for (let dz = -radius; dz <= radius; dz++) {
       if (dx * dx + dz * dz <= radius * radius + 1) grid.set(gx + dx, y, gz + dz, B.Obsidian);
     }
+    p.crown = base + p.h + 1;
     // Crystal crown on each spire.
     grid.set(gx, base + p.h, gz, B.Bloom);
     for (const [dx, dz] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) grid.set(gx + dx, base + p.h - 1, gz + dz, B.Bloom);
@@ -91,7 +93,10 @@ function build(seed: number): Stage<ChestHandles> {
   root.add(...worldMeshes(meshWorld(grid, BLOCKS, { uv, sky: [.58, .55, .7], glow: [.72, .5, 1], minimum: .08,
     sun: { direction: [-.45, .72, .52], color: [.72, .65, .85], strength: .25, reach: 24 },
   }), texture));
-  const living: EndActor[] = [crystalBeams(root, pillars), endermen(root), driftingMotes(root, rand)];
+  const dragon = dragonModel(root);
+  const living: EndActor[] = [crystalBeams(root, pillars), endermen(root), driftingMotes(root, rand), visitors(root), crystalBlasts(root, pillars),
+    // The dragon is low and often here: the first sweep comes within seconds, then every 15–25.
+    dragonFlight(dragon, { floor: FLOOR, first: 9, every: [15, 10], swoop: [0, 5.5, -11] })];
   return {
     root, living, calm: .025,
     sky: { top: '#080b18', horizon: '#28213b', bottom: '#111322' },
@@ -138,14 +143,19 @@ function crystalBeams(root: Group, pillars: readonly { x: number; z: number; h: 
   return { update(world) { material.opacity = .035 + (Math.sin(world.time * .45) + 1) * .025; } };
 }
 
+const ENDERMAN = { body: new MeshBasicMaterial({ color: '#171522' }), eye: new MeshBasicMaterial({ color: '#dc70ff' }) };
+function endermanModel(): Group {
+  const group = new Group(), { body: mat, eye } = ENDERMAN;
+  const body = new Mesh(new BoxGeometry(.65, 1.7, .42), mat); body.position.y = 1.5; group.add(body);
+  for (const x of [-.15, .15]) { const e = new Mesh(new BoxGeometry(.1, .07, .035), eye); e.position.set(x, 1.82, .22); group.add(e); }
+  for (const x of [-.2, .2]) { const leg = new Mesh(new BoxGeometry(.16, 1.05, .16), mat); leg.position.set(x, .52, 0); group.add(leg); }
+  return group;
+}
+
 function endermen(root: Group): EndActor {
-  const mat = new MeshBasicMaterial({ color: '#171522' }), eye = new MeshBasicMaterial({ color: '#dc70ff' });
   const actors: { group: Group; x: number; y: number; z: number; phase: number; speed: number }[] = [];
   for (let i = 0; i < 4; i++) {
-    const group = new Group();
-    const body = new Mesh(new BoxGeometry(.65, 1.7, .42), mat); body.position.y = 1.5; group.add(body);
-    for (const x of [-.15, .15]) { const e = new Mesh(new BoxGeometry(.1, .07, .035), eye); e.position.set(x, 1.82, .22); group.add(e); }
-    for (const x of [-.2, .2]) { const leg = new Mesh(new BoxGeometry(.16, 1.05, .16), mat); leg.position.set(x, .52, 0); group.add(leg); }
+    const group = endermanModel();
     const x = i % 2 ? 43 : -43, z = -58 + i * 17;
     const y = i % 2 ? 12 : 10;
     group.position.set(x, y, z); root.add(group); actors.push({ group, x, y, z, phase: i * 1.8, speed: i % 2 ? -.45 : .38 });
@@ -157,6 +167,83 @@ function endermen(root: Group): EndActor {
       if (Math.sin(world.time * .13 + a.phase) > .997) { a.group.visible = false; }
       else a.group.visible = true;
     }
+  } };
+}
+
+/** A burst of violet specks from a point, rising and fading over about a second. */
+function puffs(root: Group, count: number, color: string, size: number, spread: number, rise: number) {
+  const positions = new Float32Array(count * 3), velocity = Array.from({ length: count }, () => new Vector3()), geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(positions, 3));
+  const material = new PointsMaterial({ color: new Color(color), size, transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending });
+  const points = new Points(geometry, material); points.frustumCulled = false; root.add(points);
+  let age = 9;
+  return {
+    burst(at: readonly [number, number, number], rand: () => number) {
+      age = 0;
+      for (let i = 0; i < count; i++) {
+        positions.set(at, i * 3);
+        velocity[i]!.set((rand() - .5) * spread, rand() * rise, (rand() - .5) * spread);
+      }
+    },
+    update(dt: number) {
+      if (age > 1.2) { material.opacity = 0; return; }
+      age += dt; material.opacity = Math.max(0, 1 - age / 1.2);
+      for (let i = 0; i < count; i++) {
+        const v = velocity[i]!, k = i * 3;
+        positions[k] = positions[k]! + v.x * dt; positions[k + 1] = positions[k + 1]! + v.y * dt; positions[k + 2] = positions[k + 2]! + v.z * dt;
+        v.y -= dt * 1.5;
+      }
+      geometry.attributes.position!.needsUpdate = true;
+    },
+  };
+}
+
+/** Endermen teleport onto the chest's island one at a time: a puff, a long stare at the chest, a shudder, a puff, gone. */
+function visitors(root: Group): EndActor {
+  const rim = [[-3.3, 1], [3.7, -.6], [.6, -2.7], [-2.2, -2.2]] as const, group = endermanModel(), smoke = puffs(root, 36, '#c27bff', .3, 4, 3);
+  group.visible = false; root.add(group);
+  // The island's surface: its middle is a block higher than its rim.
+  const surface = (x: number, z: number) => Math.hypot(x / 4, z / 3.5) < .7 ? FLOOR + 1 : FLOOR;
+  let wait = 4, stay = 0, at = 0;
+  return { update(context, dt) {
+    smoke.update(dt);
+    if (group.visible) {
+      stay -= dt;
+      // Angry: it trembles faster as it gets ready to leave.
+      group.position.x = rim[at]![0] + .5 + Math.sin(context.time * 55) * Math.max(0, .6 - stay) * .05;
+      if (stay <= 0) { smoke.burst([group.position.x, group.position.y + 1.4, group.position.z], context.rand); group.visible = false; wait = 5 + context.rand() * 6; }
+      return;
+    }
+    if ((wait -= dt) > 0) return;
+    const next = (at + 1 + Math.floor(context.rand() * (rim.length - 1))) % rim.length, [x, z] = rim[next]!;
+    at = next; stay = 4 + context.rand() * 2;
+    group.position.set(x + .5, surface(x, z), z + .5);
+    group.rotation.y = Math.atan2(CHEST[0] - group.position.x, CHEST[2] - group.position.z);
+    group.visible = true;
+    smoke.burst([group.position.x, group.position.y + 1.4, group.position.z], context.rand);
+    context.host?.light('#cc7bff', .5, .5);
+  } };
+}
+
+/** An end crystal on a spire goes off now and then: a ball of fire, debris, a flash and a tremor that reaches the chest. */
+function crystalBlasts(root: Group, pillars: readonly { x: number; z: number; crown?: number }[]): EndActor {
+  const fire = new MeshBasicMaterial({ color: '#ffb4f0', transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false });
+  const ball = new Mesh(new IcosahedronGeometry(1, 1), fire); ball.visible = false; root.add(ball);
+  const debris = puffs(root, 48, '#ff8fe0', .9, 18, 14);
+  let wait = 6, age = -1;
+  return { update(context, dt) {
+    debris.update(dt);
+    if (age >= 0) {
+      age += dt;
+      ball.scale.setScalar(1 + age * 22); fire.opacity = Math.max(0, .9 - age / .9);
+      if (age > .9) { age = -1; ball.visible = false; wait = 7 + context.rand() * 7; }
+      return;
+    }
+    if ((wait -= dt) > 0) return;
+    const p = pillars[Math.floor(context.rand() * pillars.length)]!, y = (p.crown ?? FLOOR + 20) + 1.5;
+    ball.position.set(p.x + .5, y, p.z + .5); ball.scale.setScalar(1); ball.visible = true; age = 0;
+    debris.burst([p.x + .5, y, p.z + .5], context.rand);
+    context.flash('#ff9cf0', .3); context.host?.tremor(.4, .7); context.host?.light('#ff8fe0', .8, .5);
   } };
 }
 
