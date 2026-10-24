@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/voxel-vault/api/internal/domain/rulebook"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
 )
 
 func p(v float64) *float64 { return &v }

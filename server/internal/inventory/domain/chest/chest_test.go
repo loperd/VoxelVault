@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/voxel-vault/api/internal/domain/rulebook"
-	"github.com/voxel-vault/api/internal/domain/rulebook/rulebooktest"
 	"github.com/voxel-vault/api/internal/inventory/domain/chest"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook/rulebooktest"
 )
 
 func issue(t *testing.T, rb *rulebook.Rulebook, id string, seed uint64) *chest.Chest {

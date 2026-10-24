@@ -218,7 +218,7 @@ let inventoryLoad: Promise<void> | undefined;
 let account: Account | undefined;
 function accountOf(player: Player): Account {
   if (account?.player !== player) {
-    wallet.reset(player.economyMode ?? 'legacy');
+    wallet.reset();
     account = { player, wallet, signOut() {
       void auth.signOut().catch(error => reporter.capture(error, { code: 'SIGN_OUT_FAILED' })).finally(() => window.location.reload());
     } };

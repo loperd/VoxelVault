@@ -57,6 +57,6 @@ Provider linking proves ownership of the current account and the new external id
 
 ## Migration acceptance
 
-Existing `server/internal/domain/inventory` and `server/internal/app/economy.go` still couple Inventory and Wallet directly. Replace this path with the contracts above before calling the new economy complete.
+`server/internal/domain/inventory`, still used by Inventory pricing, imports the legacy wallet model. Replace this path with the contracts above before calling the new economy complete.
 
 Automated import checks must reject domain/application dependencies on adapters and foreign contexts. Failure tests must interrupt processing after each local commit, restart workers, duplicate and reorder messages, and exercise concurrent commands against the same item/account. Verify no repeated consumption or credit, no negative available balance, balanced postings, conflicting-ID rejection and eventual completion or an observable reconciliation state.

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/voxel-vault/api/internal/domain/rulebook"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
 	"github.com/voxel-vault/api/internal/rulebookjson"
 )
 

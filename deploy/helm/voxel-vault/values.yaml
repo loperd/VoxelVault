@@ -88,8 +88,6 @@ env:
   WEBAUTHN_ORIGINS: "http://localhost:5173"
   COOKIE_SECURE: "false"
   DEFAULT_ROLE: "player"
-  # Explicit opt-in after offline migration and economy-cutover -action check.
-  ECONOMY_MODE: "legacy"          # legacy | maintenance | contexts
   WALLET_ASSETS: "currency,travel-scraps,deep-ore,end-shards,dragon-scales,quantum-shards"
   # Telegram Login (OIDC): the client id is the bot id, public (it is in the authorization URL).
   TELEGRAM_CLIENT_ID: "8751479936"
@@ -102,8 +100,8 @@ env:
 # Keys in the KV (all env):
 #   TELEGRAM_CLIENT_SECRET   Telegram OIDC client secret (empty/absent → Telegram login off)
 #   DATABASE_URL             postgres://… (with the bundled Postgres: its Service, user, password)
-#   INVENTORY_DATABASE_URL   separate Inventory runtime connection in contexts mode
-#   WALLET_DATABASE_URL      separate Wallet runtime connection in contexts mode
+#   INVENTORY_DATABASE_URL   separate Inventory runtime connection
+#   WALLET_DATABASE_URL      separate Wallet runtime connection
 #   POSTGRES_PASSWORD        only with the bundled Postgres
 # PREREQ for vso: the KV, a read policy and a Kubernetes-auth role bound to this chart's
 # ServiceAccount exist BEFORE switching to vso, or VSO overwrites the Secret with nothing.

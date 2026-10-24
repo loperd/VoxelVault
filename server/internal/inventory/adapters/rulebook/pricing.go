@@ -4,9 +4,9 @@ package rulebook
 
 import (
 	legacy "github.com/voxel-vault/api/internal/domain/inventory"
-	rules "github.com/voxel-vault/api/internal/domain/rulebook"
 	"github.com/voxel-vault/api/internal/inventory/application"
 	"github.com/voxel-vault/api/internal/inventory/domain"
+	rules "github.com/voxel-vault/api/internal/inventory/domain/rulebook"
 	"time"
 )
 

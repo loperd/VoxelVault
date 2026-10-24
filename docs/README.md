@@ -23,6 +23,7 @@ This is the maintained documentation for Voxel Vault. Source code and executable
 - [Asset authoring and Blender](guides/asset-authoring.md)
 - [Mobile performance](guides/performance.md)
 - [Releases](guides/releases.md)
+- [0.5.0 release notes](releases/0.5.0.md)
 - [0.4.2 release notes](releases/0.4.2.md)
 - [0.4.1 release notes](releases/0.4.1.md)
 - [0.3.11 release notes](releases/0.3.11.md)

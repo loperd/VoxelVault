@@ -15,7 +15,6 @@ type Config struct {
 	StarterChests string
 	// The chest economy's rulebook: types, items, traits and the rules that tune them.
 	EconomyPath          string
-	EconomyMode          string
 	InventoryDatabaseURL string
 	WalletDatabaseURL    string
 	WalletAssets         []string
@@ -36,7 +35,6 @@ func Load() Config {
 		DefaultRole:          env("DEFAULT_ROLE", "player"),
 		StarterChests:        env("STARTER_CHESTS", "traveler:10,deep-mine:5,ender:5,dragon:3"),
 		EconomyPath:          env("ECONOMY_CONFIG", "config/economy.json"),
-		EconomyMode:          env("ECONOMY_MODE", "legacy"),
 		InventoryDatabaseURL: os.Getenv("INVENTORY_DATABASE_URL"),
 		WalletDatabaseURL:    os.Getenv("WALLET_DATABASE_URL"),
 		WalletAssets:         split(os.Getenv("WALLET_ASSETS")),

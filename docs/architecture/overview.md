@@ -25,8 +25,7 @@ flowchart LR
 | `src/adapters/inbound/react/` | Screens and interaction components |
 | `src/adapters/outbound/` | API data, browser storage/scheduling, chest/world rendering and audio |
 | `src/composition/`, `src/main.tsx` | Frontend dependency composition and runtime ownership |
-| `server/internal/domain/` | Existing chest, inventory, wallet and rulebook rules |
-| `server/internal/app/` | Existing backend economy orchestration |
+| `server/internal/domain/` | Legacy inventory and wallet rules still used by Inventory pricing |
 | `server/internal/httpapi/`, `server/internal/store/` | HTTP/authentication and database adapters |
 | `packages/blockworld/` | Reusable world engine, independent of the application |
 | `tools/mc-import/` | Offline schematic importer |
@@ -36,7 +35,7 @@ flowchart LR
 
 [Bounded contexts and sagas](contexts.md) is the accepted target for autonomous Inventory, Wallet, Identity/Profile and future Shop. There must be no shared transactions, tables, repositories or domain models across those boundaries. Application integration is through consumer-owned ports and translation adapters.
 
-The existing backend is not yet compliant: Inventory imports the wallet aggregate and `app.Economy` uses one persistence transaction for item work and wallet changes. The mutable `wallet_balances` table is not a ledger. This coupling must be removed during the context migration; a directory rename does not accomplish it.
+The legacy economy engine is removed; the API serves only the Inventory and Wallet contexts. The remaining coupling is `server/internal/domain/inventory`, which Inventory pricing uses and which imports the legacy wallet model. The mutable `wallet_balances` table is not a ledger; it survives only as the frozen cutover source.
 
 ## Runtime ownership
 

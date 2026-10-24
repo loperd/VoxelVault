@@ -9,9 +9,9 @@ import (
 	"math"
 	"slices"
 
-	"github.com/voxel-vault/api/internal/domain/dice"
-	"github.com/voxel-vault/api/internal/domain/rulebook"
 	"github.com/voxel-vault/api/internal/domain/wallet"
+	"github.com/voxel-vault/api/internal/inventory/domain/dice"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
 )
 
 var (

@@ -64,8 +64,8 @@ Values files layer on `values.yaml`:
 - `values.prod.yaml` — VPS cluster, `https://voxelvault.mono.place` / `api-voxelvault.mono.place`.
 
 Secret keys (all env): `TELEGRAM_CLIENT_SECRET`, `DATABASE_URL`, `POSTGRES_PASSWORD` (bundled Postgres only).
-Context mode additionally requires `INVENTORY_DATABASE_URL` and `WALLET_DATABASE_URL` with
-separate context runtime credentials. Migration and opening-import credentials belong to the
+The API also requires `INVENTORY_DATABASE_URL` and `WALLET_DATABASE_URL` with separate
+context runtime credentials. Migration and opening-import credentials belong to the
 offline operator process; do not add them to the API Secret.
 VSO overwrites the Secret with the KV: fill the KV, the read policy and the Kubernetes-auth role
 **before** an install with `secrets.source: vso`.
@@ -79,7 +79,13 @@ Its default entrypoint remains `/api`; Kubernetes `command` or Docker
 `--entrypoint` selects an operator tool. No tool requires a shell in the distroless image.
 Helm and the release workflow never run migrations, freeze the source or import balances.
 
-Rehearse on a controlled copy before activating context mode. With the relevant connections
+The API runs only the Inventory and Wallet contexts and requires a completed cutover. Startup
+checks migrated context databases, a frozen legacy source and both opening baselines matching
+its snapshot; if any is missing the process exits (the pod crash-loops and `helm --atomic` rolls
+back). Economy endpoints and readiness return 503 only if that check regresses while running.
+There is no maintenance mode: the API is down from freeze until import completes, so plan the
+window and scale the API to 0 before export.
+Rehearse on a controlled copy before the first rollout. With the relevant connections
 in the operator environment, run these binaries in order:
 
 ```sh
@@ -122,8 +128,8 @@ excessive effective table/sequence rights, including PUBLIC grants and grant opt
 that database. It does not create roles, revoke existing grants or grant future tables.
 Re-run after schema/policy changes. It does not audit other databases or replace
 application RBAC and resource authorization. Switch to runtime connections before checking
-API startup. Context and maintenance API modes do not run legacy or Casbin AutoMigrate;
-legacy mode retains the transitional bootstrap path. RBAC policy data may still be seeded.
+API startup. The API does not run legacy or Casbin AutoMigrate. RBAC policy data may still be
+seeded.
 
 Inventory runtime now requires Goose version 4. Its lifecycle migration records verified
 checkpoints for existing instances using Go under local write locks. Runtime Go adapters
@@ -154,9 +160,9 @@ imports before funding; funding is ledger activity and later baseline re-imports
 
 All domain checks, ledger validation and lifecycle recording execute in Go. Migrations
 create storage structures and ordinary integrity constraints without custom PostgreSQL
-functions, procedures or triggers. Legacy write fencing is a Go transaction lease: every
-legacy economy application writer must use it. Drain old API/worker versions and revoke
-legacy economy write access before enabling context mode; unrestricted operator SQL bypasses
+functions, procedures or triggers. Legacy write fencing is a Go transaction lease taken
+by the cutover tooling; no application writer of the legacy economy remains. Drain old API/worker versions and revoke
+legacy economy write access before the cutover; unrestricted operator SQL bypasses
 application checks. The schema owner remains an offline operator identity.
 
 Inventory application entrypoints independently enforce RBAC and resource scopes through
@@ -167,10 +173,8 @@ Startup binds the exact configured starter plan; callers cannot choose a differe
 HTTP route checks remain an additional compatibility layer. No database procedure or
 trigger implements authorization.
 
-After a successful check and runtime-grant verification, set `env.ECONOMY_MODE: contexts`
-in the environment's maintained values, with its context connections already in the Secret.
-The default is `legacy`; `maintenance` makes protected economy endpoints and readiness return
-503. Once frozen, returning to `legacy` does not restore economy service. Recovery must move
+Roll out the API only after a successful check and runtime-grant verification, with its context
+connections already in the Secret. There is no legacy engine to return to: recovery must move
 forward with compatible context code; Helm `--atomic` cannot reverse an imported ledger.
 The standalone worker is optional because the context-backed API already runs delivery.
 

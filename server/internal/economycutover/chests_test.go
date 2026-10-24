@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/voxel-vault/api/internal/domain/rulebook/rulebooktest"
 	"github.com/voxel-vault/api/internal/economycutover"
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
 	ilocal "github.com/voxel-vault/api/internal/inventory/adapters/inbound/local"
@@ -18,6 +17,7 @@ import (
 	"github.com/voxel-vault/api/internal/inventory/domain"
 	"github.com/voxel-vault/api/internal/inventory/domain/chest"
 	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook/rulebooktest"
 )
 
 func chestClient(f *fixture) ilocal.ChestsOpeningClient {

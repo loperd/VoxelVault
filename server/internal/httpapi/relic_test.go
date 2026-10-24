@@ -8,19 +8,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/voxel-vault/api/internal/domain"
-	"github.com/voxel-vault/api/internal/domain/rulebook"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
 	"github.com/voxel-vault/api/internal/rulebookjson"
 )
 
-func TestRelicCatalogAndDatabaseSeedDefinition(t *testing.T) {
+func TestRelicCatalogChancesSumToOneHundredPercent(t *testing.T) {
 	rb, err := rulebookjson.Load("../../config/economy.json")
 	if err != nil {
 		t.Fatal(err)
-	}
-	metadata, ok := domain.CaseByID("relic")
-	if !ok || metadata.Title != "Квантовый реликт" || metadata.Accent != "#51dccb" {
-		t.Fatalf("Relic database seed metadata missing: %+v", metadata)
 	}
 	s := &Server{rulebook: func() *rulebook.Rulebook { return rb }}
 	r := httptest.NewRequest(http.MethodGet, "/api/v1/cases/relic/catalog", nil)

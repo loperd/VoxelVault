@@ -529,7 +529,7 @@ test('items screen: separate wallet affordability, prices, and sale asked twice'
     async work(id, action) { calls.push([action, id]); state = { ...state, items: state.items.filter(entry => entry.id !== id) }; listeners.forEach(listener => listener()); return offers[action]; },
     async merge(a, b) { calls.push(['merge', a, b]); return { kept: state.items[1], mended: false }; } };
   const { AccountContext } = await import(new URL('adapters/inbound/react/AccountContext.js', build));
-  const walletState = { loaded: true, balances: [{ asset: 'deep-ore', available: '10' }], historyAvailable: true };
+  const walletState = { loaded: true, balances: [{ asset: 'deep-ore', available: '10' }] };
   const wallet = { getState: () => walletState, subscribe: () => () => {}, async load() {} };
   await act(async () => { root.render(createElement(AccountContext.Provider, { value: { items, wallet, player: { displayName: 'Miner', handle: 'miner' }, signOut() {} } }, createElement(ItemsScreen, { items, navigation: { go() {} } }))); });
   assert.equal(document.querySelector('.wallet__entry'), null, 'balances belong to the Wallet page');
@@ -574,7 +574,7 @@ test('the header uses Wallet and opens its section; the profile signs out', asyn
 
 test('Wallet shows exact funds, retries history and changes currency without stale rows', async () => {
   const { WalletScreen } = await import(new URL('adapters/inbound/react/WalletScreen.js', build));
-  const state = { loaded: true, historyAvailable: true, balances: [{ asset:'currency',posted:'9007199254740993',held:'4',available:'9007199254740989' },{asset:'end-shards',posted:'20',held:'0',available:'20'}] };
+  const state = { loaded: true, balances: [{ asset:'currency',posted:'9007199254740993',held:'4',available:'9007199254740989' },{asset:'end-shards',posted:'20',held:'0',available:'20'}] };
   let fail = true;
   const calls = [];
   const entry = { id:'j1',asset:'currency',direction:'credit',units:'9007199254740993',purpose:'opening_balance',reference:'opening',at:'2026-10-23T00:00:00Z' };

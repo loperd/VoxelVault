@@ -106,7 +106,7 @@ function decodePlayer(value: unknown): Player {
     throw new AuthError('UNAVAILABLE', 'The server sent an invalid player.');
   }
   const roles = Array.isArray(dto.roles) ? dto.roles.filter((role): role is string => typeof role === 'string') : [];
-  return Object.freeze({ id: dto.id, handle: dto.handle, displayName: dto.displayName, roles: Object.freeze(roles), ...(dto.economyMode === 'contexts' || dto.economyMode === 'legacy' ? { economyMode: dto.economyMode } : {}) });
+  return Object.freeze({ id: dto.id, handle: dto.handle, displayName: dto.displayName, roles: Object.freeze(roles) });
 }
 
 // WebAuthn JSON <-> binary. Modern browsers parse the server's JSON themselves; older ones need this.

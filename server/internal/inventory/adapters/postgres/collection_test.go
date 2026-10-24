@@ -16,13 +16,13 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
-	"github.com/voxel-vault/api/internal/domain/rulebook/rulebooktest"
 	pg "github.com/voxel-vault/api/internal/inventory/adapters/postgres"
 	"github.com/voxel-vault/api/internal/inventory/adapters/postgres/migrations"
 	"github.com/voxel-vault/api/internal/inventory/application"
 	"github.com/voxel-vault/api/internal/inventory/domain"
 	"github.com/voxel-vault/api/internal/inventory/domain/chest"
 	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook/rulebooktest"
 )
 
 var serial atomic.Uint64

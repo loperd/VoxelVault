@@ -1,5 +1,5 @@
 /** The signed-in player, as the server knows them. Roles are data (Casbin), never a fixed list here. */
-export interface Player { readonly id: string; readonly handle: string; readonly displayName: string; readonly roles: readonly string[]; readonly economyMode?: 'legacy' | 'contexts' }
+export interface Player { readonly id: string; readonly handle: string; readonly displayName: string; readonly roles: readonly string[] }
 export interface AuthProviders { readonly passkey: boolean; readonly telegram: boolean }
 
 export type AuthFailure =

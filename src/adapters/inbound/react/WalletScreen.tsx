@@ -22,12 +22,12 @@ export function WalletScreen({ wallet, navigation, soundPreference }: { readonly
   useEffect(() => { const c = new AbortController(); void wallet.load(c.signal).catch(() => { if (!c.signal.aborted) setBalancesFailed(true); }); return () => c.abort(); }, [wallet]);
   useEffect(() => {
     const c = new AbortController(); request.current = c; setEntries([]); setNext(undefined); setFailed(false); setLoading(false);
-    if (state.historyAvailable && state.loaded) {
+    if (state.loaded) {
       setLoading(true);
       void wallet.history(asset, undefined, c.signal).then(h => { if (!c.signal.aborted) { setEntries(h.entries); setNext(h.nextCursor); } }, () => { if (!c.signal.aborted) setFailed(true); }).finally(() => { if (!c.signal.aborted) setLoading(false); });
     }
     return () => c.abort();
-  }, [wallet, asset, state.historyAvailable, state.loaded, attempt]);
+  }, [wallet, asset, state.loaded, attempt]);
   const more = async () => {
     const c = request.current; if (!next || !c || loading) return; setLoading(true); setFailed(false);
     try { const h = await wallet.history(asset, next, c.signal); if (!c.signal.aborted) { setEntries(old => [...old, ...h.entries.filter(e => !old.some(prior => prior.id === e.id))]); setNext(h.nextCursor); } }
@@ -47,14 +47,13 @@ export function WalletScreen({ wallet, navigation, soundPreference }: { readonly
     </section>
     <section className="wallet-screen__history" aria-labelledby="wallet-history-title" aria-busy={loading}>
       <h2 id="wallet-history-title">История операций <span>{resourceTitle(asset)}</span></h2>
-      {!state.historyAvailable && state.loaded && <p>История операций пока недоступна.</p>}
       {failed && <p role="alert">Не удалось загрузить историю. <button type="button" onClick={() => { if (next) void more(); else setAttempt(n => n + 1); }}>Повторить</button></p>}
       <ol className="wallet-screen__transactions">{entries.map(e => <li key={e.id}>
         <div><strong>{purpose(e.purpose)}</strong><time dateTime={e.at}>{new Date(e.at).toLocaleString('ru-RU')}</time></div>
         <span className={e.direction === 'credit' ? 'wallet-screen__credit' : ''}>{e.direction === 'credit' ? '+' : '−'}{count(e.units)}</span>
       </li>)}</ol>
       {loading && <p role="status">Загружаем операции…</p>}
-      {state.loaded && state.historyAvailable && !loading && !failed && entries.length === 0 && <p>Операций с этой валютой пока нет.</p>}
+      {state.loaded && !loading && !failed && entries.length === 0 && <p>Операций с этой валютой пока нет.</p>}
       {next && <button type="button" className="btn btn-transparent" disabled={loading} onClick={() => { void more(); }}>Показать ещё</button>}
     </section>
   </div></main>;

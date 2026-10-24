@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
-	"github.com/voxel-vault/api/internal/app"
 	"github.com/voxel-vault/api/internal/config"
-	"github.com/voxel-vault/api/internal/domain/rulebook"
+	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
 	"github.com/voxel-vault/api/internal/store"
 	"gorm.io/gorm"
 )
@@ -24,22 +23,17 @@ type Server struct {
 	config       config.Config
 	identity     *IdentityPorts
 	mux          *http.ServeMux
-	economy      *app.Economy
 	rulebook     func() *rulebook.Rulebook
-	starter      []app.Grant
+	starter      []iv1.Grant
 	contexts     *ContextPorts
 	economyGuard func(context.Context) error
 }
 
-// New serves the API; rb is the chest economy's rulebook in force.
-func New(db *gorm.DB, cfg config.Config, identity *IdentityPorts, rb *rulebook.Rulebook) (*Server, error) {
-	return NewWithEconomy(db, cfg, identity, rb, nil, nil)
-}
-
-// NewWithEconomy receives only published context ports. The composition root owns all
-// database wiring and supplies a guard that fails closed during migration/outages.
-func NewWithEconomy(db *gorm.DB, cfg config.Config, identity *IdentityPorts, rb *rulebook.Rulebook, ports *ContextPorts, guard func(context.Context) error) (*Server, error) {
-	if ports != nil && (ports.Collection == nil || ports.Workshop == nil || ports.Wallet == nil || ports.Subjects == nil || ports.UserContext == nil || guard == nil) {
+// New serves the API; rb is the chest economy's rulebook in force. It receives only published
+// context ports. The composition root owns all database wiring and supplies a guard that fails
+// closed during migration/outages.
+func New(db *gorm.DB, cfg config.Config, identity *IdentityPorts, rb *rulebook.Rulebook, ports *ContextPorts, guard func(context.Context) error) (*Server, error) {
+	if ports == nil || ports.Collection == nil || ports.Workshop == nil || ports.Wallet == nil || ports.Subjects == nil || ports.UserContext == nil || guard == nil {
 		return nil, fmt.Errorf("complete context ports and readiness guard are required")
 	}
 	if identity == nil || identity.Profiles == nil || identity.Sessions == nil || identity.Security == nil || identity.Peer == nil {
@@ -50,12 +44,7 @@ func NewWithEconomy(db *gorm.DB, cfg config.Config, identity *IdentityPorts, rb 
 		return nil, fmt.Errorf("configure starter chests: %w", err)
 	}
 	current := func() *rulebook.Rulebook { return rb }
-	s := &Server{db: db, config: cfg, identity: identity, mux: http.NewServeMux(), rulebook: current, starter: starter,
-		economy: &app.Economy{Store: store.Economy{DB: db}, Rulebook: current, Clock: time.Now, IDs: newUUID, Seeds: newSeed}}
-	s.contexts, s.economyGuard = ports, guard
-	if ports != nil {
-		s.economy = nil
-	}
+	s := &Server{db: db, config: cfg, identity: identity, mux: http.NewServeMux(), rulebook: current, starter: starter, contexts: ports, economyGuard: guard}
 	s.routes()
 	return s, nil
 }
@@ -73,7 +62,7 @@ func (s *Server) routes() {
 		if err == nil {
 			err = sqlDB.PingContext(r.Context())
 		}
-		if err == nil && s.economyGuard != nil {
+		if err == nil {
 			err = s.economyGuard(r.Context())
 		}
 		if err != nil {
@@ -87,7 +76,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/items/{itemID}/image.svg", s.itemImage)
 	s.mux.HandleFunc("GET /api/v1/me", s.requirePermission("/api/v1/me", "GET", s.me))
 	s.mux.HandleFunc("POST /api/v1/access/users/{userID}/roles", s.sameOrigin(s.requireUser(s.assignRole)))
-	s.inventoryRoutes()
+	s.contextRoutes()
 }
 
 type itemDTO struct {
@@ -156,10 +145,7 @@ func (s *Server) requireUser(next http.HandlerFunc) http.HandlerFunc {
 			writeError(w, http.StatusUnauthorized, "authentication required")
 			return
 		}
-		ctx := context.WithValue(r.Context(), userContextKey, user)
-		if s.contexts != nil {
-			ctx = s.contexts.UserContext(ctx, user.ID)
-		}
+		ctx := s.contexts.UserContext(context.WithValue(r.Context(), userContextKey, user), user.ID)
 		next(w, r.WithContext(ctx))
 	}
 }
@@ -187,11 +173,7 @@ func (s *Server) me(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 503, "authorization unavailable")
 		return
 	}
-	mode := "legacy"
-	if s.contexts != nil {
-		mode = "contexts"
-	}
-	writeJSON(w, 200, map[string]any{"id": user.ID, "handle": user.Handle, "displayName": user.DisplayName, "roles": roles, "economyMode": mode})
+	writeJSON(w, 200, map[string]any{"id": user.ID, "handle": user.Handle, "displayName": user.DisplayName, "roles": roles})
 }
 
 func (s *Server) assignRole(w http.ResponseWriter, r *http.Request) {

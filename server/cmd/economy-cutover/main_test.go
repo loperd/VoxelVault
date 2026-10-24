@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/voxel-vault/api/internal/domain/chest"
 	cutover "github.com/voxel-vault/api/internal/economycutover"
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
 	imigrate "github.com/voxel-vault/api/internal/inventory/adapters/postgres/migrations"
+	"github.com/voxel-vault/api/internal/inventory/domain/chest"
 	"github.com/voxel-vault/api/internal/rulebookjson"
 	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
 	security "github.com/voxel-vault/api/internal/security/application"
@@ -108,7 +108,13 @@ func TestOfflineCutoverAndReadOnlyReadiness(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = store.Transact(ctx, g, func(tx store.Tx) error { return tx.SaveChest(c) }); err != nil {
+	s := c.State()
+	contents, _ := json.Marshal(s.Contents)
+	traits, _ := json.Marshal(s.Traits)
+	parents, _ := json.Marshal(s.Origin.Parents)
+	row := store.ChestInstance{ID: s.ID, UserID: s.Owner, CaseID: s.Type, Status: string(s.Status), Seed: int64(s.Seed), Revision: s.Revision,
+		Contents: contents, Traits: traits, Rarity: s.Rarity, Condition: s.Condition, OriginSource: s.Origin.Source, OriginParents: parents}
+	if err = g.Create(&row).Error; err != nil {
 		t.Fatal(err)
 	}
 	assets := []string{"currency"}

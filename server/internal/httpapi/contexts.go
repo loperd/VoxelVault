@@ -24,21 +24,12 @@ type SubjectDirectory interface {
 	Exists(context.Context, string) (bool, error)
 }
 
-func (s *Server) economyMode() string {
-	if s.contexts != nil {
-		return "contexts"
-	}
-	return "legacy"
-}
-
 func (s *Server) guardEconomy(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
-		if s.economyGuard != nil {
-			if err := s.economyGuard(r.Context()); err != nil {
-				writeError(w, 503, "economy temporarily unavailable")
-				return
-			}
+		if err := s.economyGuard(r.Context()); err != nil {
+			writeError(w, 503, "economy temporarily unavailable")
+			return
 		}
 		next(w, r)
 	}
@@ -132,11 +123,7 @@ func (s *Server) contextChest(x iv1.Chest) (contextChestDTO, error) {
 }
 func (s *Server) contextInventory(w http.ResponseWriter, r *http.Request) {
 	owner := userFrom(r.Context()).ID
-	gs := []iv1.Grant{}
-	for _, g := range s.starter {
-		gs = append(gs, iv1.Grant{Type: g.Type, Count: g.Count})
-	}
-	if err := s.contexts.Collection.GrantStarter(r.Context(), owner, gs); err != nil {
+	if err := s.contexts.Collection.GrantStarter(r.Context(), owner, s.starter); err != nil {
 		contextError(w, err)
 		return
 	}

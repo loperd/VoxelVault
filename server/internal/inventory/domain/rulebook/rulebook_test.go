@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/voxel-vault/api/internal/domain/rulebook/rulebooktest"
 	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook/rulebooktest"
 )
 
 func TestValueResolvesDefaultsPatternsAndRules(t *testing.T) {

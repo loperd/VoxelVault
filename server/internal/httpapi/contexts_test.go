@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -17,7 +16,6 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/voxel-vault/api/internal/config"
-	"github.com/voxel-vault/api/internal/domain/rulebook/rulebooktest"
 	cutover "github.com/voxel-vault/api/internal/economycutover"
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
 	lmigrate "github.com/voxel-vault/api/internal/economycutover/adapters/legacy/migrations"
@@ -29,6 +27,7 @@ import (
 	inv "github.com/voxel-vault/api/internal/inventory/application"
 	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
 	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook/rulebooktest"
 	"github.com/voxel-vault/api/internal/store"
 	"github.com/voxel-vault/api/internal/wallet/adapters/authorization"
 	wlocal "github.com/voxel-vault/api/internal/wallet/adapters/inbound/local"
@@ -206,12 +205,9 @@ func (f *httpContexts) activate(t *testing.T) {
 	f.runtime = r
 	t.Cleanup(r.Close)
 	cfg := config.Config{AllowedOrigins: []string{"http://localhost"}, StarterChests: "ender:1"}
-	f.server, err = NewWithEconomy(f.gorm, cfg, f.identity, f.rb, &ContextPorts{Collection: r.Collection, Workshop: r.Workshop, Wallet: r.Wallet, Subjects: f.identity.Profiles, UserContext: r.UserContext}, r.Guard.Check)
+	f.server, err = New(f.gorm, cfg, f.identity, f.rb, &ContextPorts{Collection: r.Collection, Workshop: r.Workshop, Wallet: r.Wallet, Subjects: f.identity.Profiles, UserContext: r.UserContext}, r.Guard.Check)
 	if err != nil {
 		t.Fatal(err)
-	}
-	if f.server.economy != nil {
-		t.Fatal("context API retains a legacy mutation fallback")
 	}
 }
 func (f *httpContexts) startWorker(t *testing.T) {
@@ -309,9 +305,6 @@ func TestContextAPIRepairsThroughSagaAndReadsSeparateWallet(t *testing.T) {
 	if err := f.source.QueryRow(`SELECT value FROM wallet_balances WHERE user_id='alice' AND resource='end-shards'`).Scan(&old); err != nil || old != 20 {
 		t.Fatal("legacy wallet changed", old, err)
 	}
-	if err := store.Transact(context.Background(), f.gorm, func(store.Tx) error { return nil }); err == nil {
-		t.Fatal("legacy writes reopened")
-	}
 }
 
 func TestContextAPIBuybackWithoutBudgetRestoresItemWithoutCredit(t *testing.T) {
@@ -360,11 +353,6 @@ func TestReadinessRequiresAllBaselinesAndKeepsLegacyFrozen(t *testing.T) {
 	decodeResponse(t, f.request("GET", "/api/v1/wallet", "", "", ""), 401, nil)
 	httpExec(t, f.wdb, `UPDATE wallet.opening_baseline SET digest=$1`, f.snapshot.Digest)
 	decodeResponse(t, f.request("GET", "/api/v1/wallet", "alice", "", ""), 200, nil)
-	old := f.server
-	f.server = &Server{db: f.gorm, identity: f.identity, mux: http.NewServeMux(), economyGuard: (legacy.Source{DB: f.source}).LegacyWritable}
-	f.server.routes()
-	decodeResponse(t, f.request("GET", "/api/v1/inventory/items", "alice", "", ""), 503, nil)
-	f.server = old
 }
 
 func TestContextAPICancellationAndInsufficientFundsDoNotChangeItems(t *testing.T) {
@@ -447,6 +435,34 @@ func TestContextAPIChestsAndMergesUsePublishedCollectionPorts(t *testing.T) {
 	decodeResponse(t, f.request("POST", "/api/v1/inventory/merge", "alice", "merge-chests", body), 201, nil)
 	decodeResponse(t, f.request("POST", "/api/v1/admin/users/alice/chests", "bob", "forged", `{"caseId":"ender","count":1}`), 403, nil)
 	decodeResponse(t, f.request("POST", "/api/v1/admin/users/alice/chests", "alice", "bad-grant", `{`), 400, nil)
+}
+
+func TestContextMergeOddsAnswerPercentsOnlyForOwnAvailablePair(t *testing.T) {
+	f := httpStack(t, true)
+	if _, err := f.acl.AddGroupingPolicy("alice", "admin"); err != nil {
+		t.Fatal(err)
+	}
+	decodeResponse(t, f.request("POST", "/api/v1/admin/users/alice/chests", "alice", "odds-grant", `{"caseId":"ender","count":2}`), 201, nil)
+	var cs []map[string]any
+	decodeResponse(t, f.request("GET", "/api/v1/inventory", "alice", "", ""), 200, &cs)
+	ids := []string{}
+	for _, c := range cs {
+		if c["status"] == "available" && c["id"] != "existing-chest" {
+			ids = append(ids, c["id"].(string))
+		}
+	}
+	if len(ids) != 2 {
+		t.Fatal(cs)
+	}
+	odds := "/api/v1/inventory/merge?a=" + ids[0] + "&b=" + ids[1]
+	var o mergeOddsDTO
+	decodeResponse(t, f.request("GET", odds, "alice", "", ""), 200, &o)
+	if o.Contents.Total < 1 || o.Contents.Kept < 1 || o.Contents.Keep != percent(float64(o.Contents.Kept), float64(o.Contents.Total)) || o.Traits == nil {
+		t.Fatal("odds shape", o)
+	}
+	decodeResponse(t, f.request("GET", odds, "bob", "", ""), 404, nil)
+	decodeResponse(t, f.request("POST", "/api/v1/inventory/merge", "alice", "odds-merge", fmt.Sprintf(`{"a":%q,"b":%q}`, ids[0], ids[1])), 201, nil)
+	decodeResponse(t, f.request("GET", odds, "alice", "", ""), 409, nil)
 }
 
 func TestWalletHistoryPaginationIsScopedAndKeepsExactIntegers(t *testing.T) {
@@ -538,7 +554,7 @@ func TestContextActivationRejectsIncompleteAssetConfiguration(t *testing.T) {
 		r.Close()
 		t.Fatal("missing repair material accepted")
 	}
-	if _, err := NewWithEconomy(nil, config.Config{}, nil, f.rb, &ContextPorts{}, nil); err == nil {
+	if _, err := New(nil, config.Config{}, nil, f.rb, &ContextPorts{}, nil); err == nil {
 		t.Fatal("partial dependency injection accepted")
 	}
 }

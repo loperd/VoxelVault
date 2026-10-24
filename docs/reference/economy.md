@@ -54,11 +54,11 @@ Starting item base values by rarity are 4/8/16/32/64. State multipliers are 1/0.
 - Sale: consume the item for base × state multiplier × `item.sellRate` (initially 2.5) in common currency.
 - Merge items: consume two different damaged instances of the same item; retain the better one, with a configurable chance (initially 70%) to improve it by one step.
 
-The current implementation changes item and balance in a shared transaction. This is legacy coupling. The accepted replacement reserves items/funds and settles through a durable saga, with a Wallet-owned double-entry ledger; see [contexts](../architecture/contexts.md).
+Inventory reserves the item and Wallet settles the funds through a durable saga, with a Wallet-owned double-entry ledger; see [contexts](../architecture/contexts.md).
 
 ## Rulebook configuration
 
-`server/internal/domain/rulebook` holds the pure model. `server/internal/rulebookjson` decodes the JSON configuration and rejects unknown fields. The API reads `ECONOMY_CONFIG` on startup; the default is `config/economy.json` and the container uses `/config/economy.json`.
+`server/internal/inventory/domain/rulebook` holds the pure model. `server/internal/rulebookjson` decodes the JSON configuration and rejects unknown fields. The API reads `ECONOMY_CONFIG` on startup; the default is `config/economy.json` and the container uses `/config/economy.json`.
 
 A parameter has a default and conditional rules. Conditions may refer to type, collection, trait, item state, issue source, time and named events. Rules can set, multiply, add, allow or deny. More-specific `set` rules win, with explicit priority as the tie breaker; values are constrained to valid ranges. Collection/type defaults use the same conditional mechanism rather than separate inheritance.
 
@@ -66,26 +66,31 @@ Published configuration has a revision. Issued contents, traits and derived rari
 
 ## Current HTTP contract
 
-Responses contain server decisions. Ownership failures do not reveal another player's objects.
+Responses contain server decisions. Ownership failures do not reveal another player's objects. Routes are registered in `contextRoutes` (`server/internal/httpapi/contexts.go`); every economy route answers 503 while the cutover readiness guard fails. Mutations marked "key" require an `Idempotency-Key` header (1–160 characters); a repeat with the same key answers the same result.
 
 | Method and path | Request | Response |
 |---|---|---|
 | `GET /api/v1/inventory` | — | Chest instances; first access grants configured starter stock once |
 | `POST /api/v1/inventory/{id}/claim` | `{sessionId}` | `{chest, landing}`; landing may be null for a repeat |
 | `POST /api/v1/inventory/{id}/open` | `{sessionId}` | `{chest, item}`; item is null when destroyed |
-| `GET /api/v1/inventory/merge?a=&b=` | — | Merge odds for this pair |
-| `POST /api/v1/inventory/merge` | `{a, b}` | New chest, HTTP 201 |
-| `GET /api/v1/inventory/items` | — | `{items, balances}`; items carry current offers |
-| `POST /api/v1/inventory/items/{id}/repair` | — | `{resource, value}` |
-| `POST /api/v1/inventory/items/{id}/salvage` | — | `{resource, value}` |
-| `POST /api/v1/inventory/items/{id}/sell` | — | `{resource, value}` |
-| `POST /api/v1/inventory/items/merge` | `{a, b}` | Retained owned item |
+| `GET /api/v1/inventory/merge?a=&b=` | — | Merge odds `{traits[{id,keep,upgrade}], contents{total,kept,keep}}` in percent |
+| `POST /api/v1/inventory/merge` | key, `{a, b}` | New chest, HTTP 201 |
+| `GET /api/v1/inventory/items` | — | `{items}`; items carry status, optional `operationId` and current offers |
+| `POST /api/v1/inventory/items/{id}/repair` | key | HTTP 202, operation, `Location: /api/v1/inventory/operations/{operationId}` |
+| `POST /api/v1/inventory/items/{id}/salvage` | key | HTTP 202, operation, `Location` as above |
+| `POST /api/v1/inventory/items/{id}/sell` | key | HTTP 202, operation, `Location` as above |
+| `GET /api/v1/inventory/operations/{id}` | — | Operation `{operationId, itemId, action, stage, version, quote, reason?}` |
+| `POST /api/v1/inventory/operations/{id}/cancel` | — | HTTP 202, operation |
+| `POST /api/v1/inventory/items/merge` | key, `{a, b}` | Retained owned item |
+| `GET /api/v1/wallet` | — | `{balances[{asset, posted, held, available}]}`; amounts are decimal strings |
+| `GET /api/v1/wallet/transactions?asset=&cursor=&limit=` | — | `{entries[{id, asset, direction, units, purpose, reference, at}], nextCursor?}`; asset defaults to `currency`, limit 1–100 (default 25) |
+| `POST /api/v1/admin/users/{userId}/chests` | key, `{caseId, count}` | `{userId, caseId, issued}`, HTTP 201 |
 | `GET /api/v1/cases/{type}/catalog` | — | Type item pool and weight shares |
 
-The combined items/balances response is the current contract, not the target Wallet API. No ledger or saga endpoints are established by this table.
+Workshop actions settle asynchronously through the Inventory–Wallet saga: insufficient funds cancel the operation rather than fail the request. Poll the operation until its stage is final, then reread items and wallet.
 
-Chest DTOs include `id`, `caseId`, status, seed, revision, rarity, condition, `contents[{item,weight}]`, `traits[{id,intensity,seed}]`, origin, optional session/drop/destruction moment/opening time. Owned items include item definition, instance state and origin. Offers include optional repair, salvage, sale, optional selected merge partner and merge-repair chance. An item removed from the rulebook may remain listed without offers.
+Chest DTOs include `id`, `caseId`, status, seed (exact, as a string), revision, rarity, condition, `contents[{item,weight}]`, `traits[{id,intensity,seed}]`, origin, optional session/drop/destruction moment/opening time. Owned items include item definition, instance state and origin. Offers carry amounts as `{resource, value}` with `value` a decimal string: optional repair, salvage, sale, optional selected merge partner and merge-repair chance. An item removed from the rulebook may remain listed without offers.
 
 `chance` in catalog/display DTOs is the server-provided weight share for the relevant pool or contents. It does not authorize client-side selection or issuance. Merge odds describe trait keep/upgrade and how many distinct contents survive; the same server plan drives execution.
 
-Errors: 400 for invalid input, 404 for a missing or unowned object, 409 for incompatible state, session conflict, invalid merge pair or insufficient resources. See `server/internal/httpapi/inventory.go` for serialization and error mapping.
+Errors are `{error: code}` (`contextError` in `server/internal/httpapi/contexts.go`): 400 `invalid`, 403 `forbidden`, 404 `not_found` (missing or unowned), 409 `conflict` or `not_ready` (incompatible state, session conflict, invalid merge pair), 503 otherwise. Malformed bodies and missing keys answer 400 before reaching the contexts.

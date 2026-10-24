@@ -1,10 +1,10 @@
 package rulebook_test
 
 import (
-	rules "github.com/voxel-vault/api/internal/domain/rulebook"
-	"github.com/voxel-vault/api/internal/domain/rulebook/rulebooktest"
 	adapter "github.com/voxel-vault/api/internal/inventory/adapters/rulebook"
 	"github.com/voxel-vault/api/internal/inventory/domain"
+	rules "github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/internal/inventory/domain/rulebook/rulebooktest"
 	"testing"
 	"time"
 )
