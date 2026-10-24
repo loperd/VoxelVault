@@ -2,6 +2,14 @@
 
 ## Procedure
 
+A release goes through its own branch, and the tag only ever marks a master commit:
+
+1. Bump `version` in `package.json` and `package-lock.json` (both places) and write `docs/releases/<version>.md` (`# <version>`, then what changed); link it from `docs/README.md`.
+2. `git switch -c release/v<version>`, stage the release files by name (never `git add -A`: other work may share the tree), commit as `Release <version>` with the notes' body as the message. Commit times follow `CLAUDE.md`.
+3. Run the gates `scripts/release.mjs` runs (tests, build, Go, Helm, migration job, assets, model decoding, mobile probe).
+4. Merge the branch into master, tag that master commit `<version>` (annotated, no prefix) and push branch, master and tag together: `git push --atomic origin release/v<version> master refs/tags/<version>`.
+5. The tag starts the deployment (`.github/workflows/deploy.yml`); watch it with `gh run watch`, then `gh release create <version> --verify-tag --title <version> --notes-file docs/releases/<version>.md`.
+
 The release helper is `scripts/release.mjs`. Release notes live at `docs/releases/<version>.md`; package and lockfile versions must match the intended release.
 
 ```sh

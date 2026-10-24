@@ -12,6 +12,10 @@ Maintained documentation is distilled from `.ai/` after the findings or decision
 
 Write documentation, README files and artifact/report text in English. This language rule does not change the Russian conversation with the user.
 
+## Releases
+
+Cut every release as described in [docs/guides/releases.md](docs/guides/releases.md): a `release/v<version>` branch merged into master, the tag only on master.
+
 ## Database architecture
 
 Implement business rules, lifecycle transitions, authorization, audit recording and ledger

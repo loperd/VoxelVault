@@ -44,6 +44,8 @@ import { MemorySessionJournal } from './adapters/outbound/browser/memory-session
 import { GameTransitions } from './adapters/outbound/browser/game-transitions.ts';
 import { browserFrameEnvironment } from './adapters/outbound/browser/frame-scheduler.ts';
 import { normalizeBaseUrl, resolvePublicAsset } from './adapters/outbound/data/asset-url.ts';
+import { browserFetch } from './adapters/outbound/data/request-json.ts';
+import { sessionFetch } from './adapters/outbound/data/session-fetch.ts';
 import './adapters/inbound/react/styles.css';
 
 const container = document.getElementById('root');
@@ -61,15 +63,15 @@ const reporter = new ConsoleErrorReporter();
 const failsafe = new Failsafe({ document, reporter, goHome: () => navigation.go({ screen: 'inventory' }, true), isHome: () => navigation.getState().screen === 'inventory' });
 failsafe.install();
 // The player's chests live on the server only: it issues them and owns their state.
-// A 401 from the player's own data means the session is gone: out to the sign-in, nothing kept.
-const authenticatedFetch: typeof fetch = async (input, init) => {
-  const response = await fetch(input, init);
-  if (response.status === 401) expireSession();
-  return response;
-};
+// A 401 from the player's own data: refresh the session first; if the gateway refuses, the browser's
+// saved state goes, and only then the player goes out to the sign-in, nothing kept.
+const authenticatedFetch = sessionFetch(browserFetch, resolvePublicAsset('api/v1/auth/refresh', baseUrl), () => {
+  clearSavedState();
+  expireSession();
+});
 const inventory = new ApiInventory(baseUrl, CASES, error => reporter.capture(error, { code: 'INVENTORY_SYNC_FAILED' }), authenticatedFetch);
 // Inventory and Wallet use independent gateways and state.
-const items = new ApiItems(baseUrl, error => reporter.capture(error, { code: 'ITEMS_SYNC_FAILED' }));
+const items = new ApiItems(baseUrl, error => reporter.capture(error, { code: 'ITEMS_SYNC_FAILED' }), authenticatedFetch);
 const wallet = new ApiWallet(baseUrl, authenticatedFetch);
 // Chests were once kept in the browser (a demo store); nothing of that is used any more.
 try {
@@ -183,7 +185,7 @@ window.addEventListener('keydown', event => {
  * without one the way in is the login screen (passkey or Telegram). A server that cannot be
  * reached is said plainly, with a retry, instead of an app that fails piece by piece.
  */
-const auth = new ApiAuthGateway(baseUrl);
+const auth = new ApiAuthGateway(baseUrl, authenticatedFetch);
 let session: { readonly state: 'checking' } | { readonly state: 'signed-out' | 'unavailable' } | { readonly state: 'signed-in'; readonly player: Player } = { state: 'checking' };
 async function checkSession() {
   session = { state: 'checking' }; renderRoute();
@@ -195,6 +197,12 @@ async function checkSession() {
     session = { state: 'unavailable' };
   }
   renderRoute();
+}
+/** The game's own keys in localStorage (screens, last finds); the sound setting belongs to the device and stays. */
+function clearSavedState() {
+  try {
+    for (const key of Object.keys(window.localStorage)) if (key.startsWith('voxel-vault:') && key !== 'voxel-vault:sound-muted') window.localStorage.removeItem(key);
+  } catch { /* No browser storage: nothing to clear. */ }
 }
 function expireSession() {
   if (session.state !== 'signed-in') return;
