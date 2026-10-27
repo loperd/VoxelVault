@@ -11,14 +11,14 @@ import (
 	"syscall"
 	"time"
 
+	identityhttp "github.com/voxel-vault/api/identity/adapters/inbound/gatewayhttp"
 	"github.com/voxel-vault/api/internal/config"
 	"github.com/voxel-vault/api/internal/economyruntime"
 	"github.com/voxel-vault/api/internal/httpapi"
-	identityhttp "github.com/voxel-vault/api/internal/identity/adapters/inbound/gatewayhttp"
 	"github.com/voxel-vault/api/internal/identityruntime"
-	"github.com/voxel-vault/api/internal/platform/gatewayhttp"
 	"github.com/voxel-vault/api/internal/rulebookjson"
 	"github.com/voxel-vault/api/internal/store"
+	"github.com/voxel-vault/api/platform/gatewayhttp"
 )
 
 func run() error {

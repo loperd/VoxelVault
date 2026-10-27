@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/voxel-vault/api/internal/platform/postgrespermissions"
+	"github.com/voxel-vault/api/platform/postgrespermissions"
 )
 
 // RuntimePrivileges covers catalog reads and the frozen economy fence. It grants no access to frozen legacy Inventory or Wallet data.

@@ -3,19 +3,19 @@ package identityruntime
 import (
 	"context"
 	"fmt"
-	"github.com/voxel-vault/api/internal/platform/resourcegrants"
+	"github.com/voxel-vault/api/platform/resourcegrants"
 	"log"
 	"time"
 
-	"github.com/voxel-vault/api/internal/identity/adapters/authorization"
-	"github.com/voxel-vault/api/internal/identity/adapters/inbound/local"
-	"github.com/voxel-vault/api/internal/identity/adapters/postgres"
-	roles "github.com/voxel-vault/api/internal/identity/adapters/security"
-	"github.com/voxel-vault/api/internal/identity/application"
-	"github.com/voxel-vault/api/internal/platform/configjson"
-	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
-	security "github.com/voxel-vault/api/internal/security/application"
+	"github.com/voxel-vault/api/identity/adapters/authorization"
+	"github.com/voxel-vault/api/identity/adapters/inbound/local"
+	"github.com/voxel-vault/api/identity/adapters/postgres"
+	roles "github.com/voxel-vault/api/identity/adapters/security"
+	"github.com/voxel-vault/api/identity/application"
 	"github.com/voxel-vault/api/internal/securityruntime"
+	"github.com/voxel-vault/api/platform/configjson"
+	"github.com/voxel-vault/api/security/adapters/policyconfig"
+	security "github.com/voxel-vault/api/security/application"
 )
 
 const RegistrationWorker = "identity-registration-worker"

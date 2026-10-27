@@ -8,8 +8,8 @@ import (
 	"time"
 
 	cutover "github.com/voxel-vault/api/internal/economycutover"
-	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
-	wv1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
+	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
+	wv1 "github.com/voxel-vault/api/ledger/contracts/v1"
 )
 
 func manifest(t *testing.T) cutover.Snapshot {

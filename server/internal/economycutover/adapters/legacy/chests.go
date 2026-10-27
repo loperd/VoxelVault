@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/voxel-vault/api/internal/economycutover"
-	v1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
+	v1 "github.com/voxel-vault/api/inventory/contracts/v1"
 )
 
 // ChestOpening translates only the frozen archive format into Inventory's published DTOs.

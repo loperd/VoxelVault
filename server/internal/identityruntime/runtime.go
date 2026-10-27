@@ -11,16 +11,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/voxel-vault/api/internal/identity/adapters/authorization"
-	"github.com/voxel-vault/api/internal/identity/adapters/inbound/local"
+	"github.com/voxel-vault/api/identity/adapters/authorization"
+	"github.com/voxel-vault/api/identity/adapters/inbound/local"
 
-	"github.com/voxel-vault/api/internal/identity/adapters/postgres"
-	"github.com/voxel-vault/api/internal/identity/application"
-	v1 "github.com/voxel-vault/api/internal/identity/contracts/v1"
-	"github.com/voxel-vault/api/internal/identity/domain"
-	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
-	security "github.com/voxel-vault/api/internal/security/application"
-	sv1 "github.com/voxel-vault/api/internal/security/contracts/v1"
+	"github.com/voxel-vault/api/identity/adapters/postgres"
+	"github.com/voxel-vault/api/identity/application"
+	v1 "github.com/voxel-vault/api/identity/contracts/v1"
+	"github.com/voxel-vault/api/identity/domain"
+	"github.com/voxel-vault/api/security/adapters/policyconfig"
+	security "github.com/voxel-vault/api/security/application"
+	sv1 "github.com/voxel-vault/api/security/contracts/v1"
 )
 
 type Runtime struct {

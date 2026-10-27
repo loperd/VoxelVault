@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/voxel-vault/api/internal/economyruntime"
-	ipg "github.com/voxel-vault/api/internal/inventory/adapters/postgres"
-	pricing "github.com/voxel-vault/api/internal/inventory/adapters/rulebook"
-	inv "github.com/voxel-vault/api/internal/inventory/application"
-	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
-	"github.com/voxel-vault/api/internal/inventory/domain"
-	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
+	pricing "github.com/voxel-vault/api/inventory/adapters/rulebook"
+	inv "github.com/voxel-vault/api/inventory/application"
+	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
+	"github.com/voxel-vault/api/inventory/domain"
+	"github.com/voxel-vault/api/inventory/domain/rulebook"
 )
 
 func forbiddenInventory(t *testing.T, err error) {

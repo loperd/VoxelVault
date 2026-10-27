@@ -2,8 +2,8 @@ package inventoryledger_test
 
 import (
 	"context"
-	"github.com/voxel-vault/api/internal/inventory/application"
-	wallet "github.com/voxel-vault/api/internal/ledger/application"
+	"github.com/voxel-vault/api/inventory/application"
+	wallet "github.com/voxel-vault/api/ledger/application"
 )
 
 type allowInventory struct{}

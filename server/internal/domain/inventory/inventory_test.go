@@ -6,8 +6,8 @@ import (
 
 	"github.com/voxel-vault/api/internal/domain/inventory"
 	"github.com/voxel-vault/api/internal/domain/wallet"
-	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
-	"github.com/voxel-vault/api/internal/inventory/domain/rulebook/rulebooktest"
+	"github.com/voxel-vault/api/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/inventory/domain/rulebook/rulebooktest"
 )
 
 // item-i is rare: base value 16.

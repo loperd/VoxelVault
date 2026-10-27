@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	ledger "github.com/voxel-vault/api/internal/ledger/application"
-	v1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
+	ledger "github.com/voxel-vault/api/ledger/application"
+	v1 "github.com/voxel-vault/api/ledger/contracts/v1"
 )
 
 func TestTransferQuoteConfirmationAndHistoryThroughGateway(t *testing.T) {

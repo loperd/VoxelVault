@@ -13,12 +13,12 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	identitypg "github.com/voxel-vault/api/internal/identity/adapters/postgres"
-	ipg "github.com/voxel-vault/api/internal/inventory/adapters/postgres"
-	wpg "github.com/voxel-vault/api/internal/ledger/adapters/postgres"
-	"github.com/voxel-vault/api/internal/platform/postgrespermissions"
-	securitypg "github.com/voxel-vault/api/internal/security/adapters/postgres"
+	identitypg "github.com/voxel-vault/api/identity/adapters/postgres"
 	"github.com/voxel-vault/api/internal/store"
+	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
+	wpg "github.com/voxel-vault/api/ledger/adapters/postgres"
+	"github.com/voxel-vault/api/platform/postgrespermissions"
+	securitypg "github.com/voxel-vault/api/security/adapters/postgres"
 )
 
 func run(ctx context.Context, target, role string) error {

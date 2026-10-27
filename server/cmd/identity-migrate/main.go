@@ -10,7 +10,7 @@ import (
 	"syscall"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/voxel-vault/api/internal/identity/adapters/postgres/migrations"
+	"github.com/voxel-vault/api/identity/adapters/postgres/migrations"
 )
 
 func run() error {

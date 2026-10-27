@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/voxel-vault/api/internal/inventory/adapters/authorization"
-	"github.com/voxel-vault/api/internal/inventory/application"
-	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
-	securitypg "github.com/voxel-vault/api/internal/security/adapters/postgres"
-	security "github.com/voxel-vault/api/internal/security/application"
+	"github.com/voxel-vault/api/inventory/adapters/authorization"
+	"github.com/voxel-vault/api/inventory/application"
+	"github.com/voxel-vault/api/security/adapters/policyconfig"
+	securitypg "github.com/voxel-vault/api/security/adapters/postgres"
+	security "github.com/voxel-vault/api/security/application"
 )
 
 const WorkerPrincipal = "inventory-worker"

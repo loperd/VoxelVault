@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	iv1 "github.com/voxel-vault/api/internal/identity/contracts/v1"
-	"github.com/voxel-vault/api/internal/platform/gatewayhttp"
-	"github.com/voxel-vault/api/internal/platform/resourcegrants"
-	sv1 "github.com/voxel-vault/api/internal/security/contracts/v1"
+	iv1 "github.com/voxel-vault/api/identity/contracts/v1"
+	"github.com/voxel-vault/api/platform/gatewayhttp"
+	"github.com/voxel-vault/api/platform/resourcegrants"
+	sv1 "github.com/voxel-vault/api/security/contracts/v1"
 )
 
 type User struct{ ID, Handle, DisplayName string }

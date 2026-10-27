@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/voxel-vault/api/internal/inventory/adapters/postgres/migrations"
+	"github.com/voxel-vault/api/inventory/adapters/postgres/migrations"
 	"os"
 	"os/signal"
 	"syscall"

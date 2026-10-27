@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
 	"github.com/voxel-vault/api/internal/rulebookjson"
+	"github.com/voxel-vault/api/inventory/domain/rulebook"
 )
 
 func TestRelicCatalogChancesSumToOneHundredPercent(t *testing.T) {

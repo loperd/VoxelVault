@@ -3,8 +3,8 @@ package ledgertransfer
 import (
 	"context"
 
-	cv1 "github.com/voxel-vault/api/internal/currency/contracts/v1"
-	lv1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
+	cv1 "github.com/voxel-vault/api/currency/contracts/v1"
+	lv1 "github.com/voxel-vault/api/ledger/contracts/v1"
 )
 
 // HistoryReader composes currency eligibility with Ledger's own identity/owner

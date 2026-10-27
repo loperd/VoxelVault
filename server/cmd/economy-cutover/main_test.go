@@ -15,13 +15,13 @@ import (
 
 	cutover "github.com/voxel-vault/api/internal/economycutover"
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
-	imigrate "github.com/voxel-vault/api/internal/inventory/adapters/postgres/migrations"
-	"github.com/voxel-vault/api/internal/inventory/domain/chest"
-	wmigrate "github.com/voxel-vault/api/internal/ledger/adapters/postgres/migrations"
 	"github.com/voxel-vault/api/internal/rulebookjson"
-	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
-	security "github.com/voxel-vault/api/internal/security/application"
 	"github.com/voxel-vault/api/internal/store"
+	imigrate "github.com/voxel-vault/api/inventory/adapters/postgres/migrations"
+	"github.com/voxel-vault/api/inventory/domain/chest"
+	wmigrate "github.com/voxel-vault/api/ledger/adapters/postgres/migrations"
+	"github.com/voxel-vault/api/security/adapters/policyconfig"
+	security "github.com/voxel-vault/api/security/application"
 )
 
 func testDatabase(t *testing.T, suffix string) (*sql.DB, string) {

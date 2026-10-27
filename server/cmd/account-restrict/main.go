@@ -18,8 +18,8 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/voxel-vault/api/internal/ledger/adapters/postgres"
-	"github.com/voxel-vault/api/internal/ledger/domain"
+	"github.com/voxel-vault/api/ledger/adapters/postgres"
+	"github.com/voxel-vault/api/ledger/domain"
 )
 
 func fail(args ...any) {

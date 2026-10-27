@@ -12,14 +12,14 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
-	ipg "github.com/voxel-vault/api/internal/inventory/adapters/postgres"
-	inv "github.com/voxel-vault/api/internal/inventory/application"
-	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
-	idomain "github.com/voxel-vault/api/internal/inventory/domain"
-	wpg "github.com/voxel-vault/api/internal/ledger/adapters/postgres"
-	wmigrate "github.com/voxel-vault/api/internal/ledger/adapters/postgres/migrations"
-	"github.com/voxel-vault/api/internal/platform/postgrespermissions"
 	"github.com/voxel-vault/api/internal/store"
+	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
+	inv "github.com/voxel-vault/api/inventory/application"
+	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
+	idomain "github.com/voxel-vault/api/inventory/domain"
+	wpg "github.com/voxel-vault/api/ledger/adapters/postgres"
+	wmigrate "github.com/voxel-vault/api/ledger/adapters/postgres/migrations"
+	"github.com/voxel-vault/api/platform/postgrespermissions"
 )
 
 func runtimeRole(t *testing.T, admin *sql.DB, dsn, suffix string, policy postgrespermissions.Policy) (*sql.DB, string, string) {

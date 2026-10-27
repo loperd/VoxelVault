@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	imigrate "github.com/voxel-vault/api/internal/identity/adapters/postgres/migrations"
-	iv1 "github.com/voxel-vault/api/internal/identity/contracts/v1"
+	imigrate "github.com/voxel-vault/api/identity/adapters/postgres/migrations"
+	iv1 "github.com/voxel-vault/api/identity/contracts/v1"
 	"github.com/voxel-vault/api/internal/identityruntime"
-	"github.com/voxel-vault/api/internal/platform/gatewayhttp"
-	smigrate "github.com/voxel-vault/api/internal/security/adapters/postgres/migrations"
+	"github.com/voxel-vault/api/platform/gatewayhttp"
+	smigrate "github.com/voxel-vault/api/security/adapters/postgres/migrations"
 )
 
 const fixtureToken = "trusted-http-fixture-peer-credential"

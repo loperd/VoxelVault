@@ -5,11 +5,11 @@ import (
 	"context"
 	"errors"
 
-	fv1 "github.com/voxel-vault/api/internal/commissions/contracts/v1"
-	cv1 "github.com/voxel-vault/api/internal/currency/contracts/v1"
-	iv1 "github.com/voxel-vault/api/internal/identity/contracts/v1"
-	"github.com/voxel-vault/api/internal/ledger/application"
-	"github.com/voxel-vault/api/internal/ledger/domain"
+	fv1 "github.com/voxel-vault/api/commissions/contracts/v1"
+	cv1 "github.com/voxel-vault/api/currency/contracts/v1"
+	iv1 "github.com/voxel-vault/api/identity/contracts/v1"
+	"github.com/voxel-vault/api/ledger/application"
+	"github.com/voxel-vault/api/ledger/domain"
 )
 
 type Currency struct{ Client cv1.Provider }

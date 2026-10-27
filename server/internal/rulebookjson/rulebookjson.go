@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/inventory/domain/rulebook"
 )
 
 type file struct {

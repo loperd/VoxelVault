@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/voxel-vault/api/internal/security/adapters/inbound/local"
-	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
-	"github.com/voxel-vault/api/internal/security/adapters/postgres"
-	"github.com/voxel-vault/api/internal/security/application"
-	v1 "github.com/voxel-vault/api/internal/security/contracts/v1"
+	"github.com/voxel-vault/api/security/adapters/inbound/local"
+	"github.com/voxel-vault/api/security/adapters/policyconfig"
+	"github.com/voxel-vault/api/security/adapters/postgres"
+	"github.com/voxel-vault/api/security/application"
+	v1 "github.com/voxel-vault/api/security/contracts/v1"
 )
 
 type Runtime struct {

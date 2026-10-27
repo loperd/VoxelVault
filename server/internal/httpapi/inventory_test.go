@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
 	"github.com/voxel-vault/api/internal/rulebookjson"
+	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
 )
 
 func TestParseGrantsReadsTheStarterChests(t *testing.T) {

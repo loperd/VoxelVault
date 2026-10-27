@@ -10,14 +10,14 @@ import (
 
 	"github.com/voxel-vault/api/internal/economycutover"
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
-	ilocal "github.com/voxel-vault/api/internal/inventory/adapters/inbound/local"
-	ipg "github.com/voxel-vault/api/internal/inventory/adapters/postgres"
-	inv "github.com/voxel-vault/api/internal/inventory/application"
-	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
-	"github.com/voxel-vault/api/internal/inventory/domain"
-	"github.com/voxel-vault/api/internal/inventory/domain/chest"
-	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
-	"github.com/voxel-vault/api/internal/inventory/domain/rulebook/rulebooktest"
+	ilocal "github.com/voxel-vault/api/inventory/adapters/inbound/local"
+	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
+	inv "github.com/voxel-vault/api/inventory/application"
+	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
+	"github.com/voxel-vault/api/inventory/domain"
+	"github.com/voxel-vault/api/inventory/domain/chest"
+	"github.com/voxel-vault/api/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/inventory/domain/rulebook/rulebooktest"
 )
 
 func chestClient(f *fixture) ilocal.ChestsOpeningClient {

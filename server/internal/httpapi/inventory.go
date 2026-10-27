@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
-	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
+	"github.com/voxel-vault/api/inventory/domain/rulebook"
 )
 
 // Chests and items exist only on the server, and the server alone decides what happens to them.

@@ -58,7 +58,7 @@ Inventory reserves the item and Ledger settles the funds through a durable saga,
 
 ## Rulebook configuration
 
-`server/internal/inventory/domain/rulebook` holds the pure model. `server/internal/rulebookjson` decodes the JSON configuration and rejects unknown fields. The API reads `ECONOMY_CONFIG` on startup; the default is `config/economy.json` and the container uses `/config/economy.json`.
+`server/inventory/domain/rulebook` holds the pure model. `server/internal/rulebookjson` decodes the JSON configuration and rejects unknown fields. The API reads `ECONOMY_CONFIG` on startup; the default is `config/economy.json` and the container uses `/config/economy.json`.
 
 A parameter has a default and conditional rules. Conditions may refer to type, collection, trait, item state, issue source, time and named events. Rules can set, multiply, add, allow or deny. More-specific `set` rules win, with explicit priority as the tie breaker; values are constrained to valid ranges. Collection/type defaults use the same conditional mechanism rather than separate inheritance.
 
@@ -145,4 +145,4 @@ with 429 `rate_limited` and writes a time-limited `send` block of `Limits.Suspen
 (never indefinite, one active auto-block per account). Operators add, lift and list
 restrictions with `/account-restrict` (see the Helm README); there is no appeal flow.
 
-Restriction changes are published through the generic outbox (`internal/platform/outbox`, table `ledger.outbox`, topic `account-restrictions`) as `restriction.added`, `restriction.lifted` and `restriction.expired`. They are written in the same transaction as the change (auto-blocks included); expiry has no write of its own, so the `restriction-expire` CronJob publishes it. Event ids are `restriction:<id>:<kind>`, so each fact exists once. The body holds ids, kind, `expiresAt` and actor, never the internal reason. A consumer reads the topic with `Table.Topic("account-restrictions", "")` and must deduplicate by id; Ledger's receipt queues ignore these events (`kind` filter). No consumer ships yet.
+Restriction changes are published through the generic outbox (`platform/outbox`, table `ledger.outbox`, topic `account-restrictions`) as `restriction.added`, `restriction.lifted` and `restriction.expired`. They are written in the same transaction as the change (auto-blocks included); expiry has no write of its own, so the `restriction-expire` CronJob publishes it. Event ids are `restriction:<id>:<kind>`, so each fact exists once. The body holds ids, kind, `expiresAt` and actor, never the internal reason. A consumer reads the topic with `Table.Topic("account-restrictions", "")` and must deduplicate by id; Ledger's receipt queues ignore these events (`kind` filter). No consumer ships yet.

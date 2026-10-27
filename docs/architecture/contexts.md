@@ -69,6 +69,6 @@ Provider linking proves ownership of the current account and the new external id
 
 ## Migration acceptance
 
-`server/internal/domain/inventory` still uses the legacy `domain/wallet` value model for pricing. It is not a second authoritative balance store. Runtime settlement uses `server/internal/ledger` through published contracts and the `inventoryledger` integration.
+`server/internal/domain/inventory` still uses the legacy `domain/wallet` value model for pricing. It is not a second authoritative balance store. Runtime settlement uses `server/ledger` through published contracts and the `inventoryledger` integration.
 
 Automated import checks must reject domain/application dependencies on adapters and foreign contexts. Failure tests must interrupt processing after each local commit, restart workers, duplicate and reorder messages, and exercise concurrent commands against the same item/account. Verify no repeated consumption or credit, no negative available balance, balanced postings, conflicting-ID rejection and eventual completion or an observable reconciliation state.

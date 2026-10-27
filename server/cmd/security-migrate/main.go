@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/voxel-vault/api/internal/platform/migrationcmd"
-	"github.com/voxel-vault/api/internal/security/adapters/postgres/migrations"
+	"github.com/voxel-vault/api/platform/migrationcmd"
+	"github.com/voxel-vault/api/security/adapters/postgres/migrations"
 	"os"
 )
 

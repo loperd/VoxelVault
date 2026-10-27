@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	wallet "github.com/voxel-vault/api/internal/ledger/application"
-	v1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
+	wallet "github.com/voxel-vault/api/ledger/application"
+	v1 "github.com/voxel-vault/api/ledger/contracts/v1"
 )
 
 func forbiddenWallet(t *testing.T, err error) {

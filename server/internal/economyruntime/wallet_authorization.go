@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/voxel-vault/api/internal/ledger/adapters/authorization"
-	"github.com/voxel-vault/api/internal/ledger/application"
-	"github.com/voxel-vault/api/internal/ledger/domain"
-	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
-	securitypg "github.com/voxel-vault/api/internal/security/adapters/postgres"
-	security "github.com/voxel-vault/api/internal/security/application"
-	v1 "github.com/voxel-vault/api/internal/security/contracts/v1"
+	"github.com/voxel-vault/api/ledger/adapters/authorization"
+	"github.com/voxel-vault/api/ledger/application"
+	"github.com/voxel-vault/api/ledger/domain"
+	"github.com/voxel-vault/api/security/adapters/policyconfig"
+	securitypg "github.com/voxel-vault/api/security/adapters/postgres"
+	security "github.com/voxel-vault/api/security/application"
+	v1 "github.com/voxel-vault/api/security/contracts/v1"
 )
 
 // WalletAuthorizer composes role decisions with Wallet's narrower economic

@@ -13,7 +13,7 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/voxel-vault/api/internal/ledger/adapters/postgres"
+	"github.com/voxel-vault/api/ledger/adapters/postgres"
 )
 
 func fail(args ...any) {

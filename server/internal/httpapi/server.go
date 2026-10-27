@@ -8,9 +8,9 @@ import (
 	"net/http"
 
 	"github.com/voxel-vault/api/internal/config"
-	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
-	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
 	"github.com/voxel-vault/api/internal/store"
+	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
+	"github.com/voxel-vault/api/inventory/domain/rulebook"
 	"gorm.io/gorm"
 )
 

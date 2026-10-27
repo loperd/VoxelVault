@@ -5,9 +5,9 @@ package inventoryledger
 import (
 	"context"
 	"errors"
-	inventory "github.com/voxel-vault/api/internal/inventory/application"
-	"github.com/voxel-vault/api/internal/inventory/domain"
-	v1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
+	inventory "github.com/voxel-vault/api/inventory/application"
+	"github.com/voxel-vault/api/inventory/domain"
+	v1 "github.com/voxel-vault/api/ledger/contracts/v1"
 	"strconv"
 )
 
