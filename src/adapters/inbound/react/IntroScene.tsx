@@ -13,7 +13,19 @@ import { Button } from './Button.tsx';
 import { ScreenHeader } from './ScreenHeader.tsx';
 import type { SoundPreference } from './SoundControl.tsx';
 
-export function IntroScene({ items, phase, actionRef, onOpen, recentFind, openLabel = 'Открыть сундук', availableCaseCount, archiveCount, archiveView = false, inspectedCase, soundPreference }: {
+export function IntroScene({
+  items,
+  phase,
+  actionRef,
+  onOpen,
+  recentFind,
+  openLabel = 'Открыть сундук',
+  availableCaseCount,
+  archiveCount,
+  archiveView = false,
+  inspectedCase,
+  soundPreference,
+}: {
   readonly soundPreference?: SoundPreference;
   readonly openLabel?: string;
   readonly availableCaseCount?: number;
@@ -28,33 +40,86 @@ export function IntroScene({ items, phase, actionRef, onOpen, recentFind, openLa
 }) {
   const { navigation } = useScreenNavigation();
   const casePresentation = useCasePresentation();
-  const featured = items.find(item => item.rarity === 'legendary');
-  const inspectedProfile = CASES.find(value => value.id === inspectedCase?.caseId)?.model.modifications;
-  return <section className={`intro-scene intro-scene--${phase}`} aria-label="Открытие сундука"
-    style={{ '--content-exit-duration': `${CONTENT_EXIT_SECONDS}s` } as CSSProperties}>
-    <div className="intro-scene__top">
-      <div className="case-atmosphere" aria-hidden="true"><span /><span /><span /><span /><span /><span /></div>
-      <ScreenHeader navigation={navigation} active={archiveView ? 'archive' : 'inventory'} archiveCount={archiveCount} soundPreference={soundPreference} />
-      <div className="case-heading"><p className="eyebrow">{casePresentation.collection}</p>
-        <h1>{casePresentation.title}</h1>
-        <p className="intro-scene__description">{casePresentation.description}</p>
-      </div>
-      {recentFind ? <RecentFindHighlight source={recentFind} fallback={featured} disabled={phase !== 'ready'} />
-        : featured && <CaseHighlight item={featured} disabled={phase !== 'ready'} />}
-      <div className="case-caption" aria-hidden="true"><span /> ENDER CHEST <span /></div>
-    </div>
-    <div className="intro-scene__bottom" inert={phase !== 'ready'}>
-      <div className="case-open-bar">
-        {!archiveView && <div className="case-open-bar__copy"><span className="eyebrow">{availableCaseCount === undefined ? 'Что скрывается внутри?' : 'Твоя коллекция'}</span>
-          {availableCaseCount === undefined ? <p>Один сундук. Твоя следующая находка.</p>
-            : <p className="case-owned-count"><strong>{availableCaseCount}</strong><span>{availableCaseCount > 0 ? 'можно открыть сейчас' : 'нет доступных для открытия'}</span></p>}
-          {inspectedCase && inspectedProfile && <ChestIndicators appearance={inspectedCase.appearance} profile={inspectedProfile} status={inspectedCase.status} showCondition={false} showFeatures={false} />}
-        </div>}
-        <div className="actions">
-          <Button ref={actionRef} disabled={phase !== 'ready'} onClick={onOpen}>{openLabel}</Button>
+  const featured = items.find((item) => item.rarity === 'legendary');
+  const inspectedProfile = CASES.find((value) => value.id === inspectedCase?.caseId)?.model
+    .modifications;
+  return (
+    <section
+      className={`intro-scene intro-scene--${phase}`}
+      aria-label="Открытие сундука"
+      style={{ '--content-exit-duration': `${CONTENT_EXIT_SECONDS}s` } as CSSProperties}
+    >
+      <div className="intro-scene__top">
+        <div className="case-atmosphere" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+        <ScreenHeader
+          navigation={navigation}
+          active={archiveView ? 'archive' : 'inventory'}
+          archiveCount={archiveCount}
+          soundPreference={soundPreference}
+        />
+        <div className="case-heading">
+          <p className="eyebrow">{casePresentation.collection}</p>
+          <h1>{casePresentation.title}</h1>
+          <p className="intro-scene__description">{casePresentation.description}</p>
+        </div>
+        {recentFind ? (
+          <RecentFindHighlight
+            source={recentFind}
+            fallback={featured}
+            disabled={phase !== 'ready'}
+          />
+        ) : (
+          featured && <CaseHighlight item={featured} disabled={phase !== 'ready'} />
+        )}
+        <div className="case-caption" aria-hidden="true">
+          <span /> ENDER CHEST <span />
         </div>
       </div>
-      <div className="intro-scene__catalog"><Catalog items={items} /></div>
-    </div>
-  </section>;
+      <div className="intro-scene__bottom" inert={phase !== 'ready'}>
+        <div className="case-open-bar">
+          {!archiveView && (
+            <div className="case-open-bar__copy">
+              <span className="eyebrow">
+                {availableCaseCount === undefined ? 'Что скрывается внутри?' : 'Твоя коллекция'}
+              </span>
+              {availableCaseCount === undefined ? (
+                <p>Один сундук. Твоя следующая находка.</p>
+              ) : (
+                <p className="case-owned-count">
+                  <strong>{availableCaseCount}</strong>
+                  <span>
+                    {availableCaseCount > 0 ? 'можно открыть сейчас' : 'нет доступных для открытия'}
+                  </span>
+                </p>
+              )}
+              {inspectedCase && inspectedProfile && (
+                <ChestIndicators
+                  appearance={inspectedCase.appearance}
+                  profile={inspectedProfile}
+                  status={inspectedCase.status}
+                  showCondition={false}
+                  showFeatures={false}
+                />
+              )}
+            </div>
+          )}
+          <div className="actions">
+            <Button ref={actionRef} disabled={phase !== 'ready'} onClick={onOpen}>
+              {openLabel}
+            </Button>
+          </div>
+        </div>
+        <div className="intro-scene__catalog">
+          <Catalog items={items} />
+        </div>
+      </div>
+    </section>
+  );
 }

@@ -25,13 +25,13 @@ import (
 	ilocal "github.com/voxel-vault/api/internal/inventory/adapters/inbound/local"
 	ipg "github.com/voxel-vault/api/internal/inventory/adapters/postgres"
 	inv "github.com/voxel-vault/api/internal/inventory/application"
+	"github.com/voxel-vault/api/internal/ledger/adapters/authorization"
+	wlocal "github.com/voxel-vault/api/internal/ledger/adapters/inbound/local"
+	wpg "github.com/voxel-vault/api/internal/ledger/adapters/postgres"
+	wallet "github.com/voxel-vault/api/internal/ledger/application"
+	"github.com/voxel-vault/api/internal/ledger/domain"
 	"github.com/voxel-vault/api/internal/rulebookjson"
 	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
-	"github.com/voxel-vault/api/internal/wallet/adapters/authorization"
-	wlocal "github.com/voxel-vault/api/internal/wallet/adapters/inbound/local"
-	wpg "github.com/voxel-vault/api/internal/wallet/adapters/postgres"
-	wallet "github.com/voxel-vault/api/internal/wallet/application"
-	"github.com/voxel-vault/api/internal/wallet/domain"
 )
 
 func connect(ctx context.Context, env string) (*sql.DB, error) {

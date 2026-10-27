@@ -1,5 +1,13 @@
 import { Group } from 'three';
-import { BlockRegistry, BlockWorld, blockAtlas, computeLight, meshWorld, worldMeshes, type MeshOptions } from '../../../../../packages/blockworld/src/index.ts';
+import {
+  BlockRegistry,
+  BlockWorld,
+  blockAtlas,
+  computeLight,
+  meshWorld,
+  worldMeshes,
+  type MeshOptions,
+} from '../../../../../packages/blockworld/src/index.ts';
 
 /**
  * What the three deep-mine composition studies are built from: vanilla-style blocks of the shared
@@ -34,12 +42,25 @@ export const id = (name: string) => BLOCKS.id(name);
 
 /** Seeded value noise in 3D, 0..1, for rock that is rough without being random per block. */
 export function noise3(seed: number): (x: number, y: number, z: number) => number {
-  const hash = (x: number, y: number, z: number) => { const h = Math.sin(x * 127.1 + y * 311.7 + z * 74.7 + seed * 19.3) * 43758.5453; return h - Math.floor(h); };
+  const hash = (x: number, y: number, z: number) => {
+    const h = Math.sin(x * 127.1 + y * 311.7 + z * 74.7 + seed * 19.3) * 43758.5453;
+    return h - Math.floor(h);
+  };
   const k = (t: number) => t * t * (3 - 2 * t);
   return (x, y, z) => {
-    const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z), fx = k(x - xi), fy = k(y - yi), fz = k(z - zi);
+    const xi = Math.floor(x),
+      yi = Math.floor(y),
+      zi = Math.floor(z),
+      fx = k(x - xi),
+      fy = k(y - yi),
+      fz = k(z - zi);
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-    const plane = (dz: number) => lerp(lerp(hash(xi, yi, zi + dz), hash(xi + 1, yi, zi + dz), fx), lerp(hash(xi, yi + 1, zi + dz), hash(xi + 1, yi + 1, zi + dz), fx), fy);
+    const plane = (dz: number) =>
+      lerp(
+        lerp(hash(xi, yi, zi + dz), hash(xi + 1, yi, zi + dz), fx),
+        lerp(hash(xi, yi + 1, zi + dz), hash(xi + 1, yi + 1, zi + dz), fx),
+        fy,
+      );
     return lerp(plane(0), plane(1), fz);
   };
 }
@@ -47,7 +68,8 @@ export function noise3(seed: number): (x: number, y: number, z: number) => numbe
 /** Light the world, mesh it with the atlas and hand back the group a stage shows. */
 export function render(world: BlockWorld, options: Omit<MeshOptions, 'uv'>): Group {
   computeLight(world, BLOCKS);
-  const { texture, uv } = blockAtlas(), root = new Group();
+  const { texture, uv } = blockAtlas(),
+    root = new Group();
   root.add(...worldMeshes(meshWorld(world, BLOCKS, { uv, ...options }), texture));
   return root;
 }

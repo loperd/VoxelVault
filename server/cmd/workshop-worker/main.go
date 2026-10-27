@@ -9,18 +9,18 @@ import (
 	"fmt"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/voxel-vault/api/internal/economyruntime"
-	bridge "github.com/voxel-vault/api/internal/integrations/inventorywallet"
+	bridge "github.com/voxel-vault/api/internal/integrations/inventoryledger"
 	ipg "github.com/voxel-vault/api/internal/inventory/adapters/postgres"
 	pricing "github.com/voxel-vault/api/internal/inventory/adapters/rulebook"
 	inv "github.com/voxel-vault/api/internal/inventory/application"
 	rules "github.com/voxel-vault/api/internal/inventory/domain/rulebook"
+	"github.com/voxel-vault/api/internal/ledger/adapters/authorization"
+	"github.com/voxel-vault/api/internal/ledger/adapters/inbound/local"
+	"github.com/voxel-vault/api/internal/ledger/adapters/outbound/events"
+	wpg "github.com/voxel-vault/api/internal/ledger/adapters/postgres"
+	wallet "github.com/voxel-vault/api/internal/ledger/application"
+	wdomain "github.com/voxel-vault/api/internal/ledger/domain"
 	"github.com/voxel-vault/api/internal/rulebookjson"
-	"github.com/voxel-vault/api/internal/wallet/adapters/authorization"
-	"github.com/voxel-vault/api/internal/wallet/adapters/inbound/local"
-	"github.com/voxel-vault/api/internal/wallet/adapters/outbound/events"
-	wpg "github.com/voxel-vault/api/internal/wallet/adapters/postgres"
-	wallet "github.com/voxel-vault/api/internal/wallet/application"
-	wdomain "github.com/voxel-vault/api/internal/wallet/domain"
 	"os"
 	"os/signal"
 	"strings"
@@ -76,7 +76,7 @@ func run(once bool) error {
 		return err
 	}
 	defer idb.Close()
-	wdb, err := connect(startup, "WALLET_DATABASE_URL", "wallet_schema_version", 6)
+	wdb, err := connect(startup, "WALLET_DATABASE_URL", "wallet_schema_version", 7)
 	if err != nil {
 		return err
 	}

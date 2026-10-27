@@ -9,17 +9,38 @@ const require = createRequire(new URL('package.json', build));
 const { createElement } = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { ErrorNotice } = await import(new URL('adapters/inbound/react/ErrorNotice.js', build));
-const { NavigationContext } = await import(new URL('adapters/inbound/react/NavigationContext.js', build));
+const { NavigationContext } = await import(
+  new URL('adapters/inbound/react/NavigationContext.js', build)
+);
 
 function notice(route) {
   const navigation = { getState: () => route, subscribe: () => () => {}, go() {} };
-  return renderToStaticMarkup(createElement(NavigationContext.Provider, { value: { navigation } },
-    createElement(ErrorNotice, { title: 'Connection unavailable' })));
+  return renderToStaticMarkup(
+    createElement(
+      NavigationContext.Provider,
+      { value: { navigation } },
+      createElement(ErrorNotice, { title: 'Connection unavailable' }),
+    ),
+  );
 }
 
 test('error screens offer the main menu from every inner route, including inventory items', () => {
-  for (const screen of ['catalog', 'archive', 'items', 'wallet', 'case', 'item', 'opening', 'reward', 'not-found']) {
-    assert.match(notice({ screen, caseId: 'ender', itemId: 'item', sessionId: 'session' }), /В главное меню/, screen);
+  for (const screen of [
+    'catalog',
+    'archive',
+    'items',
+    'wallet',
+    'case',
+    'item',
+    'opening',
+    'reward',
+    'not-found',
+  ]) {
+    assert.match(
+      notice({ screen, caseId: 'ender', itemId: 'item', sessionId: 'session' }),
+      /В главное меню/,
+      screen,
+    );
   }
 });
 

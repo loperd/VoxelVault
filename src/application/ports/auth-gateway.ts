@@ -1,10 +1,20 @@
 /** The signed-in player, as the server knows them. Roles are data (Casbin), never a fixed list here. */
-export interface Player { readonly id: string; readonly handle: string; readonly displayName: string; readonly roles: readonly string[] }
-export interface AuthProviders { readonly passkey: boolean; readonly telegram: boolean }
+export interface Player {
+  readonly id: string;
+  readonly handle: string;
+  readonly displayName: string;
+  readonly roles: readonly string[];
+}
+export interface AuthProviders {
+  readonly passkey: boolean;
+  readonly telegram: boolean;
+}
 
 export type AuthFailure =
   | 'UNAVAILABLE' // the server could not be reached or failed
-  | 'HANDLE_TAKEN' | 'INVALID_INPUT' | 'UNKNOWN_ACCOUNT'
+  | 'HANDLE_TAKEN'
+  | 'INVALID_INPUT'
+  | 'UNKNOWN_ACCOUNT'
   | 'CANCELLED' // the player closed the passkey prompt
   | 'UNSUPPORTED' // this browser has no passkeys
   | 'REJECTED'; // the server did not accept the passkey
@@ -12,7 +22,9 @@ export type AuthFailure =
 export class AuthError extends Error {
   readonly code: AuthFailure;
   constructor(code: AuthFailure, message: string, options?: ErrorOptions) {
-    super(message, options); this.name = 'AuthError'; this.code = code;
+    super(message, options);
+    this.name = 'AuthError';
+    this.code = code;
   }
 }
 

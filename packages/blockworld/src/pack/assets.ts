@@ -40,14 +40,18 @@ export class Owned {
   private readonly items: { dispose(): void }[] = [];
   private done = false;
   add<T extends { dispose(): void }>(item: T): T {
-    if (this.done) { item.dispose(); throw new Error('Freed already.'); }
-    this.items.push(item); packDiagnostics.resources++;
+    if (this.done) {
+      item.dispose();
+      throw new Error('Freed already.');
+    }
+    this.items.push(item);
+    packDiagnostics.resources++;
     return item;
   }
   /** Every geometry, material and texture of an object tree. */
   addTree(root: Object3D): void {
     const seen = new Set<{ dispose(): void }>();
-    root.traverse(object => {
+    root.traverse((object) => {
       if (!(object instanceof Mesh)) return;
       seen.add(object.geometry);
       for (const material of ([] as Material[]).concat(object.material)) {
@@ -60,13 +64,22 @@ export class Owned {
   dispose(): void {
     if (this.done) return;
     this.done = true;
-    for (const item of this.items.splice(0)) { item.dispose(); packDiagnostics.resources--; }
+    for (const item of this.items.splice(0)) {
+      item.dispose();
+      packDiagnostics.resources--;
+    }
   }
 }
 
 /** A texture whose image (an ImageBitmap from the loader) is closed with it. */
 function textureWithImage(texture: Texture): { dispose(): void } {
-  return { dispose: () => { const image = texture.image as { close?: () => void } | undefined; texture.dispose(); image?.close?.(); } };
+  return {
+    dispose: () => {
+      const image = texture.image as { close?: () => void } | undefined;
+      texture.dispose();
+      image?.close?.();
+    },
+  };
 }
 
 const aborted = (signal: AbortSignal) => signal.reason ?? new DOMException('Aborted', 'AbortError');
@@ -76,35 +89,65 @@ const aborted = (signal: AbortSignal) => signal.reason ?? new DOMException('Abor
  * on any failure, and on `signal` — even if it comes after the last step — everything made is freed
  * and the promise rejects (with the signal's reason when cancelled).
  */
-export async function loadPackAssets(pack: WorldPack, options: { signal: AbortSignal }): Promise<PackAssets> {
-  const { signal } = options, owned = new Owned();
+export async function loadPackAssets(
+  pack: WorldPack,
+  options: { signal: AbortSignal },
+): Promise<PackAssets> {
+  const { signal } = options,
+    owned = new Owned();
   try {
     if (signal.aborted) throw aborted(signal);
-    const tiles = await Promise.all(pack.textureNames.map(async name => {
-      try { return { name, rgba: (await decodePng(pack.texture(name), { size: TILE, signal })).rgba }; } catch (error) {
-        if (signal.aborted) throw aborted(signal);
-        throw new Error(`Texture "${name}": ${error instanceof Error ? error.message : String(error)}`, { cause: error });
-      }
-    }));
+    const tiles = await Promise.all(
+      pack.textureNames.map(async (name) => {
+        try {
+          return { name, rgba: (await decodePng(pack.texture(name), { size: TILE, signal })).rgba };
+        } catch (error) {
+          if (signal.aborted) throw aborted(signal);
+          throw new Error(
+            `Texture "${name}": ${error instanceof Error ? error.message : String(error)}`,
+            { cause: error },
+          );
+        }
+      }),
+    );
     if (signal.aborted) throw aborted(signal);
     const atlas = packAtlas(tiles);
     owned.add(atlas);
 
     // Every model parses even if one fails, so that all that was made is owned and freed.
     const loader = new GLTFLoader();
-    const parsed = await Promise.allSettled(pack.modelNames.map(name => new Promise<[string, Object3D]>((resolve, reject) => {
-      loader.parse(pack.model(name), '', gltf => {
-        // Every scene the loader built is owned (a checked model has one: it is gltf.scene).
-        for (const scene of gltf.scenes) owned.addTree(scene);
-        resolve([name, gltf.scene]);
-      }, error => reject(new Error(`Model "${name}": ${error instanceof Error ? error.message : String(error)}`, { cause: error })));
-    })));
-    const failed = parsed.find(result => result.status === 'rejected');
+    const parsed = await Promise.allSettled(
+      pack.modelNames.map(
+        (name) =>
+          new Promise<[string, Object3D]>((resolve, reject) => {
+            loader.parse(
+              pack.model(name),
+              '',
+              (gltf) => {
+                // Every scene the loader built is owned (a checked model has one: it is gltf.scene).
+                for (const scene of gltf.scenes) owned.addTree(scene);
+                resolve([name, gltf.scene]);
+              },
+              (error) =>
+                reject(
+                  new Error(
+                    `Model "${name}": ${error instanceof Error ? error.message : String(error)}`,
+                    { cause: error },
+                  ),
+                ),
+            );
+          }),
+      ),
+    );
+    const failed = parsed.find((result) => result.status === 'rejected');
     if (failed) throw (failed as PromiseRejectedResult).reason;
     if (signal.aborted) throw aborted(signal);
-    const templates = new Map(parsed.map(result => (result as PromiseFulfilledResult<[string, Object3D]>).value));
+    const templates = new Map(
+      parsed.map((result) => (result as PromiseFulfilledResult<[string, Object3D]>).value),
+    );
 
-    let instances = 0, released = false;
+    let instances = 0,
+      released = false;
     packDiagnostics.assets++;
     return {
       pack,
@@ -114,18 +157,34 @@ export async function loadPackAssets(pack: WorldPack, options: { signal: AbortSi
         if (!template) throw new Error(`The pack "${pack.id}" has no model "${name}".`);
         return template;
       },
-      get instances() { return instances; },
-      get released() { return released; },
+      get instances() {
+        return instances;
+      },
+      get released() {
+        return released;
+      },
       borrow() {
-        if (released) throw new Error(`The resources of the pack "${pack.id}" were released; load it again to show it.`);
+        if (released)
+          throw new Error(
+            `The resources of the pack "${pack.id}" were released; load it again to show it.`,
+          );
         instances++;
         let given = false;
-        return () => { if (!given) { given = true; instances--; } };
+        return () => {
+          if (!given) {
+            given = true;
+            instances--;
+          }
+        };
       },
       release() {
         if (released) return;
-        if (instances > 0) throw new Error(`The resources of the pack "${pack.id}" are still used by ${instances} stage(s); dispose their views first.`);
-        released = true; packDiagnostics.assets--;
+        if (instances > 0)
+          throw new Error(
+            `The resources of the pack "${pack.id}" are still used by ${instances} stage(s); dispose their views first.`,
+          );
+        released = true;
+        packDiagnostics.assets--;
         owned.dispose();
       },
     };

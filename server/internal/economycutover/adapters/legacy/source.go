@@ -10,7 +10,7 @@ import (
 
 	"github.com/voxel-vault/api/internal/economycutover"
 	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
-	wv1 "github.com/voxel-vault/api/internal/wallet/contracts/v1"
+	wv1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
 )
 
 type Source struct {

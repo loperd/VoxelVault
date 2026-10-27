@@ -21,7 +21,9 @@ export class CatalogController implements ItemCatalog {
   readonly subscribe = (listener: () => void): (() => void) => {
     if (this.state.phase === 'disposed') return () => {};
     this.listeners.add(listener);
-    return () => { this.listeners.delete(listener); };
+    return () => {
+      this.listeners.delete(listener);
+    };
   };
 
   load(): Promise<void> {
@@ -63,7 +65,8 @@ export class CatalogController implements ItemCatalog {
     } catch (error) {
       if (!abort.signal.aborted) {
         this.publish({
-          phase: 'failed', items: EMPTY,
+          phase: 'failed',
+          items: EMPTY,
           message: error instanceof Error ? error.message : 'The catalog could not be loaded.',
         });
       }

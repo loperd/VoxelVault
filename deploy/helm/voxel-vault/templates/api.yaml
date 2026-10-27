@@ -1,3 +1,6 @@
+{{- if ne .Values.service.type "ClusterIP" }}
+{{- fail "the backend service must be ClusterIP" }}
+{{- end }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -57,8 +60,14 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "voxel-vault.fullname" . }}-env
-            - secretRef:
-                name: {{ include "voxel-vault.secretName" . | quote }}
+          env:
+            {{- range $key := list "DATABASE_URL" "INVENTORY_DATABASE_URL" "WALLET_DATABASE_URL" "IDENTITY_DATABASE_URL" "SECURITY_DATABASE_URL" "GATEWAY_INTERNAL_TOKEN" "IDENTITY_INTERNAL_TOKEN" }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "voxel-vault.secretName" $ | quote }}
+                  key: {{ $key }}
+            {{- end }}
           readinessProbe:
             httpGet:
               path: /readyz

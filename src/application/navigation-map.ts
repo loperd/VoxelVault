@@ -18,10 +18,24 @@ export const MAIN_SCREEN = 'inventory' as const;
 /** One step back; undefined on the main screen. */
 export function parentRoute(route: ScreenRoute): ScreenRoute | undefined {
   switch (route.screen) {
-    case 'inventory': return undefined;
-    case 'archive': case 'items': case 'wallet': case 'catalog': case 'not-found': return { screen: MAIN_SCREEN };
-    case 'case': return route.returnTo === 'archive' ? { screen: 'archive' } : { screen: MAIN_SCREEN };
-    case 'item': case 'opening': case 'reward':
-      return { screen: 'case', caseId: route.caseId, ...(route.instanceId ? { instanceId: route.instanceId } : {}), ...('returnTo' in route && route.returnTo ? { returnTo: route.returnTo } : {}) };
+    case 'inventory':
+      return undefined;
+    case 'archive':
+    case 'items':
+    case 'wallet':
+    case 'catalog':
+    case 'not-found':
+      return { screen: MAIN_SCREEN };
+    case 'case':
+      return route.returnTo === 'archive' ? { screen: 'archive' } : { screen: MAIN_SCREEN };
+    case 'item':
+    case 'opening':
+    case 'reward':
+      return {
+        screen: 'case',
+        caseId: route.caseId,
+        ...(route.instanceId ? { instanceId: route.instanceId } : {}),
+        ...('returnTo' in route && route.returnTo ? { returnTo: route.returnTo } : {}),
+      };
   }
 }

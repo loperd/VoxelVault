@@ -52,10 +52,11 @@ func (r *Runtime) EnableAccounts(ctx context.Context, securityDSN, defaultRole s
 		return err
 	}
 	registry := postgres.Registry{DB: r.DB}
-	service := application.Accounts{Grants: resourcegrants.Allows, Registry: registry, Profiles: registry, Sessions: r.sessionService, Roles: roles.Subjects{Client: sec.Subjects}, Authorizer: auth, Clock: time.Now, ID: r.sessionService.ID, Providers: append([]string(nil), providers...)}
+	service := application.Accounts{Grants: resourcegrants.Allows, Registry: registry, Profiles: registry, Recipient: registry, Sessions: r.sessionService, Roles: roles.Subjects{Client: sec.Subjects}, Authorizer: auth, Clock: time.Now, ID: r.sessionService.ID, Providers: append([]string(nil), providers...)}
 	client := local.Accounts{Service: service, Principal: application.Principal{Kind: "service", ID: r.gateway}}
 	r.Accounts = client
 	r.Profiles = client
+	r.Recipient = client
 	r.Security = sec.Subjects
 	r.SecurityDB = sec.DB
 	r.registration = &service

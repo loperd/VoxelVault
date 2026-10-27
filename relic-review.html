@@ -1,4 +1,81 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relic V4 — material review</title>
-<style>html,body{margin:0;background:#161b22;color:#dde7e9;font:14px system-ui}main{display:flex;min-height:100vh;align-items:center;justify-content:center}canvas{width:min(82vh,80vw);height:min(82vh,80vw)}aside{position:fixed;top:16px;left:16px;max-width:290px}button,select{background:#26333a;color:inherit;border:1px solid #536a71;padding:7px;margin:3px}p{line-height:1.45}#status{font-size:12px;white-space:pre-wrap}a{color:#83d8c5}</style></head>
-<body><aside><strong>Relic V4 — визуальное ревью</strong><p><select id="asset"><option value="v4">V4 Materials</option><option value="after">V3 PBR</option><option value="before">Before · Geometry V2</option></select><select id="rig"><option value="neutral">Neutral studio</option><option value="showcase">Material showcase</option><option value="weak">Weak light · 4%</option><option value="app">Application lights</option></select></p><p><button id="emission">Emissive ON / OFF</button><button id="clay">Clay</button><button id="open">Открыть / закрыть</button><button id="front">Спереди</button><button id="top">Сверху</button><button id="three">3/4</button><button id="save">Сохранить PNG</button></p><p>Поворот и масштаб — мышью. Загрузка через production <code>loadChestAssets</code>. PBR сохраняется профилем без перекраски.</p><p id="status">Загрузка…</p></aside><main id="view"></main><script type="module" src="/src/dev/relic-review.ts"></script></body></html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Relic V4 — material review</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #161b22;
+        color: #dde7e9;
+        font: 14px system-ui;
+      }
+      main {
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+      }
+      canvas {
+        width: min(82vh, 80vw);
+        height: min(82vh, 80vw);
+      }
+      aside {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        max-width: 290px;
+      }
+      button,
+      select {
+        background: #26333a;
+        color: inherit;
+        border: 1px solid #536a71;
+        padding: 7px;
+        margin: 3px;
+      }
+      p {
+        line-height: 1.45;
+      }
+      #status {
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+      a {
+        color: #83d8c5;
+      }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <strong>Relic V4 — визуальное ревью</strong>
+      <p>
+        <select id="asset">
+          <option value="v4">V4 Materials</option>
+          <option value="after">V3 PBR</option>
+          <option value="before">Before · Geometry V2</option></select
+        ><select id="rig">
+          <option value="neutral">Neutral studio</option>
+          <option value="showcase">Material showcase</option>
+          <option value="weak">Weak light · 4%</option>
+          <option value="app">Application lights</option>
+        </select>
+      </p>
+      <p>
+        <button id="emission">Emissive ON / OFF</button><button id="clay">Clay</button
+        ><button id="open">Открыть / закрыть</button><button id="front">Спереди</button
+        ><button id="top">Сверху</button><button id="three">3/4</button
+        ><button id="save">Сохранить PNG</button>
+      </p>
+      <p>
+        Поворот и масштаб — мышью. Загрузка через production <code>loadChestAssets</code>. PBR
+        сохраняется профилем без перекраски.
+      </p>
+      <p id="status">Загрузка…</p>
+    </aside>
+    <main id="view"></main>
+    <script type="module" src="/src/dev/relic-review.ts"></script>
+  </body>
+</html>

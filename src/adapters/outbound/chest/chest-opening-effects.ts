@@ -1,7 +1,18 @@
 import {
-  AdditiveBlending, Color, Box3, BufferGeometry, Float32BufferAttribute, Group,
-  Mesh, MeshBasicMaterial, PlaneGeometry, PointLight, Points, PointsMaterial,
-  ShaderMaterial, DoubleSide,
+  AdditiveBlending,
+  Color,
+  Box3,
+  BufferGeometry,
+  Float32BufferAttribute,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  PlaneGeometry,
+  PointLight,
+  Points,
+  PointsMaterial,
+  ShaderMaterial,
+  DoubleSide,
   type Object3D,
 } from 'three';
 
@@ -9,10 +20,17 @@ import {
 export class ChestOpeningEffects {
   private readonly root = new Group();
   private readonly light = new PointLight(0x41ffcf, 0, 4, 2);
-  private readonly glow = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({
-    color: 0x62ffdf, transparent: true, opacity: 0, depthWrite: false,
-    blending: AdditiveBlending, side: 2,
-  }));
+  private readonly glow = new Mesh(
+    new PlaneGeometry(1, 1),
+    new MeshBasicMaterial({
+      color: 0x62ffdf,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      side: 2,
+    }),
+  );
   private readonly beams = new Group();
   private readonly beamGeometry = new PlaneGeometry(0.3, 2.8);
   private readonly beamMaterial = new ShaderMaterial({
@@ -24,12 +42,22 @@ export class ChestOpeningEffects {
       float height = smoothstep(0.0, 0.08, vUv.y) * pow(1.0 - vUv.y, 1.8);
       gl_FragColor = vec4(tint, edge * height * energy);
     }`,
-    transparent: true, depthWrite: false, side: DoubleSide, blending: AdditiveBlending, toneMapped: false,
+    transparent: true,
+    depthWrite: false,
+    side: DoubleSide,
+    blending: AdditiveBlending,
+    toneMapped: false,
   });
   private readonly positions = new Float32Array(80 * 3);
   private readonly geometry = new BufferGeometry();
-  private readonly material = new PointsMaterial({ color: 0x7effdb, size: 0.055,
-    transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending });
+  private readonly material = new PointsMaterial({
+    color: 0x7effdb,
+    size: 0.055,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    blending: AdditiveBlending,
+  });
   private readonly particles: Points;
   private context?: AudioContext;
   private readonly voices = new Set<OscillatorNode>();
@@ -45,9 +73,11 @@ export class ChestOpeningEffects {
     const bounds = new Box3().setFromObject(chest);
     const width = bounds.max.x - bounds.min.x;
     const depth = bounds.max.z - bounds.min.z;
-    this.root.position.set((bounds.min.x + bounds.max.x) / 2,
+    this.root.position.set(
+      (bounds.min.x + bounds.max.x) / 2,
       bounds.min.y + (bounds.max.y - bounds.min.y) * 0.64,
-      (bounds.min.z + bounds.max.z) / 2);
+      (bounds.min.z + bounds.max.z) / 2,
+    );
     this.glow.rotation.x = -Math.PI / 2;
     this.glow.scale.set(width * 0.82, depth * 0.8, 1);
     this.geometry.setAttribute('position', new Float32BufferAttribute(this.positions, 3));
@@ -55,7 +85,8 @@ export class ChestOpeningEffects {
     this.particles.frustumCulled = false;
     for (let i = 0; i < 5; i++) {
       const beam = new Mesh(this.beamGeometry, this.beamMaterial);
-      beam.position.y = 1.4; beam.rotation.y = i * Math.PI / 5;
+      beam.position.y = 1.4;
+      beam.rotation.y = (i * Math.PI) / 5;
       this.beams.add(beam);
     }
     this.root.add(this.light, this.glow, this.particles, this.beams);
@@ -68,31 +99,56 @@ export class ChestOpeningEffects {
     try {
       this.context ??= new AudioContext();
       void this.context.resume().catch(() => {});
-    } catch { /* Sound is optional. */ }
+    } catch {
+      /* Sound is optional. */
+    }
   }
 
   setMuted(muted: boolean): void {
     this.muted = muted;
     if (muted) {
-      for (const voice of this.voices) { try { voice.stop(); } catch { /* Already stopped. */ } }
+      for (const voice of this.voices) {
+        try {
+          voice.stop();
+        } catch {
+          /* Already stopped. */
+        }
+      }
     }
   }
 
-  charge(): void { this.tone(75, 290, 1.25, 0.025, 'sine'); this.tone(120, 430, 1.25, 0.008, 'triangle'); }
+  charge(): void {
+    this.tone(75, 290, 1.25, 0.025, 'sine');
+    this.tone(120, 430, 1.25, 0.008, 'triangle');
+  }
 
-  impact(): void { this.tone(105, 32, 0.22, 0.08, 'sine'); this.tone(180, 55, 0.09, 0.018, 'triangle'); }
+  impact(): void {
+    this.tone(105, 32, 0.22, 0.08, 'sine');
+    this.tone(180, 55, 0.09, 0.018, 'triangle');
+  }
 
-  start(): void { this.stop(); this.active = true; this.root.visible = true; }
+  start(): void {
+    this.stop();
+    this.active = true;
+    this.root.visible = true;
+  }
 
   update(progress: number, reducedMotion: boolean): void {
     if (!this.active) return;
     const p = Math.max(0, Math.min(progress, 1));
-    if (this.cue === 0) { this.tone(170, 65, 0.09, 0.035, 'triangle'); this.cue = 1; }
-    if (p >= 0.18 && this.cue === 1) { this.tone(100, 230, 0.35, 0.018, 'sawtooth'); this.cue = 2; }
+    if (this.cue === 0) {
+      this.tone(170, 65, 0.09, 0.035, 'triangle');
+      this.cue = 1;
+    }
+    if (p >= 0.18 && this.cue === 1) {
+      this.tone(100, 230, 0.35, 0.018, 'sawtooth');
+      this.cue = 2;
+    }
     if (p >= 0.65 && this.cue === 2) {
       this.tone(520, 1040, 0.42, 0.025, 'sine');
       this.tone(780, 1560, 0.5, 0.022, 'sine');
-      this.tone(210, 55, 0.3, 0.045, 'triangle'); this.cue = 3;
+      this.tone(210, 55, 0.3, 0.045, 'triangle');
+      this.cue = 3;
     }
     const reveal = Math.max(0, (p - 0.08) / 0.92);
     const burst = Math.max(0, (p - 0.42) / 0.58);
@@ -118,24 +174,45 @@ export class ChestOpeningEffects {
   }
 
   stop(): void {
-    this.active = false; this.cue = 0; this.root.visible = false;
-    for (const voice of this.voices) { try { voice.stop(); } catch { /* Already ended. */ } voice.disconnect(); }
+    this.active = false;
+    this.cue = 0;
+    this.root.visible = false;
+    for (const voice of this.voices) {
+      try {
+        voice.stop();
+      } catch {
+        /* Already ended. */
+      }
+      voice.disconnect();
+    }
     this.voices.clear();
   }
 
   dispose(): void {
-    this.stop(); this.root.removeFromParent();
-    this.geometry.dispose(); this.material.dispose();
-    this.beamGeometry.dispose(); this.beamMaterial.dispose();
-   
-    this.glow.geometry.dispose(); this.glow.material.dispose(); this.light.dispose();
+    this.stop();
+    this.root.removeFromParent();
+    this.geometry.dispose();
+    this.material.dispose();
+    this.beamGeometry.dispose();
+    this.beamMaterial.dispose();
+
+    this.glow.geometry.dispose();
+    this.glow.material.dispose();
+    this.light.dispose();
     if (this.context) void this.context.close().catch(() => {});
   }
 
-  private tone(from: number, to: number, duration: number, volume: number, type: OscillatorType): void {
+  private tone(
+    from: number,
+    to: number,
+    duration: number,
+    volume: number,
+    type: OscillatorType,
+  ): void {
     const context = this.context;
     if (this.muted || !context || context.state !== 'running') return;
-    const oscillator = context.createOscillator(), gain = context.createGain();
+    const oscillator = context.createOscillator(),
+      gain = context.createGain();
     const now = context.currentTime;
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(from, now);
@@ -143,9 +220,15 @@ export class ChestOpeningEffects {
     gain.gain.setValueAtTime(0, now);
     gain.gain.linearRampToValueAtTime(volume, now + 0.012);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    oscillator.connect(gain); gain.connect(context.destination);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
     this.voices.add(oscillator);
-    oscillator.onended = () => { this.voices.delete(oscillator); oscillator.disconnect(); gain.disconnect(); };
-    oscillator.start(now); oscillator.stop(now + duration);
+    oscillator.onended = () => {
+      this.voices.delete(oscillator);
+      oscillator.disconnect();
+      gain.disconnect();
+    };
+    oscillator.start(now);
+    oscillator.stop(now + duration);
   }
 }

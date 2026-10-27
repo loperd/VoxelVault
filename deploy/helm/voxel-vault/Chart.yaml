@@ -3,4 +3,4 @@ name: voxel-vault
 description: Voxel Vault API and PostgreSQL for local Kubernetes development
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: '0.1.0'

@@ -54,16 +54,20 @@ export function createApplication(options: ApplicationOptions): Application {
     ? staticCatalog(options.contents)
     : new FixtureCatalogGateway(options.baseUrl, options.fetcher, options.catalogPath);
   const catalog = new CatalogController(gateway);
-  const preview = options.chestPreview ? new ChestPreviewController(options.chestPreview) : undefined;
-  const session = options.presentation ? new RouletteController({
-    journal: options.journal,
-    ownership: options.ownership,
-    catalog: gateway,
-    outcome: options.outcome ?? new FixtureOutcomeGateway(options.baseUrl, options.fetcher),
-    ...options.presentation,
-    random: options.random ?? browserRandom,
-    createSessionId: options.createSessionId ?? createBrowserSessionId,
-  }) : undefined;
+  const preview = options.chestPreview
+    ? new ChestPreviewController(options.chestPreview)
+    : undefined;
+  const session = options.presentation
+    ? new RouletteController({
+        journal: options.journal,
+        ownership: options.ownership,
+        catalog: gateway,
+        outcome: options.outcome ?? new FixtureOutcomeGateway(options.baseUrl, options.fetcher),
+        ...options.presentation,
+        random: options.random ?? browserRandom,
+        createSessionId: options.createSessionId ?? createBrowserSessionId,
+      })
+    : undefined;
   let disposed = false;
 
   return {
@@ -79,7 +83,11 @@ export function createApplication(options: ApplicationOptions): Application {
       disposed = true;
       const errors: unknown[] = [];
       for (const resource of [session, preview, catalog, gateway]) {
-        try { resource?.dispose(); } catch (error) { errors.push(error); }
+        try {
+          resource?.dispose();
+        } catch (error) {
+          errors.push(error);
+        }
       }
       if (errors.length > 0) throw new AggregateError(errors, 'Failed to dispose the application.');
     },
@@ -88,5 +96,11 @@ export function createApplication(options: ApplicationOptions): Application {
 
 function staticCatalog(items: readonly Item[]): CatalogGateway & { dispose(): void } {
   const catalog = copyCatalog(items);
-  return { load: async signal => { signal.throwIfAborted(); return catalog; }, dispose() {} };
+  return {
+    load: async (signal) => {
+      signal.throwIfAborted();
+      return catalog;
+    },
+    dispose() {},
+  };
 }

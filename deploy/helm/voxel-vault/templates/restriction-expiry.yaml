@@ -1,0 +1,42 @@
+{{- if .Values.restrictionExpiry.enabled }}
+# Publishes restriction.expired events (idempotent, runtime credentials only).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "voxel-vault.fullname" . }}-restriction-expiry
+  labels:
+    {{- include "voxel-vault.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.restrictionExpiry.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 60
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "voxel-vault.serviceAccountName" . }}
+          automountServiceAccountToken: false
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: restriction-expire
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["/restriction-expire"]
+              securityContext:
+                {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              env:
+                - name: WALLET_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "voxel-vault.secretName" . | quote }}
+                      key: WALLET_DATABASE_URL
+{{- end }}

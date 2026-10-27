@@ -1,7 +1,4 @@
 {
   "extends": "./tsconfig.core.json",
-  "include": [
-    "src/adapters/outbound/chest",
-    "src/adapters/outbound/browser"
-  ]
+  "include": ["src/adapters/outbound/chest", "src/adapters/outbound/browser"]
 }

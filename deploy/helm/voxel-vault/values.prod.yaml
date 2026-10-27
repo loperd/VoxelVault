@@ -11,7 +11,7 @@ image:
   pullPolicy: IfNotPresent
 imagePullSecrets:
   - name: gitlab-registry
-  - name: ghcr-pull                # read:packages token, created once (deploy/bootstrap/README.md)
+  - name: ghcr-pull # read:packages token, created once (deploy/bootstrap/README.md)
 
 ingress:
   enabled: true
@@ -20,32 +20,31 @@ ingress:
 gateway:
   image:
     repository: registry.gitlab.com/overseerio/gateway
-    tag: "97300404"
-  # SESSION_SECRET and INTERNAL_TOKEN come from the same Vault path as the API secret.
-  existingSecret: voxel-vault-secrets
+    tag: '973004046c53-44d72eefe6f7'
+  # Gateway-only signing and provider credentials use a distinct Secret.
+  existingSecret: voxel-vault-gateway-secrets
   config:
     telegramAuth:
-      redirectUrl: "https://voxelvault.mono.place/api/v1/auth/telegram/callback"
+      redirectUrl: 'https://voxelvault.mono.place/api/v1/auth/telegram/callback'
     cors:
       allowedOrigins:
         - https://voxelvault.mono.place
 
-
 env:
-  FRONTEND_URL: "https://voxelvault.mono.place/"
-  WEBAUTHN_RP_ID: "voxelvault.mono.place"
-  WEBAUTHN_ORIGINS: "https://voxelvault.mono.place"
-  ALLOWED_ORIGINS: "https://voxelvault.mono.place"
-  COOKIE_SECURE: "true"
+  FRONTEND_URL: 'https://voxelvault.mono.place/'
+  WEBAUTHN_RP_ID: 'voxelvault.mono.place'
+  WEBAUTHN_ORIGINS: 'https://voxelvault.mono.place'
+  ALLOWED_ORIGINS: 'https://voxelvault.mono.place'
+  COOKIE_SECURE: 'true'
   # BotFather: trusted origin https://voxelvault.mono.place, this redirect URI.
-  TELEGRAM_REDIRECT_URL: "https://voxelvault.mono.place/api/v1/auth/telegram/callback"
+  TELEGRAM_REDIRECT_URL: 'https://voxelvault.mono.place/api/v1/auth/telegram/callback'
 
 # KV-v2 secret/prod/voxel-vault must hold every key BEFORE the upgrade (TELEGRAM_CLIENT_SECRET,
 # DATABASE_URL, POSTGRES_PASSWORD with the bundled database); role voxel-vault-prod bound to the SA.
 secrets:
   source: vso
   vso:
-    address: "http://vault.vault.svc:8200"
-    role: "voxel-vault-prod"
-    mount: "secret"
-    path: "prod/voxel-vault/gateway"
+    address: 'http://vault.vault.svc:8200'
+    role: 'voxel-vault-prod'
+    mount: 'secret'
+    path: 'prod/voxel-vault/gateway'

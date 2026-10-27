@@ -18,8 +18,16 @@ export const BLOCK_SIDES: readonly BlockSide[] = ['north', 'south', 'east', 'wes
  * then `top`) or `side` (the four around), then `all`.
  */
 export interface BlockTextures {
-  readonly all?: string; readonly top?: string; readonly bottom?: string; readonly side?: string;
-  readonly north?: string; readonly south?: string; readonly east?: string; readonly west?: string; readonly up?: string; readonly down?: string;
+  readonly all?: string;
+  readonly top?: string;
+  readonly bottom?: string;
+  readonly side?: string;
+  readonly north?: string;
+  readonly south?: string;
+  readonly east?: string;
+  readonly west?: string;
+  readonly up?: string;
+  readonly down?: string;
 }
 
 /**
@@ -27,7 +35,10 @@ export interface BlockTextures {
  * it shows, [u0, v0, u1, v1] in tile pixels from the top-left, 0..16, as the game's models give it
  * (u0 > u1 mirrors). Without `uv` the face shows the part of the tile its box covers.
  */
-export interface PartFace { readonly texture?: string; readonly uv?: readonly [number, number, number, number] }
+export interface PartFace {
+  readonly texture?: string;
+  readonly uv?: readonly [number, number, number, number];
+}
 
 /** A box of a `boxes` model with faces of its own: from and to in sixteenths, 0..16. */
 export interface BlockPart {
@@ -75,27 +86,42 @@ export class BlockRegistry {
    */
   constructor(definitions: readonly BlockDefinition[], options: { strict?: boolean } = {}) {
     for (const definition of definitions) {
-      const id = this.blocks.length + 1, model = definition.model ?? 'cube', t = definition.textures;
+      const id = this.blocks.length + 1,
+        model = definition.model ?? 'cube',
+        t = definition.textures;
       const missing = (side: string) => {
-        if (options.strict) throw new Error(`Block "${definition.name}" has no texture for its ${side} side.`);
+        if (options.strict)
+          throw new Error(`Block "${definition.name}" has no texture for its ${side} side.`);
         return 'stone';
       };
-      const side = t.side ?? t.all, top = t.top ?? t.all ?? side, bottom = t.bottom ?? t.all ?? t.top ?? side;
+      const side = t.side ?? t.all,
+        top = t.top ?? t.all ?? side,
+        bottom = t.bottom ?? t.all ?? t.top ?? side;
       const sides = {
-        north: t.north ?? side ?? missing('north'), south: t.south ?? side ?? missing('south'),
-        east: t.east ?? side ?? missing('east'), west: t.west ?? side ?? missing('west'),
-        up: t.up ?? top ?? missing('up'), down: t.down ?? bottom ?? missing('down'),
+        north: t.north ?? side ?? missing('north'),
+        south: t.south ?? side ?? missing('south'),
+        east: t.east ?? side ?? missing('east'),
+        west: t.west ?? side ?? missing('west'),
+        up: t.up ?? top ?? missing('up'),
+        down: t.down ?? bottom ?? missing('down'),
       };
       const block: Block = {
-        id, name: definition.name, model,
+        id,
+        name: definition.name,
+        model,
         textures: { ...sides, top: sides.up, bottom: sides.down, side: side ?? sides.north },
-        transparent: definition.transparent ?? model !== 'cube', cutout: definition.cutout ?? false,
-        light: Math.max(0, Math.min(15, definition.light ?? 0)), secondLight: definition.secondLight ?? false,
-        boxes: (definition.boxes ?? []).map(box => 'from' in box ? box : { from: [box[0], box[1], box[2]], to: [box[3], box[4], box[5]] }),
+        transparent: definition.transparent ?? model !== 'cube',
+        cutout: definition.cutout ?? false,
+        light: Math.max(0, Math.min(15, definition.light ?? 0)),
+        secondLight: definition.secondLight ?? false,
+        boxes: (definition.boxes ?? []).map((box) =>
+          'from' in box ? box : { from: [box[0], box[1], box[2]], to: [box[3], box[4], box[5]] },
+        ),
         opaque: model === 'cube' && !(definition.transparent ?? false),
       };
       if (this.ids.has(block.name)) throw new Error(`Block "${block.name}" is defined twice.`);
-      this.blocks.push(block); this.ids.set(block.name, id);
+      this.blocks.push(block);
+      this.ids.set(block.name, id);
     }
   }
 
@@ -106,5 +132,7 @@ export class BlockRegistry {
     return id;
   }
 
-  get(id: number): Block | undefined { return id > 0 ? this.blocks[id - 1] : undefined; }
+  get(id: number): Block | undefined {
+    return id > 0 ? this.blocks[id - 1] : undefined;
+  }
 }

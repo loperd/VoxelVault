@@ -7,8 +7,8 @@ export interface FrameEnvironment {
 
 export function browserFrameEnvironment(view: Window, document: Document): FrameEnvironment {
   return {
-    requestFrame: callback => view.requestAnimationFrame(callback),
-    cancelFrame: id => view.cancelAnimationFrame(id),
+    requestFrame: (callback) => view.requestAnimationFrame(callback),
+    cancelFrame: (id) => view.cancelAnimationFrame(id),
     isHidden: () => document.hidden,
     onVisibilityChange(callback) {
       document.addEventListener('visibilitychange', callback);
@@ -29,8 +29,12 @@ export class FrameScheduler {
   private disposed = false;
   private generation = 0;
 
-  constructor(environment: FrameEnvironment, update: (deltaSeconds: number) => void,
-    resetClock: () => void, onError: (error: unknown) => void) {
+  constructor(
+    environment: FrameEnvironment,
+    update: (deltaSeconds: number) => void,
+    resetClock: () => void,
+    onError: (error: unknown) => void,
+  ) {
     this.environment = environment;
     this.update = update;
     this.resetClock = resetClock;
@@ -67,16 +71,23 @@ export class FrameScheduler {
   }
 
   private schedule(): void {
-    if (!this.running || this.disposed || this.frame !== undefined || this.environment.isHidden()) return;
+    if (!this.running || this.disposed || this.frame !== undefined || this.environment.isHidden())
+      return;
     const generation = this.generation;
-    this.frame = this.environment.requestFrame(timestamp => {
+    this.frame = this.environment.requestFrame((timestamp) => {
       if (generation !== this.generation) return;
       this.frame = undefined;
       if (!this.running || this.disposed || this.environment.isHidden()) return;
-      const delta = this.previous === undefined ? 0 : Math.max(0, (timestamp - this.previous) / 1000);
+      const delta =
+        this.previous === undefined ? 0 : Math.max(0, (timestamp - this.previous) / 1000);
       this.previous = timestamp;
-      try { this.update(delta); }
-      catch (error) { this.stop(); this.onError(error); return; }
+      try {
+        this.update(delta);
+      } catch (error) {
+        this.stop();
+        this.onError(error);
+        return;
+      }
       this.schedule();
     });
   }

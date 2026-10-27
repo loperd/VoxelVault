@@ -4,8 +4,12 @@ export class FixedStepper {
   private accumulator = 0;
 
   constructor(stepSeconds = 1 / 60, maxSteps = 5) {
-    if (!Number.isFinite(stepSeconds) || stepSeconds <= 0
-        || !Number.isSafeInteger(maxSteps) || maxSteps < 1) {
+    if (
+      !Number.isFinite(stepSeconds) ||
+      stepSeconds <= 0 ||
+      !Number.isSafeInteger(maxSteps) ||
+      maxSteps < 1
+    ) {
       throw new Error('The fixed step and maximum substeps must be positive.');
     }
     this.stepSeconds = stepSeconds;
@@ -18,7 +22,10 @@ export class FixedStepper {
     }
     this.accumulator = Math.min(this.accumulator + deltaSeconds, this.stepSeconds * this.maxSteps);
     let count = 0;
-    while (this.accumulator + this.stepSeconds * 1e-9 >= this.stepSeconds && count < this.maxSteps) {
+    while (
+      this.accumulator + this.stepSeconds * 1e-9 >= this.stepSeconds &&
+      count < this.maxSteps
+    ) {
       step(this.stepSeconds);
       this.accumulator = Math.max(0, this.accumulator - this.stepSeconds);
       count += 1;
@@ -26,5 +33,7 @@ export class FixedStepper {
     return count;
   }
 
-  reset(): void { this.accumulator = 0; }
+  reset(): void {
+    this.accumulator = 0;
+  }
 }

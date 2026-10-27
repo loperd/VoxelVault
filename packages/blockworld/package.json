@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "description": "Minecraft-style block world rendering on three.js: block registry, light propagation, a vanilla-look mesher (face shading, smooth lighting, ambient occlusion), a procedural 16×16 atlas, a budgeted view, and the world's physics (its blocks are the ground) for guests that live in it.",
-  "exports": { ".": "./src/index.ts" },
-  "peerDependencies": { "three": "~0.186.1", "@dimforge/rapier3d-compat": "0.21.0" }
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "three": "~0.186.1",
+    "@dimforge/rapier3d-compat": "0.21.0"
+  }
 }

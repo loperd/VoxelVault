@@ -12,7 +12,9 @@ for (const name of ['draco_decoder.js', 'draco_decoder.wasm', 'draco_wasm_wrappe
   await copyFile(resolve(source, name), resolve(target, name));
 }
 await copyFile(resolve(project, 'licenses/Apache-2.0.txt'), resolve(target, 'LICENSE.txt'));
-await writeFile(resolve(target, 'NOTICE.txt'),
-  'Draco geometry compression — Google. Distributed under the Apache License 2.0.\n'
-  + 'Source: https://github.com/google/draco\nDecoder files supplied by the installed Three.js package.\n');
+await writeFile(
+  resolve(target, 'NOTICE.txt'),
+  'Draco geometry compression — Google. Distributed under the Apache License 2.0.\n' +
+    'Source: https://github.com/google/draco\nDecoder files supplied by the installed Three.js package.\n',
+);
 console.log('Draco decoder assets synchronized with the installed Three.js release.');

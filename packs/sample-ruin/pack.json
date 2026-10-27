@@ -6,9 +6,7 @@
     "blockworld": 1
   },
   "credits": {
-    "authors": [
-      "Voxel Vault contributors"
-    ],
+    "authors": ["Voxel Vault contributors"],
     "license": "CC0-1.0",
     "source": "Painted and modelled by scripts/packs/make-sample-ruin.mjs; no third-party assets."
   },
@@ -65,114 +63,50 @@
       },
       "parts": [
         {
-          "from": [
-            0,
-            6,
-            2
-          ],
-          "to": [
-            16,
-            8,
-            14
-          ]
+          "from": [0, 6, 2],
+          "to": [16, 8, 14]
         },
         {
-          "from": [
-            1,
-            0,
-            3
-          ],
-          "to": [
-            3,
-            6,
-            13
-          ],
+          "from": [1, 0, 3],
+          "to": [3, 6, 13],
           "faces": {
             "east": {
               "texture": "ruin_bricks",
-              "uv": [
-                0,
-                10,
-                10,
-                16
-              ]
+              "uv": [0, 10, 10, 16]
             },
             "west": {
               "texture": "ruin_bricks",
-              "uv": [
-                0,
-                10,
-                10,
-                16
-              ]
+              "uv": [0, 10, 10, 16]
             },
             "north": {
               "texture": "ruin_bricks",
-              "uv": [
-                0,
-                10,
-                2,
-                16
-              ]
+              "uv": [0, 10, 2, 16]
             },
             "south": {
               "texture": "ruin_bricks",
-              "uv": [
-                0,
-                10,
-                2,
-                16
-              ]
+              "uv": [0, 10, 2, 16]
             }
           }
         },
         {
-          "from": [
-            13,
-            0,
-            3
-          ],
-          "to": [
-            15,
-            6,
-            13
-          ],
+          "from": [13, 0, 3],
+          "to": [15, 6, 13],
           "faces": {
             "east": {
               "texture": "ruin_bricks",
-              "uv": [
-                0,
-                10,
-                10,
-                16
-              ]
+              "uv": [0, 10, 10, 16]
             },
             "west": {
               "texture": "ruin_bricks",
-              "uv": [
-                0,
-                10,
-                10,
-                16
-              ]
+              "uv": [0, 10, 10, 16]
             },
             "north": {
               "texture": "ruin_bricks",
-              "uv": [
-                0,
-                10,
-                2,
-                16
-              ]
+              "uv": [0, 10, 2, 16]
             },
             "south": {
               "texture": "ruin_bricks",
-              "uv": [
-                0,
-                10,
-                2,
-                16
-              ]
+              "uv": [0, 10, 2, 16]
             }
           }
         }
@@ -187,16 +121,8 @@
     }
   ],
   "structure": {
-    "size": [
-      12,
-      8,
-      12
-    ],
-    "origin": [
-      -6,
-      0,
-      -6
-    ],
+    "size": [12, 8, 12],
+    "origin": [-6, 0, -6],
     "sides": "open",
     "cells": "structure.u16"
   },
@@ -206,72 +132,35 @@
   "objects": [
     {
       "model": "brazier",
-      "at": [
-        3.5,
-        2,
-        3.5
-      ]
+      "at": [3.5, 2, 3.5]
     },
     {
       "model": "brazier",
-      "at": [
-        8.5,
-        2,
-        3.5
-      ],
-      "rotation": [
-        0,
-        45,
-        0
-      ]
+      "at": [8.5, 2, 3.5],
+      "rotation": [0, 45, 0]
     }
   ],
   "markers": {
     "altar": {
-      "at": [
-        5.5,
-        3,
-        5.5
-      ],
+      "at": [5.5, 3, 5.5],
       "front": "south",
-      "tags": [
-        "guest"
-      ]
+      "tags": ["guest"]
     },
     "lamp": {
-      "at": [
-        9.5,
-        4.5,
-        9.5
-      ]
+      "at": [9.5, 4.5, 9.5]
     }
   },
   "cameras": {
     "hero": {
-      "eye": [
-        5.5,
-        5.2,
-        15
-      ],
+      "eye": [5.5, 5.2, 15],
       "look": "altar",
       "fov": 50,
-      "focus": [
-        0.5,
-        0.48
-      ],
+      "focus": [0.5, 0.48],
       "drift": 0.1
     },
     "high": {
-      "eye": [
-        15,
-        11,
-        15
-      ],
-      "look": [
-        5.5,
-        2,
-        5.5
-      ],
+      "eye": [15, 11, 15],
+      "look": [5.5, 2, 5.5],
       "fov": 45,
       "drift": 0
     }
@@ -288,25 +177,13 @@
       "far": 70
     },
     "blocks": {
-      "sky": [
-        0.85,
-        0.88,
-        1.0
-      ],
-      "glow": [
-        1.0,
-        0.76,
-        0.48
-      ],
+      "sky": [0.85, 0.88, 1.0],
+      "glow": [1.0, 0.76, 0.48],
       "minimum": 0.06,
       "occlusion": 0.65
     },
     "sun": {
-      "direction": [
-        -0.55,
-        0.6,
-        0.45
-      ],
+      "direction": [-0.55, 0.6, 0.45],
       "color": "#ffb070",
       "strength": 0.3,
       "scatter": 0.6
@@ -331,20 +208,12 @@
       {
         "id": "brazier-west",
         "type": "fire",
-        "at": [
-          3.5,
-          2.65,
-          3.5
-        ]
+        "at": [3.5, 2.65, 3.5]
       },
       {
         "id": "brazier-east",
         "type": "fire",
-        "at": [
-          8.5,
-          2.65,
-          3.5
-        ]
+        "at": [8.5, 2.65, 3.5]
       }
     ]
   }

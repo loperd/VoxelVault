@@ -6,5 +6,7 @@ import { MINER_GEODE } from './geode.ts';
 
 /** Three composition studies for the deep mine, for review only: none is wired to the case yet. */
 export const MINER_CONCEPTS: Readonly<Record<string, StageBuilder<ChestHandles>>> = Object.freeze({
-  'concept-sinkhole': MINER_SINKHOLE, 'concept-gallery': MINER_GALLERY, 'concept-geode': MINER_GEODE,
+  'concept-sinkhole': MINER_SINKHOLE,
+  'concept-gallery': MINER_GALLERY,
+  'concept-geode': MINER_GEODE,
 });

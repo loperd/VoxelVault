@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.ai/
+.codegraph/
+.test-build/
+coverage/
+assets/
+public/models/
+experiments/
+deploy/helm/**/templates/
+**/package-lock.json

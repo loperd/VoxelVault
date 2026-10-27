@@ -21,3 +21,7 @@ type Profiles interface {
 	Profile(context.Context, string) (Profile, error)
 	Exists(context.Context, string) (bool, error)
 }
+
+type RecipientResolver interface {
+	ResolveRecipient(context.Context, string) (Profile, error)
+}

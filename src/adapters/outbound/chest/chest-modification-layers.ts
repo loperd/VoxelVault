@@ -1,10 +1,36 @@
-import { Box3, BoxGeometry, Color, DataTexture, DoubleSide, Mesh, MeshStandardMaterial, NearestFilter, NormalBlending,
-  PlaneGeometry, Quaternion, RepeatWrapping, RGBAFormat, ShaderMaterial, SRGBColorSpace, Vector3, type Object3D } from 'three';
+import {
+  Box3,
+  BoxGeometry,
+  Color,
+  DataTexture,
+  DoubleSide,
+  Mesh,
+  MeshStandardMaterial,
+  NearestFilter,
+  NormalBlending,
+  PlaneGeometry,
+  Quaternion,
+  RepeatWrapping,
+  RGBAFormat,
+  ShaderMaterial,
+  SRGBColorSpace,
+  Vector3,
+  type Object3D,
+} from 'three';
 import type { ResolvedModification } from '../../../domain/chest-appearance.ts';
 import type { ChestModificationProfile, GrowthStyle } from '../../../domain/chest-modifications.ts';
 import { meshesOf } from './chest-appearance.ts';
-import { cobwebSprite, glowPattern, growthPattern, PATTERN_SIZE, random, snowSprite, SPRITE_SIZE, vineSprite,
-  wearPattern } from './chest-surface-patterns.ts';
+import {
+  cobwebSprite,
+  glowPattern,
+  growthPattern,
+  PATTERN_SIZE,
+  random,
+  snowSprite,
+  SPRITE_SIZE,
+  vineSprite,
+  wearPattern,
+} from './chest-surface-patterns.ts';
 
 /**
  * Projects a 128px mask by the dominant axis of the local normal instead of the mesh UVs: the
@@ -30,7 +56,8 @@ export function patternTexture(pixels: Uint8Array, size = PATTERN_SIZE): DataTex
 /** Shares the base geometry, sits just above the surface and is ignored by palette/physics lookups. */
 export function overlay(surface: Mesh, material: ShaderMaterial, order: number): Mesh {
   const mesh = new Mesh(surface.geometry, material);
-  mesh.userData.chestOverlay = true; mesh.renderOrder = order;
+  mesh.userData.chestOverlay = true;
+  mesh.renderOrder = order;
   surface.add(mesh);
   return mesh;
 }
@@ -84,7 +111,12 @@ const shaders = {
       gl_FragColor = vec4(lit(leaf) * (1.0 + glow * .3), opacity * (edge < .06 ? .55 : 1.0)); ${OUTPUT} }`,
 };
 
-interface Animated { material: ShaderMaterial; intensity: number; pulse: number; phase: number }
+interface Animated {
+  material: ShaderMaterial;
+  intensity: number;
+  pulse: number;
+  phase: number;
+}
 
 /** Static instance modifications (wear, glow, growth) drawn on the parts their catalogue entry names. */
 export class ChestModificationLayers {
@@ -93,44 +125,93 @@ export class ChestModificationLayers {
   private readonly animated: Animated[] = [];
   private time = 0;
 
-  constructor(root: Object3D, profile: ChestModificationProfile, modifications: readonly ResolvedModification[], accent: number) {
-    const parts = new Map(profile.parts.map(part => [part.id, part.nodes]));
+  constructor(
+    root: Object3D,
+    profile: ChestModificationProfile,
+    modifications: readonly ResolvedModification[],
+    accent: number,
+  ) {
+    const parts = new Map(profile.parts.map((part) => [part.id, part.nodes]));
     modifications.forEach(({ definition, intensity, seed }, index) => {
-      const surfaces = meshesOf(root, definition.parts.flatMap(part => parts.get(part) ?? []));
+      const surfaces = meshesOf(
+        root,
+        definition.parts.flatMap((part) => parts.get(part) ?? []),
+      );
       if (!surfaces.length) return;
       if (definition.kind === 'fracture') return; // drawn and animated by ChestFractureEffects
-      if (definition.kind === 'growth' && this.geometryGrowth(surfaces, definition.style, intensity, seed)) return;
-      const texture = patternTexture(definition.kind === 'wear' ? wearPattern(definition.style, seed)
-        : definition.kind === 'glow' ? glowPattern(definition.style, seed) : growthPattern(definition.style, seed));
-      const tint = new Color(definition.kind === 'glow' ? definition.style.color ?? accent : definition.style.color);
+      if (
+        definition.kind === 'growth' &&
+        this.geometryGrowth(surfaces, definition.style, intensity, seed)
+      )
+        return;
+      const texture = patternTexture(
+        definition.kind === 'wear'
+          ? wearPattern(definition.style, seed)
+          : definition.kind === 'glow'
+            ? glowPattern(definition.style, seed)
+            : growthPattern(definition.style, seed),
+      );
+      const tint = new Color(
+        definition.kind === 'glow' ? (definition.style.color ?? accent) : definition.style.color,
+      );
       const growth = definition.kind === 'growth' ? definition.style : undefined;
       this.disposables.push(texture);
       // One material per surface: growth anchors need that mesh's own bounds.
       for (const surface of surfaces) {
         surface.geometry.computeBoundingBox();
-        const bounds = surface.geometry.boundingBox ?? new Box3(new Vector3(), new Vector3(1, 1, 1));
+        const bounds =
+          surface.geometry.boundingBox ?? new Box3(new Vector3(), new Vector3(1, 1, 1));
         const material = new ShaderMaterial({
-          uniforms: { mask: { value: texture }, intensity: { value: intensity }, tint: { value: tint },
-            tintEnd: { value: new Color(definition.kind === 'wear' ? definition.style.colorEnd ?? definition.style.color : 0) },
-            patternScale: { value: definition.style.scale }, strength: { value: 1 },
+          uniforms: {
+            mask: { value: texture },
+            intensity: { value: intensity },
+            tint: { value: tint },
+            tintEnd: {
+              value: new Color(
+                definition.kind === 'wear'
+                  ? (definition.style.colorEnd ?? definition.style.color)
+                  : 0,
+              ),
+            },
+            patternScale: { value: definition.style.scale },
+            strength: { value: 1 },
             brightness: { value: definition.kind === 'glow' ? definition.style.brightness : 1 },
             spread: { value: growth?.spread ?? 1 },
-            opacity: { value: growth?.opacity ?? (definition.kind === 'wear' ? definition.style.opacity : 1) },
-            anchor: { value: ANCHORS[growth?.anchor ?? (definition.kind === 'wear' ? definition.style.anchor : 'all')] },
+            opacity: {
+              value: growth?.opacity ?? (definition.kind === 'wear' ? definition.style.opacity : 1),
+            },
+            anchor: {
+              value:
+                ANCHORS[
+                  growth?.anchor ?? (definition.kind === 'wear' ? definition.style.anchor : 'all')
+                ],
+            },
             glow: { value: growth?.glow ?? 0 },
-            highlight: { value: new Color(growth?.highlight ?? 0) }, hasHighlight: { value: growth?.highlight ? 1 : 0 },
-            boundsMin: { value: bounds.min.clone() }, boundsMax: { value: bounds.max.clone() } },
+            highlight: { value: new Color(growth?.highlight ?? 0) },
+            hasHighlight: { value: growth?.highlight ? 1 : 0 },
+            boundsMin: { value: bounds.min.clone() },
+            boundsMax: { value: bounds.max.clone() },
+          },
           vertexShader: PROJECTED_VERTEX,
           fragmentShader: PROJECTED_UV + FINISH_GLSL + shaders[definition.kind],
-          transparent: true, depthWrite: false, blending: NormalBlending,
+          transparent: true,
+          depthWrite: false,
+          blending: NormalBlending,
           // A constant depth nudge, not a slope-scaled one: a slope factor grows huge on faces seen at
           // a grazing angle and lets the overlays of neighbouring faces bleed through (smeared moss).
-          polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -4 - index * 2,
+          polygonOffset: true,
+          polygonOffsetFactor: 0,
+          polygonOffsetUnits: -4 - index * 2,
         });
         this.disposables.push(material);
         this.added.push(overlay(surface, material, 3 + index));
         if (definition.kind === 'glow' && definition.style.pulse > 0) {
-          this.animated.push({ material, intensity, pulse: definition.style.pulse, phase: (seed % 1000) / 1000 });
+          this.animated.push({
+            material,
+            intensity,
+            pulse: definition.style.pulse,
+            phase: (seed % 1000) / 1000,
+          });
         }
       }
     });
@@ -140,7 +221,8 @@ export class ChestModificationLayers {
   update(delta: number): void {
     this.time += delta;
     for (const item of this.animated) {
-      item.material.uniforms.strength!.value = .75 + .25 * Math.sin((this.time * item.pulse + item.phase) * Math.PI * 2);
+      item.material.uniforms.strength!.value =
+        0.75 + 0.25 * Math.sin((this.time * item.pulse + item.phase) * Math.PI * 2);
     }
   }
 
@@ -151,8 +233,18 @@ export class ChestModificationLayers {
   }
 
   /** Growth made of small geometry; returns false for surface growths. Front of the model is +Z. */
-  private geometryGrowth(surfaces: readonly Mesh[], style: GrowthStyle, intensity: number, seed: number): boolean {
-    const builders = { crystals: this.crystals, vines: this.vines, cobweb: this.cobwebs, snow: this.snow } as const;
+  private geometryGrowth(
+    surfaces: readonly Mesh[],
+    style: GrowthStyle,
+    intensity: number,
+    seed: number,
+  ): boolean {
+    const builders = {
+      crystals: this.crystals,
+      vines: this.vines,
+      cobweb: this.cobwebs,
+      snow: this.snow,
+    } as const;
     const build = builders[style.type as keyof typeof builders];
     if (!build) return false;
     const next = random(seed);
@@ -160,11 +252,22 @@ export class ChestModificationLayers {
     for (let index = 0; index < count; index++) {
       const surface = surfaces[Math.floor(next() * surfaces.length)]!;
       surface.geometry.computeBoundingBox();
-      const box = surface.geometry.boundingBox ?? new Box3(), size = box.getSize(new Vector3());
+      const box = surface.geometry.boundingBox ?? new Box3(),
+        size = box.getSize(new Vector3());
       // One model pixel (1/16 of the part width) as the voxel unit, matching the chest texture grid.
-      const unit = Math.max(size.x, size.z) / 16 * style.scale;
+      const unit = (Math.max(size.x, size.z) / 16) * style.scale;
       const before = this.added.length;
-      build.call(this, { surface, box, size, unit, next, style, intensity, first: index === 0, faces: facesOf(surface, box) });
+      build.call(this, {
+        surface,
+        box,
+        size,
+        unit,
+        next,
+        style,
+        intensity,
+        first: index === 0,
+        faces: facesOf(surface, box),
+      });
       // What it is decides how it behaves when the chest is jolted (vines fall off, cobweb sticks).
       for (const mesh of this.added.slice(before)) mesh.userData.growth = style.type;
     }
@@ -172,7 +275,15 @@ export class ChestModificationLayers {
   }
 
   /** A sprite plane flat on a vertical face, hanging from its top edge at `along` (0..1) of its width. */
-  private onFace(surface: Mesh, face: Face, material: MeshStandardMaterial, width: number, height: number, along: number, gap: number) {
+  private onFace(
+    surface: Mesh,
+    face: Face,
+    material: MeshStandardMaterial,
+    width: number,
+    height: number,
+    along: number,
+    gap: number,
+  ) {
     const geometry = new PlaneGeometry(1, 1);
     this.disposables.push(geometry);
     const plane = new Mesh(geometry, material);
@@ -185,14 +296,23 @@ export class ChestModificationLayers {
 
   private attach(surface: Mesh, mesh: Mesh) {
     // Loose growth (snow, crystals, cobweb, vines) is not part of the chest: the energy beam can tear it off.
-    mesh.userData.chestOverlay = true; mesh.userData.loose = true; mesh.castShadow = true;
-    surface.add(mesh); this.added.push(mesh);
+    mesh.userData.chestOverlay = true;
+    mesh.userData.loose = true;
+    mesh.castShadow = true;
+    surface.add(mesh);
+    this.added.push(mesh);
   }
 
   private spriteMaterial(pixels: Uint8Array, color = '#ffffff') {
     const map = patternTexture(pixels, SPRITE_SIZE);
     map.colorSpace = SRGBColorSpace; // sprite colours are authored in sRGB, like the chest texture
-    const material = new MeshStandardMaterial({ map, color, alphaTest: .5, side: DoubleSide, roughness: .9 });
+    const material = new MeshStandardMaterial({
+      map,
+      color,
+      alphaTest: 0.5,
+      side: DoubleSide,
+      roughness: 0.9,
+    });
     this.disposables.push(map, material);
     return material;
   }
@@ -200,15 +320,25 @@ export class ChestModificationLayers {
   /** Voxel druse at the rear corners of the top face: a few axis-aligned blocks, matte. */
   private crystals({ surface, box, size, unit, next, style }: GrowthContext) {
     const geometry = new BoxGeometry(1, 1, 1);
-    const material = new MeshStandardMaterial({ color: style.color, emissive: style.color, emissiveIntensity: .08 + style.glow * .4, roughness: .55 });
+    const material = new MeshStandardMaterial({
+      color: style.color,
+      emissive: style.color,
+      emissiveIntensity: 0.08 + style.glow * 0.4,
+      roughness: 0.55,
+    });
     this.disposables.push(geometry, material);
-    const edge = () => next() < .5 ? .08 + next() * .18 : .74 + next() * .18;
-    const cx = box.min.x + size.x * edge(), cz = box.min.z + size.z * (.08 + next() * .3);
+    const edge = () => (next() < 0.5 ? 0.08 + next() * 0.18 : 0.74 + next() * 0.18);
+    const cx = box.min.x + size.x * edge(),
+      cz = box.min.z + size.z * (0.08 + next() * 0.3);
     for (let block = 0, blocks = 2 + Math.floor(next() * 3); block < blocks; block++) {
       const crystal = new Mesh(geometry, material);
       const height = unit * (1 + Math.floor(next() * 3));
       crystal.scale.set(unit, height, unit);
-      crystal.position.set(cx + Math.round(next() * 2 - 1) * unit, box.max.y + height / 2, cz + Math.round(next() * 2 - 1) * unit);
+      crystal.position.set(
+        cx + Math.round(next() * 2 - 1) * unit,
+        box.max.y + height / 2,
+        cz + Math.round(next() * 2 - 1) * unit,
+      );
       this.attach(surface, crystal);
     }
   }
@@ -217,21 +347,39 @@ export class ChestModificationLayers {
   private vines({ surface, unit, next, style, faces }: GrowthContext) {
     // Front and both sides; the back is never seen in the game camera.
     const face = [faces.front, faces.left, faces.right][Math.floor(next() * 3)]!;
-    const span = SPRITE_SIZE * unit * .5;
-    this.onFace(surface, face, this.spriteMaterial(vineSprite(style.color, Math.floor(next() * 0xffffffff))), span, span, .15 + next() * .7, unit * .15);
+    const span = SPRITE_SIZE * unit * 0.5;
+    this.onFace(
+      surface,
+      face,
+      this.spriteMaterial(vineSprite(style.color, Math.floor(next() * 0xffffffff))),
+      span,
+      span,
+      0.15 + next() * 0.7,
+      unit * 0.15,
+    );
   }
 
   /** Corner webs on the front or rear face, mirrored for the right-hand corners. */
   private cobwebs({ surface, unit, next, style, faces }: GrowthContext) {
     const face = [faces.front, faces.left, faces.right][Math.floor(next() * 3)]!;
-    const span = unit * 10, right = next() < .5;
+    const span = unit * 10,
+      right = next() < 0.5;
     // Corner of the sprite (row 0, column 0) goes into the face's top corner; mirrored for the right one.
-    const web = this.onFace(surface, face, this.spriteMaterial(cobwebSprite(style.color, Math.floor(next() * 0xffffffff))),
-      span, span, right ? 1 - span / 2 / face.width : span / 2 / face.width, unit * .2);
+    const web = this.onFace(
+      surface,
+      face,
+      this.spriteMaterial(cobwebSprite(style.color, Math.floor(next() * 0xffffffff))),
+      span,
+      span,
+      right ? 1 - span / 2 / face.width : span / 2 / face.width,
+      unit * 0.2,
+    );
     if (right) web.scale.x = -web.scale.x;
     web.castShadow = false;
     const material = web.material as MeshStandardMaterial;
-    material.transparent = true; material.opacity = .75; material.depthWrite = false;
+    material.transparent = true;
+    material.opacity = 0.75;
+    material.depthWrite = false;
   }
 
   /**
@@ -242,18 +390,24 @@ export class ChestModificationLayers {
     if (!first) return;
     const geometry = new BoxGeometry(1, 1, 1);
     const material = this.spriteMaterial(snowSprite(style.color, Math.floor(next() * 0xffffffff)));
-    material.map!.repeat.set(.25, .25); // one 4px sprite block per texel
+    material.map!.repeat.set(0.25, 0.25); // one 4px sprite block per texel
     this.disposables.push(geometry);
-    const cell = unit * 2, columns = Math.max(1, Math.round(size.x / cell)), rows = Math.max(1, Math.round(size.z / cell));
+    const cell = unit * 2,
+      columns = Math.max(1, Math.round(size.x / cell)),
+      rows = Math.max(1, Math.round(size.z / cell));
     for (let row = 0; row < rows; row++) {
       for (let column = 0; column < columns; column++) {
         const edge = Math.min(column, row, columns - 1 - column, rows - 1 - row);
         // Wind keeps edges barer than the middle.
-        if (next() > intensity * (edge === 0 ? .55 : .85)) continue;
-        const height = unit * (next() < intensity * .45 ? 2 : 1);
+        if (next() > intensity * (edge === 0 ? 0.55 : 0.85)) continue;
+        const height = unit * (next() < intensity * 0.45 ? 2 : 1);
         const block = new Mesh(geometry, material);
         block.scale.set(size.x / columns, height, size.z / rows);
-        block.position.set(box.min.x + (column + .5) * size.x / columns, box.max.y + height / 2, box.min.z + (row + .5) * size.z / rows);
+        block.position.set(
+          box.min.x + ((column + 0.5) * size.x) / columns,
+          box.max.y + height / 2,
+          box.min.z + ((row + 0.5) * size.z) / rows,
+        );
         this.attach(surface, block);
       }
     }
@@ -261,13 +415,23 @@ export class ChestModificationLayers {
 }
 
 interface GrowthContext {
-  readonly surface: Mesh; readonly box: Box3; readonly size: Vector3; readonly unit: number;
-  readonly next: () => number; readonly style: GrowthStyle; readonly intensity: number; readonly first: boolean;
+  readonly surface: Mesh;
+  readonly box: Box3;
+  readonly size: Vector3;
+  readonly unit: number;
+  readonly next: () => number;
+  readonly style: GrowthStyle;
+  readonly intensity: number;
+  readonly first: boolean;
   readonly faces: Record<'front' | 'left' | 'right', Face>;
 }
 
 /** A vertical box face in the surface's local space: outward normal, horizontal axis and width. */
-interface Face { readonly normal: Vector3; readonly width: number; point(along: number, below: number): Vector3 }
+interface Face {
+  readonly normal: Vector3;
+  readonly width: number;
+  point(along: number, below: number): Vector3;
+}
 
 /**
  * Model nodes are often rotated against each other (Blockbench exports), so "front" is found from
@@ -284,11 +448,20 @@ function facesOf(surface: Mesh, box: Box3): Record<'front' | 'left' | 'right', F
   };
   const face = ({ axis, sign }: { axis: number; sign: number }): Face => {
     const normal = new Vector3().setComponent(axis, sign);
-    const across = axis === 0 ? 2 : 0, min = box.min.getComponent(across), max = box.max.getComponent(across);
+    const across = axis === 0 ? 2 : 0,
+      min = box.min.getComponent(across),
+      max = box.max.getComponent(across);
     const plane = sign > 0 ? box.max.getComponent(axis) : box.min.getComponent(axis);
-    return { normal, width: max - min, point(along, below) {
-      return new Vector3().setComponent(axis, plane).setComponent(across, min + (max - min) * along).setY(box.max.y - below);
-    } };
+    return {
+      normal,
+      width: max - min,
+      point(along, below) {
+        return new Vector3()
+          .setComponent(axis, plane)
+          .setComponent(across, min + (max - min) * along)
+          .setY(box.max.y - below);
+      },
+    };
   };
   return { front: face(local(0, -1)), left: face(local(-1, 0)), right: face(local(1, 0)) };
 }

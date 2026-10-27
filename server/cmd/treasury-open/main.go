@@ -16,12 +16,12 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/voxel-vault/api/internal/economyruntime"
+	"github.com/voxel-vault/api/internal/ledger/adapters/authorization"
+	"github.com/voxel-vault/api/internal/ledger/adapters/contract"
+	"github.com/voxel-vault/api/internal/ledger/adapters/postgres"
+	"github.com/voxel-vault/api/internal/ledger/application"
+	"github.com/voxel-vault/api/internal/ledger/domain"
 	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
-	"github.com/voxel-vault/api/internal/wallet/adapters/authorization"
-	"github.com/voxel-vault/api/internal/wallet/adapters/contract"
-	"github.com/voxel-vault/api/internal/wallet/adapters/postgres"
-	"github.com/voxel-vault/api/internal/wallet/application"
-	"github.com/voxel-vault/api/internal/wallet/domain"
 )
 
 func list(env string) []string {

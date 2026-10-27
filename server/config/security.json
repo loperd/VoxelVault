@@ -67,14 +67,24 @@
         {
           "resource": "/api/v1/wallet/transactions",
           "action": "GET"
+        },
+        {
+          "resource": "/api/v1/wallet/recipient",
+          "action": "GET"
+        },
+        {
+          "resource": "/api/v1/wallet/quotes",
+          "action": "POST"
+        },
+        {
+          "resource": "/api/v1/wallet/transfers",
+          "action": "POST"
         }
       ]
     },
     {
       "id": "admin",
-      "parents": [
-        "player"
-      ],
+      "parents": ["player"],
       "permissions": [
         {
           "resource": "/api/v1/admin/users/*/chests",

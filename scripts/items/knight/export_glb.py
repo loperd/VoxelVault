@@ -2,11 +2,12 @@
 # Faces merge into rectangles whatever their colour; colours (with corner shade averaged per face) live in a
 # nearest-filtered texture atlas. KHR_mesh_quantization: int8 positions, uint16 UVs; no normals, so three
 # shades it flat. A unit cube centred on the origin, facing +z; Idle (sway) and Inspect (turn) on the root.
-# usage: export_glb.py <faces.npz> <out.glb> <atlas preview.png>
+# usage: export_glb.py <faces.npz> <out.glb> <atlas preview.png> [node name (knight)] [material kind (cloth)]
 import sys, io, json, struct, numpy as np
 from PIL import Image
 
 src, out, atlas_png = sys.argv[1:4]
+node, kind = (sys.argv[4:6] + ['knight', 'cloth'][len(sys.argv[4:6]):])
 f = np.load(src); keys, col, shade = f['keys'], f['col'].astype(float), f['shade']
 texel = {tuple(k): np.clip(c * s.mean(), 0, 255) for k, c, s in zip(keys, col, shade)}
 
@@ -88,10 +89,10 @@ gltf = {
     'asset': {'version': '2.0', 'generator': 'export_glb.py'},
     'extensionsUsed': ['KHR_mesh_quantization'], 'extensionsRequired': ['KHR_mesh_quantization'],
     'scene': 0, 'scenes': [{'nodes': [0]}],
-    'nodes': [{'name': 'knight', 'children': [1]},
-              {'name': 'knight_voxels', 'mesh': 0, 'scale': [1 / size] * 3, 'translation': (-centre / size).tolist()}],
+    'nodes': [{'name': node, 'children': [1]},
+              {'name': node + '_voxels', 'mesh': 0, 'scale': [1 / size] * 3, 'translation': (-centre / size).tolist()}],
     'meshes': [{'primitives': [{'attributes': {'POSITION': 0, 'TEXCOORD_0': 1}, 'indices': 2, 'material': 0}]}],
-    'materials': [{'name': 'cloth', 'pbrMetallicRoughness': {'baseColorTexture': {'index': 0}, 'metallicFactor': 0, 'roughnessFactor': 0.9}}],
+    'materials': [{'name': kind, 'pbrMetallicRoughness': {'baseColorTexture': {'index': 0}, 'metallicFactor': 0, 'roughnessFactor': 0.9}}],
     'textures': [{'source': 0, 'sampler': 0}], 'images': [{'bufferView': 3, 'mimeType': 'image/png'}],
     'samplers': [{'magFilter': 9728, 'minFilter': 9728, 'wrapS': 33071, 'wrapT': 33071}],
     'accessors': accessors, 'bufferViews': views, 'buffers': [{'byteLength': len(binary)}], 'animations': animations,

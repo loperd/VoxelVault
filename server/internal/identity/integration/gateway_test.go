@@ -63,6 +63,7 @@ func TestCompleteGatewayBackendWireContractsUseIndependentContextStores(t *testi
 	}
 	input := map[string]any{"provider": "telegram", "externalId": "verified-subject", "displayName": "Player", "username": "player"}
 	request("POST", "/internal/auth/resolve", input, "", 401)
+	request("POST", "/internal/auth/resolve", input, strings.Repeat("p", 48), 401)
 	bad := map[string]any{"provider": "telegram", "externalId": "verified-subject", "role": "admin"}
 	request("POST", "/internal/auth/resolve", bad, secret, 400)
 	if count(t, f.accounts, `SELECT count(*) FROM identity.accounts`) != 0 {

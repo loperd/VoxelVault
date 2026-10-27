@@ -21,7 +21,9 @@ export default {
     headers.delete('Host');
     const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
     const response = await fetch(target, {
-      method: request.method, headers, body: hasBody ? request.body : undefined,
+      method: request.method,
+      headers,
+      body: hasBody ? request.body : undefined,
       // Redirects (Telegram login) and Set-Cookie go to the browser untouched.
       redirect: 'manual',
     });

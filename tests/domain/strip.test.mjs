@@ -8,12 +8,15 @@ test('the legacy percentages create 39 slots; selecting King inserts the 40th', 
   const catalog = legacyCatalog();
   const strip = buildStrip(catalog, 40, constantRandom());
   assert.equal(strip.length, 39);
-  assert.equal(strip.some(slot => slot.item.id === '14'), false);
+  assert.equal(
+    strip.some((slot) => slot.item.id === '14'),
+    false,
+  );
   const selected = ensureTarget(strip, catalog[13], constantRandom());
   assert.equal(selected.slots.length, 40);
   assert.equal(selected.slots[selected.targetIndex].item.title, 'King');
   assert.equal(strip.length, 39);
-  assert.equal(new Set(selected.slots.map(slot => slot.id)).size, 40);
+  assert.equal(new Set(selected.slots.map((slot) => slot.id)).size, 40);
 });
 
 test('shuffle changes item order while preserving rounded counts and input order', () => {
@@ -21,18 +24,23 @@ test('shuffle changes item order while preserving rounded counts and input order
   const original = structuredClone(catalog);
   const first = buildStrip(catalog, 40, constantRandom(0));
   const last = buildStrip(catalog, 40, constantRandom(1 - Number.EPSILON));
-  assert.notDeepEqual(first.map(slot => slot.item.id), last.map(slot => slot.item.id));
+  assert.notDeepEqual(
+    first.map((slot) => slot.item.id),
+    last.map((slot) => slot.item.id),
+  );
   assert.deepEqual(catalog, original);
   for (const entry of catalog) {
-    assert.equal(first.filter(slot => slot.item.id === entry.id).length,
-      Math.round(0.4 * entry.displayWeight));
+    assert.equal(
+      first.filter((slot) => slot.item.id === entry.id).length,
+      Math.round(0.4 * entry.displayWeight),
+    );
   }
 });
 
 test('capacity caps overallocated percentages without normalizing them', () => {
   const strip = buildStrip([item('a', 100), item('b', 100)], 40, constantRandom(0));
   assert.equal(strip.length, 40);
-  assert.equal(new Set(strip.map(slot => slot.item.id)).size, 1);
+  assert.equal(new Set(strip.map((slot) => slot.item.id)).size, 1);
 });
 
 test('multiple matches include both legal endpoints and never select past the array', () => {
@@ -48,7 +56,10 @@ test('missing prizes can be inserted at either end of the actual strip', () => {
   const last = ensureTarget(strip, item('b'), constantRandom(1 - Number.EPSILON));
   assert.equal(first.targetIndex, 0);
   assert.equal(last.targetIndex, 4);
-  assert.deepEqual(last.slots.slice(0, 4).map(slot => slot.id), strip.map(slot => slot.id));
+  assert.deepEqual(
+    last.slots.slice(0, 4).map((slot) => slot.id),
+    strip.map((slot) => slot.id),
+  );
 });
 
 test('an all-zero catalog produces only the authoritative result on opening', () => {
@@ -77,7 +88,7 @@ test('persistent inserts retain unique slot ids and are not reinserted', () => {
     assert.equal(selectedAgain.slots.length, strip.length);
   }
   assert.equal(strip.length, 24);
-  assert.equal(new Set(strip.map(slot => slot.id)).size, strip.length);
+  assert.equal(new Set(strip.map((slot) => slot.id)).size, strip.length);
 });
 
 test('domain outputs cannot be mutated through caller references', () => {
@@ -86,15 +97,25 @@ test('domain outputs cannot be mutated through caller references', () => {
   catalog[0].title = 'Mutated';
   assert.equal(strip[0].item.title, 'Item a');
   assert.throws(() => strip.push(strip[0]), TypeError);
-  assert.throws(() => { strip[0].item.title = 'Mutated'; }, TypeError);
+  assert.throws(() => {
+    strip[0].item.title = 'Mutated';
+  }, TypeError);
 });
 
 test('invalid catalog data is rejected before constructing a strip', () => {
   assert.throws(() => copyCatalog([]), { code: 'EMPTY_CATALOG' });
   assert.throws(() => copyCatalog([item('a'), item('a')]), { code: 'DUPLICATE_ITEM' });
-  for (const patch of [{id: ''}, {title: ' '}, {image: ''}, {displayWeight: '25'},
-    {displayWeight: -1}, {displayWeight: NaN}, {displayWeight: Infinity},
-    {rarity: 'primary'}, {rarity: {toString: () => 'legendary'}}]) {
+  for (const patch of [
+    { id: '' },
+    { title: ' ' },
+    { image: '' },
+    { displayWeight: '25' },
+    { displayWeight: -1 },
+    { displayWeight: NaN },
+    { displayWeight: Infinity },
+    { rarity: 'primary' },
+    { rarity: { toString: () => 'legendary' } },
+  ]) {
     assert.throws(() => copyItem(item('a', 0, patch)), { code: 'INVALID_ITEM' });
   }
   assert.throws(() => copyCatalog(Array(1)), { code: 'INVALID_ITEM' });
@@ -102,14 +123,22 @@ test('invalid catalog data is rejected before constructing a strip', () => {
 
 test('invalid capacity, slot ids, and random values are rejected', () => {
   for (const capacity of [0, -1, 1.5, Infinity]) {
-    assert.throws(() => buildStrip([item('a')], capacity, constantRandom()), {code: 'INVALID_CAPACITY'});
+    assert.throws(() => buildStrip([item('a')], capacity, constantRandom()), {
+      code: 'INVALID_CAPACITY',
+    });
   }
   for (const value of [-1, 1, NaN, Infinity]) {
-    assert.throws(() => ensureTarget([], item('a'), constantRandom(value)), {code: 'INVALID_RANDOM'});
+    assert.throws(() => ensureTarget([], item('a'), constantRandom(value)), {
+      code: 'INVALID_RANDOM',
+    });
   }
   const slot = { id: 'duplicate', item: item('a') };
-  assert.throws(() => ensureTarget([slot, slot], item('a'), constantRandom()), {code: 'INVALID_STRIP'});
-  assert.throws(() => ensureTarget(Array(1), item('a'), constantRandom()), {code: 'INVALID_STRIP'});
+  assert.throws(() => ensureTarget([slot, slot], item('a'), constantRandom()), {
+    code: 'INVALID_STRIP',
+  });
+  assert.throws(() => ensureTarget(Array(1), item('a'), constantRandom()), {
+    code: 'INVALID_STRIP',
+  });
 });
 
 test('100 seeded catalogs and selections keep target indices and ids valid', () => {
@@ -120,7 +149,7 @@ test('100 seeded catalogs and selections keep target indices and ids valid', () 
       const selection = ensureTarget(strip, prize, random);
       assert.ok(selection.targetIndex >= 0 && selection.targetIndex < selection.slots.length);
       assert.equal(selection.slots[selection.targetIndex].item.id, prize.id);
-      assert.equal(new Set(selection.slots.map(slot => slot.id)).size, selection.slots.length);
+      assert.equal(new Set(selection.slots.map((slot) => slot.id)).size, selection.slots.length);
       strip = selection.slots;
     }
   }

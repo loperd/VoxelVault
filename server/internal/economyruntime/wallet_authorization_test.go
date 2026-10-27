@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/voxel-vault/api/internal/economyruntime"
-	"github.com/voxel-vault/api/internal/wallet/adapters/authorization"
-	"github.com/voxel-vault/api/internal/wallet/application"
-	"github.com/voxel-vault/api/internal/wallet/domain"
+	"github.com/voxel-vault/api/internal/ledger/adapters/authorization"
+	"github.com/voxel-vault/api/internal/ledger/application"
+	"github.com/voxel-vault/api/internal/ledger/domain"
 )
 
 func TestWalletRolesDoNotPermitFundingFromSettlementOrOpeningFromUsers(t *testing.T) {

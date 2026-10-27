@@ -5,9 +5,15 @@ import type { ErrorReporter } from '../../../application/ports/error-reporter.ts
  * up to it. Replace with a Sentry-backed ErrorReporter when it is connected.
  */
 export class ConsoleErrorReporter implements ErrorReporter {
-  private readonly trail: { at: number; message: string; data?: Readonly<Record<string, unknown>> }[] = [];
+  private readonly trail: {
+    at: number;
+    message: string;
+    data?: Readonly<Record<string, unknown>>;
+  }[] = [];
   private readonly sink: Pick<Console, 'error' | 'debug'>;
-  constructor(sink: Pick<Console, 'error' | 'debug'> = console) { this.sink = sink; }
+  constructor(sink: Pick<Console, 'error' | 'debug'> = console) {
+    this.sink = sink;
+  }
 
   capture(error: unknown, context: Readonly<Record<string, unknown>>): void {
     this.sink.error('[report]', error, { ...context, breadcrumbs: [...this.trail] });

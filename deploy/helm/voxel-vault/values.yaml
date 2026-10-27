@@ -1,14 +1,19 @@
 # Base values. Environments layer on top:
 #   values.local.yaml — OrbStack on this Mac: https://vault.loper.me (tunnel), local Vault + VSO
 #   values.prod.yaml  — VPS cluster: https://voxelvault.mono.place, API api-voxelvault.mono.place
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: ''
+fullnameOverride: ''
 image:
   repository: voxel-vault-api
   tag: local
   pullPolicy: IfNotPresent
-imagePullSecrets: []             # e.g. [{name: ghcr-pull}] for the private registry
+imagePullSecrets: [] # e.g. [{name: ghcr-pull}] for the private registry
 replicaCount: 1
+# Publishes restriction.expired events for account restrictions whose time has passed.
+restrictionExpiry:
+  enabled: true
+  schedule: '*/5 * * * *'
+
 service:
   type: ClusterIP
   port: 8080
@@ -20,7 +25,7 @@ gateway:
   enabled: true
   image:
     repository: voxel-vault-gateway
-    tag: 973004046c53
+    tag: 973004046c53-44d72eefe6f7
     pullPolicy: IfNotPresent
   replicas: 1
   port: 8080
@@ -29,32 +34,32 @@ gateway:
   # Later auth/providers/transforms are configured here, independently of backends.
   config:
     server:
-      port: "${PORT}"
+      port: '${PORT}'
     upstreams:
       api:
-        url: "${LONCHA_UPSTREAM_URL}"
+        url: '${LONCHA_UPSTREAM_URL}'
     routes:
       # Everything under /api/v1/ needs the gateway session: the gateway verifies the JWT and sets the
       # trusted X-User-Id / X-Session-Id / X-Scopes / X-Internal-Token headers the API relies on.
       # /api/v1/auth/* is served by the telegramAuth plugin, not proxied.
-      - pattern: "/api/v1/"
+      - pattern: '/api/v1/'
         upstream: api
       # Anonymous catalogue the API serves without an account.
-      - pattern: "GET /api/v1/cases"
+      - pattern: 'GET /api/v1/cases'
         upstream: api
         public: true
-      - pattern: "GET /api/v1/cases/{caseID}/catalog"
+      - pattern: 'GET /api/v1/cases/{caseID}/catalog'
         upstream: api
         public: true
-      - pattern: "GET /api/v1/items/{itemID}/image.svg"
+      - pattern: 'GET /api/v1/items/{itemID}/image.svg'
         upstream: api
         public: true
-      - pattern: "GET /readyz"
+      - pattern: 'GET /readyz'
         upstream: api
         public: true
     telegramAuth:
       mode: oidc
-      redirectUrl: ""        # set per environment: https://<frontend host>/api/v1/auth/telegram/callback
+      redirectUrl: '' # set per environment: https://<frontend host>/api/v1/auth/telegram/callback
     plugins:
       telegramAuth: true
       cors: true
@@ -64,7 +69,8 @@ gateway:
       allowedOrigins:
         - http://localhost:5173
         - http://localhost:4173
-  env: {}
+  env:
+    GATEWAY_STRIP_CLIENT_CREDENTIALS: 'true'
   networkPolicy:
     enabled: true
   resources:
@@ -81,20 +87,20 @@ gateway:
 # Everything the browser checks belongs to the frontend origin: passkeys (WEBAUTHN_RP_ID),
 # the Telegram redirect, the session cookie.
 env:
-  HTTP_ADDRESS: ":8080"
-  FRONTEND_URL: "http://localhost:5173/"
-  WEBAUTHN_RP_ID: "localhost"
-  WEBAUTHN_RP_NAME: "Voxel Vault"
-  WEBAUTHN_ORIGINS: "http://localhost:5173"
-  COOKIE_SECURE: "false"
-  DEFAULT_ROLE: "player"
-  WALLET_ASSETS: "currency,travel-scraps,deep-ore,end-shards,dragon-scales,quantum-shards"
+  HTTP_ADDRESS: ':8080'
+  FRONTEND_URL: 'http://localhost:5173/'
+  WEBAUTHN_RP_ID: 'localhost'
+  WEBAUTHN_RP_NAME: 'Voxel Vault'
+  WEBAUTHN_ORIGINS: 'http://localhost:5173'
+  COOKIE_SECURE: 'false'
+  DEFAULT_ROLE: 'player'
+  WALLET_ASSETS: 'currency,travel-scraps,deep-ore,end-shards,dragon-scales,quantum-shards'
   # Telegram Login (OIDC): the client id is the bot id, public (it is in the authorization URL).
-  TELEGRAM_CLIENT_ID: "8751479936"
-  TELEGRAM_REDIRECT_URL: ""
+  TELEGRAM_CLIENT_ID: '8751479936'
+  TELEGRAM_REDIRECT_URL: ''
   # Bundled Postgres (postgres.enabled); its password and DATABASE_URL are secrets.
-  POSTGRES_USER: "voxel"
-  POSTGRES_DB: "voxel_vault"
+  POSTGRES_USER: 'voxel'
+  POSTGRES_DB: 'voxel_vault'
 
 # ── Secrets: Vault Secrets Operator, as in loncha ─────────────────────────────────────────────
 # Keys in the KV (all env):
@@ -106,26 +112,26 @@ env:
 # PREREQ for vso: the KV, a read policy and a Kubernetes-auth role bound to this chart's
 # ServiceAccount exist BEFORE switching to vso, or VSO overwrites the Secret with nothing.
 secrets:
-  source: existingSecret          # vso | existingSecret
+  source: existingSecret # vso | existingSecret
   existingSecret: voxel-vault-secrets
   vso:
-    address: "http://vault.vault.svc:8200"
-    authMount: "kubernetes"
-    role: "voxel-vault"
-    mount: "secret"               # the shared KV-v2 mount, as loncha
-    path: "local/voxel-vault"     # <env>/<app>: local/voxel-vault, prod/voxel-vault
-    refreshAfter: "60s"
-    rolloutRestart: true          # restart the API when the secret changes
+    address: 'http://vault.vault.svc:8200'
+    authMount: 'kubernetes'
+    role: 'voxel-vault'
+    mount: 'secret' # the shared KV-v2 mount, as loncha
+    path: 'local/voxel-vault' # <env>/<app>: local/voxel-vault, prod/voxel-vault
+    refreshAfter: '60s'
+    rolloutRestart: true # restart the API when the secret changes
     excludeRaw: true
 
 # Public entrance of the API (haproxy-ingress behind Cloudflare). Off locally (Vite proxies to the Service).
 ingress:
   enabled: false
   className: haproxy
-  host: ""
+  host: ''
   sslRedirect: true
   hsts: true
-  tlsSecretName: ""               # empty = TLS terminates at Cloudflare
+  tlsSecretName: '' # empty = TLS terminates at Cloudflare
   annotations: {}
 
 # The API image is distroless :nonroot (uid 65532).
@@ -138,11 +144,11 @@ containerSecurityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   capabilities:
-    drop: ["ALL"]
+    drop: ['ALL']
 
 serviceAccount:
   create: true
-  name: ""
+  name: ''
   # The API never calls the kube-API: no token mounted in its pod.
   automountServiceAccountToken: false
 
@@ -151,7 +157,7 @@ postgres:
   enabled: true
   image: postgres:17-alpine
   storage: 2Gi
-  storageClassName: ""
+  storageClassName: ''
 resources: {}
 nodeSelector: {}
 tolerations: []

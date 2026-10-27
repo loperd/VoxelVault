@@ -9,14 +9,24 @@ export class FixtureOutcomeGateway implements OutcomeGateway {
   private readonly fetcher: FetchJson;
   private readonly path: string;
 
-  constructor(baseUrl: string | URL, fetcher: FetchJson = browserFetch, path = 'selected_prize.json') {
+  constructor(
+    baseUrl: string | URL,
+    fetcher: FetchJson = browserFetch,
+    path = 'selected_prize.json',
+  ) {
     this.baseUrl = normalizeBaseUrl(baseUrl);
-    this.fetcher = fetcher; this.path = path;
+    this.fetcher = fetcher;
+    this.path = path;
   }
 
   async decide(sessionId: string, signal: AbortSignal): Promise<ChestOutcome> {
     if (!sessionId.trim()) throw new Error('The session id must be nonempty.');
-    const value = await requestJson(resolvePublicAsset(this.path, this.baseUrl), signal, this.fetcher, 'no-store');
+    const value = await requestJson(
+      resolvePublicAsset(this.path, this.baseUrl),
+      signal,
+      this.fetcher,
+      'no-store',
+    );
     signal.throwIfAborted();
     return { prize: decodeItem(value, this.baseUrl) };
   }

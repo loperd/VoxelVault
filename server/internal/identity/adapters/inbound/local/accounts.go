@@ -43,3 +43,8 @@ func (c Accounts) Exists(ctx context.Context, id string) (bool, error) {
 	v, e := c.Service.Exists(c.ctx(ctx), id)
 	return v, publicError(e)
 }
+
+func (c Accounts) ResolveRecipient(ctx context.Context, query string) (v1.Profile, error) {
+	p, err := c.Service.ResolveRecipient(c.ctx(ctx), query)
+	return v1.Profile{ID: p.ID, Handle: p.Handle, DisplayName: p.DisplayName}, publicError(err)
+}

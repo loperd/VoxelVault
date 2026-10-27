@@ -1,7 +1,7 @@
 {{- if eq .Values.secrets.source "vso" }}
 {{- /*
 Vault Secrets Operator (VSO), as in loncha. Syncs KV-v2 {{ .Values.secrets.vso.mount }}/{{ .Values.secrets.vso.path }}
-into the Secret secrets.existingSecret, which the API reads through envFrom.
+into the API Secret. API containers select explicit context credential keys only.
 PREREQ (once, with a Vault admin token — deploy/bootstrap/vault-local.sh does it locally): the KV
 holds every key, a read policy exists and a Kubernetes-auth role is bound to this chart's
 ServiceAccount. VSO OVERWRITES the Secret with the KV contents: fill the KV before switching to vso.
@@ -49,10 +49,5 @@ spec:
   rolloutRestartTargets:
     - kind: Deployment
       name: {{ include "voxel-vault.fullname" . }}
-    {{- if .Values.gateway.enabled }}
-    # The gateway reads SESSION_SECRET, INTERNAL_TOKEN and TG_OIDC_CLIENT_SECRET from this Secret.
-    - kind: Deployment
-      name: {{ include "voxel-vault.fullname" . }}-gateway
-    {{- end }}
   {{- end }}
 {{- end }}

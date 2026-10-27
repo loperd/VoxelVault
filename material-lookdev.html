@@ -1,1 +1,65 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relic · Material Look Development</title><style>body{margin:0;background:#161b22;color:#dde7e9;font:14px system-ui}header{padding:12px;position:sticky;top:0;background:#161b22;z-index:1}select,label{margin-right:18px}canvas{display:block;width:min(100vw,1440px);height:auto}.columns{display:grid;grid-template-columns:repeat(3,1fr);max-width:1440px;text-align:center;margin:12px 0}#status{font-size:12px;white-space:pre-wrap}p{margin:8px 0}</style></head><body><header><strong>Relic — три материала × три варианта</strong><p><select id="rig"><option value="neutral">Neutral reflection studio</option><option value="grazing">Grazing light</option><option value="app">Application baseline lights</option></select><label><input id="normal" type="checkbox" checked>Normal</label><label><input id="roughness" type="checkbox" checked>Roughness</label><label><input id="metallic" type="checkbox" checked>Metallic</label><label><input id="emissive" type="checkbox" checked>Emissive</label></p><div id="status">Загрузка GLB…</div></header><div class="columns"><span>RESTRAINED</span><span>BALANCED</span><span>WEATHERED</span></div><main></main><script type="module" src="/src/dev/material-lookdev.ts"></script></body></html>
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Relic · Material Look Development</title>
+    <style>
+      body {
+        margin: 0;
+        background: #161b22;
+        color: #dde7e9;
+        font: 14px system-ui;
+      }
+      header {
+        padding: 12px;
+        position: sticky;
+        top: 0;
+        background: #161b22;
+        z-index: 1;
+      }
+      select,
+      label {
+        margin-right: 18px;
+      }
+      canvas {
+        display: block;
+        width: min(100vw, 1440px);
+        height: auto;
+      }
+      .columns {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 1440px;
+        text-align: center;
+        margin: 12px 0;
+      }
+      #status {
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+      p {
+        margin: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Relic — три материала × три варианта</strong>
+      <p>
+        <select id="rig">
+          <option value="neutral">Neutral reflection studio</option>
+          <option value="grazing">Grazing light</option>
+          <option value="app">Application baseline lights</option></select
+        ><label><input id="normal" type="checkbox" checked />Normal</label
+        ><label><input id="roughness" type="checkbox" checked />Roughness</label
+        ><label><input id="metallic" type="checkbox" checked />Metallic</label
+        ><label><input id="emissive" type="checkbox" checked />Emissive</label>
+      </p>
+      <div id="status">Загрузка GLB…</div>
+    </header>
+    <div class="columns"><span>RESTRAINED</span><span>BALANCED</span><span>WEATHERED</span></div>
+    <main></main>
+    <script type="module" src="/src/dev/material-lookdev.ts"></script>
+  </body>
+</html>

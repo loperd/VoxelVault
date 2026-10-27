@@ -6,11 +6,13 @@ The project gateway, private Go API and optional single-node PostgreSQL.
 
 Ingress targets a separate Overseer Gateway deployment in this release. The API remains
 ClusterIP; a NetworkPolicy permits backend traffic only from this release's gateway pods.
-The gateway has separate `SESSION_SECRET` and `INTERNAL_TOKEN` keys in
+The gateway has `SESSION_SECRET`, `INTERNAL_TOKEN`, `IDENTITY_INTERNAL_TOKEN` and
+`TG_OIDC_CLIENT_SECRET` keys in
 `gateway.existingSecret`; it receives no backend database credentials. Provision that
 Secret independently, including through the deployment's Vault/VSO workflow if applicable.
 
-Build the pinned shared source without copying authentication code into this repository:
+Build the pinned shared source with the reviewed credential-separation patch. The source
+commit and patch SHA-256 determine the image tag; local source edits never enter the build:
 
 ```sh
 python3 deploy/build-gateway.py --source /path/to/overseer-gateway
@@ -18,8 +20,12 @@ python3 deploy/build-gateway.py --source /path/to/overseer-gateway
 
 For a remote cluster, use `--tag <registry/image:tag>`, publish the resulting image and set
 `gateway.image.repository` / `gateway.image.tag` before upgrading. The checked-in default
-image is for local OrbStack deployment. The shared source revision is recorded in
-`deploy/gateway-source.json`.
+image is for local OrbStack deployment. The shared source revision and patch digest are recorded in
+`deploy/gateway-source.json`. `--check-only` applies the exact patch and runs its gateway
+tests without Docker. The patch also pins the Go 1.26.10 security toolchain and updates the MTProto dependency
+`github.com/gotd/td` to the fixed v0.145.1 release. Publish the
+new gateway image before using these manifests; the unpatched upstream image cannot
+authenticate the separate Identity callback credential.
 
 `gateway.config` configures the shared gateway's routes and providers. Telegram OIDC,
 access/refresh tokens and cookies belong to the gateway. Internal backend hooks are never
@@ -40,9 +46,18 @@ Its Secret keys are `IDENTITY_MIGRATION_DATABASE_URL` and
 and save a database backup before the first retirement migration. Later migrations are
 idempotent. No migration runs during API startup.
 
-The API requires `IDENTITY_DATABASE_URL`, `SECURITY_DATABASE_URL` and
-`GATEWAY_INTERNAL_TOKEN`. The gateway uses the same credential as `INTERNAL_TOKEN` and
-its independent `SESSION_SECRET`. Production VSO reads the canonical KV-v2 path
+The API requires explicit `DATABASE_URL`, `IDENTITY_DATABASE_URL`, `SECURITY_DATABASE_URL`,
+`GATEWAY_INTERNAL_TOKEN` and `IDENTITY_INTERNAL_TOKEN`, alongside the Inventory/Ledger
+runtime connections. `GATEWAY_INTERNAL_TOKEN` matches the gateway's `INTERNAL_TOKEN` for
+forwarded user requests. `IDENTITY_INTERNAL_TOKEN` matches its separately configured
+`GATEWAY_IDENTITY_INTERNAL_TOKEN` for `/internal/auth/*` and `/internal/sessions/*` calls.
+Both credentials must be distinct and at least 32 bytes; neither is the JWT signing key.
+The API selects only its seven context credential keys from its Secret and receives no
+`SESSION_SECRET` or provider client secret. Gateway and API Secret names must differ.
+Ingress without the gateway, public backend Services and a disabled backend NetworkPolicy
+are rejected during Helm rendering. Gateway cookie/bearer credentials are stripped before
+proxying to the backend. Gateway credentials/provider secrets must be provisioned in
+`gateway.existingSecret` independently of API VSO data. Production VSO reads the canonical KV-v2 path
 `secret/data/prod/voxel-vault/gateway`; the obsolete
 `secret/data/voxelvault/gateway/prod` is not consumed. Preserve database credentials when
 moving the collection. The Vault policy must allow the project service account to read
@@ -74,7 +89,9 @@ VSO overwrites the Secret with the KV: fill the KV, the read policy and the Kube
 
 The image contains `/api`, `/wallet-migrate`, `/inventory-migrate`, `/economy-cutover` and
 `/workshop-worker`, `/runtime-grants` for explicit runtime permission setup and `/treasury-open`
-for a separately authorized opening allocation.
+for a separately authorized opening allocation, and `/account-restrict` (operator `WALLET_DATABASE_URL`:
+`add|lift|list` send/receive restrictions).
+`/restriction-expire` (run by the `restrictionExpiry` CronJob every 5 minutes with the runtime `WALLET_DATABASE_URL`) publishes `restriction.expired`.
 Its default entrypoint remains `/api`; Kubernetes `command` or Docker
 `--entrypoint` selects an operator tool. No tool requires a shell in the distroless image.
 Helm and the release workflow never run migrations, freeze the source or import balances.
@@ -125,7 +142,10 @@ runtime roles separately: no ownership, role memberships, elevated cluster permi
 persistent schema/database creation rights or accessible non-system security-definer functions.
 The tool applies adapter-owned table/column grants in one local transaction and rejects
 excessive effective table/sequence rights, including PUBLIC grants and grant options, in
-that database. It does not create roles, revoke existing grants or grant future tables.
+that database. It does not create roles or grant future tables. The Ledger policy
+explicitly revokes the obsolete `DELETE` privilege on `ledger.holds` from the selected
+runtime role; holds now transition through status updates. Other unexpected rights,
+including rights inherited through PUBLIC, still reject the entire transaction.
 Re-run after schema/policy changes. It does not audit other databases or replace
 application RBAC and resource authorization. Switch to runtime connections before checking
 API startup. The API does not run legacy or Casbin AutoMigrate. RBAC policy data may still be
@@ -137,7 +157,58 @@ append history and update custody in their own transactions. Drain Inventory wri
 for the registry/history tables before starting the new API or worker. Imported baselines
 are labeled as opening observations, without reconstructing unrecorded historical events.
 
-Wallet runtime requires Goose version 6. Player sales use the named `inventory-buyback`
+Ledger runtime requires Goose version 7. The historical `WALLET_DATABASE_URL`,
+`wallet-migrate`, `runtime-grants -context wallet` and Goose `wallet_schema_version`
+identities are retained; the accounting tables now belong to schema `ledger`.
+Migration 7 renames the existing schema without copying or reinterpreting records;
+the same migration adds active accounts, immutable transfer quotes, confirmation receipts, account restrictions and the outbox `kind`.
+
+For an existing activated installation, stop API and workshop-worker writers before
+running `/wallet-migrate` with operator credentials. Reapply wallet runtime grants
+against schema `ledger`, then start only the new Ledger-wired binaries. Do not repeat
+opening exports/imports or reset balances for this ownership upgrade. Rehearse the
+upgrade and verify pending intents, holds, history and replay receipts on a copy first.
+There is no mixed-version writer compatibility window.
+
+`TRANSFER_CONFIG` must reference the currency/commission configuration (the image
+bundles `/config/transfers.json`). Include every configured currency in `WALLET_ASSETS`.
+Configured fee accounts start empty; startup cannot allocate funds. Group-restricted
+configuration requires a membership adapter and fails startup without one; group
+administration is outside the current slice.
+
+The maintenance script `deploy/upgrade-ledger.py` plans the existing activated-installation
+upgrade without changing the cluster by default. Supply an explicit Kubernetes context,
+namespace, every writer deployment/container, the new API/worker image, runtime role,
+operator Secret, runtime Secret, gateway Secret/image, Helm release/values, environment
+ConfigMap and private state-file path (list the Helm-managed API writer first):
+
+```sh
+python3 deploy/upgrade-ledger.py --context <context> --namespace <namespace> \
+  --image <registry/api:new-version> --writer <api-deployment>/api \
+  --writer <separate-worker-deployment>/worker --runtime-role <ledger-runtime-role> \
+  --operator-secret <operator-secret> --runtime-secret <runtime-secret> \
+  --gateway-image <registry/gateway:patched-version> --gateway-secret <gateway-secret> \
+  --helm-release <release> --helm-values deploy/helm/voxel-vault/values.prod.yaml \
+  --configmap <application-env> --image-pull-secret ghcr-pull \
+  --state-file <private-upgrade-state.json>
+```
+
+Omit the second writer only when no separate worker exists; list every other writer.
+Pause any reconciler that can restore old writers before executing maintenance. The
+operator Secret needs `WALLET_MIGRATION_DATABASE_URL`; the runtime Secret needs the live
+runtime URLs and distinct gateway/Identity credentials. After reviewing the plan and
+completing backup/rehearsal, `--execute` drains the listed pods, migrates with operator
+credentials, explicitly revokes obsolete hold DELETE grants, reapplies runtime grants,
+checks readiness with runtime credentials, applies the Helm credential wiring and new
+gateway while API replicas remain zero, sets only the new images, and restores the
+original replica counts in both Helm and the Deployment. Helm atomic rollback is never
+used: a failed migration or rollout must not resurrect an old schema writer. A failed migration/grant check leaves writers stopped. Resume
+with the same state file and arguments after correcting the cause; each attempt keeps a
+separate Job. No automatic rollback starts an old binary, and no opening import/export or
+balance reset is part of this upgrade. No live maintenance was executed while preparing
+this script.
+
+Player sales use the named `inventory-buyback`
 treasury and cannot use currency reward issuance. An empty treasury rejects buyback;
 Inventory restores the reserved item after the payout-close fence. Salvage remains a
 burn with material output and does not enter the buyback funding path.

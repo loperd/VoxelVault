@@ -6,9 +6,7 @@
     "blockworld": 1
   },
   "credits": {
-    "authors": [
-      "Voxel Vault contributors"
-    ],
+    "authors": ["Voxel Vault contributors"],
     "license": "CC0-1.0",
     "source": "Painted and modelled by scripts/packs/make-sample-ruin.mjs; no third-party assets."
   },
@@ -48,16 +46,8 @@
     }
   ],
   "structure": {
-    "size": [
-      9,
-      3,
-      5
-    ],
-    "origin": [
-      -4.5,
-      0,
-      -2.5
-    ],
+    "size": [9, 3, 5],
+    "origin": [-4.5, 0, -2.5],
     "sides": "open",
     "cells": "structure.u16"
   },
@@ -67,34 +57,18 @@
   "objects": [
     {
       "model": "color-reference",
-      "at": [
-        6,
-        1,
-        2.5
-      ]
+      "at": [6, 1, 2.5]
     }
   ],
   "markers": {
     "key": {
-      "at": [
-        4.5,
-        3,
-        5
-      ]
+      "at": [4.5, 3, 5]
     }
   },
   "cameras": {
     "front": {
-      "eye": [
-        4.5,
-        2.4,
-        8.6
-      ],
-      "look": [
-        4.5,
-        1.35,
-        2.5
-      ],
+      "eye": [4.5, 2.4, 8.6],
+      "look": [4.5, 1.35, 2.5],
       "fov": 40,
       "drift": 0
     }
@@ -111,11 +85,7 @@
       "far": 800
     },
     "blocks": {
-      "sky": [
-        1,
-        1,
-        1
-      ],
+      "sky": [1, 1, 1],
       "minimum": 0,
       "occlusion": 0
     },

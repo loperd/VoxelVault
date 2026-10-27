@@ -17,7 +17,7 @@ import (
 	"unicode/utf8"
 
 	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
-	wv1 "github.com/voxel-vault/api/internal/wallet/contracts/v1"
+	wv1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
 )
 
 var ErrInvalid = errors.New("invalid economy migration snapshot")

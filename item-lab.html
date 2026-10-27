@@ -5,16 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Voxel Vault — Item lab</title>
     <style>
-      body { margin: 0; background: #0c1217; color: #f1f5f7; font: 16px system-ui; }
-      .lab { width: min(1120px, 100%); margin: 0 auto; padding: 24px 16px 64px; box-sizing: border-box; }
-      .lab section { margin-top: 40px; }
-      .lab__title { font-size: 18px; margin: 0 0 12px; opacity: .8; }
-      .lab__controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
-      .lab__controls select { min-height: 36px; }
-      .lab__roulette { position: relative; height: 180px; background: #17222c; }
-      .lab__roulette canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-      .lab__stills { display: flex; gap: 16px; margin-top: 12px; }
-      .lab__stills figure { margin: 0; text-align: center; font-size: 12px; opacity: .8; }
+      body {
+        margin: 0;
+        background: #0c1217;
+        color: #f1f5f7;
+        font: 16px system-ui;
+      }
+      .lab {
+        width: min(1120px, 100%);
+        margin: 0 auto;
+        padding: 24px 16px 64px;
+        box-sizing: border-box;
+      }
+      .lab section {
+        margin-top: 40px;
+      }
+      .lab__title {
+        font-size: 18px;
+        margin: 0 0 12px;
+        opacity: 0.8;
+      }
+      .lab__controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .lab__controls select {
+        min-height: 36px;
+      }
+      .lab__roulette {
+        position: relative;
+        height: 180px;
+        background: #17222c;
+      }
+      .lab__roulette canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .lab__stills {
+        display: flex;
+        gap: 16px;
+        margin-top: 12px;
+      }
+      .lab__stills figure {
+        margin: 0;
+        text-align: center;
+        font-size: 12px;
+        opacity: 0.8;
+      }
     </style>
   </head>
   <body>

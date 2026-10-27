@@ -20,7 +20,8 @@ import (
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
 	lmigrate "github.com/voxel-vault/api/internal/economycutover/adapters/legacy/migrations"
 	"github.com/voxel-vault/api/internal/economyruntime"
-	bridge "github.com/voxel-vault/api/internal/integrations/inventorywallet"
+	identityv1 "github.com/voxel-vault/api/internal/identity/contracts/v1"
+	bridge "github.com/voxel-vault/api/internal/integrations/inventoryledger"
 	ilocal "github.com/voxel-vault/api/internal/inventory/adapters/inbound/local"
 	ipg "github.com/voxel-vault/api/internal/inventory/adapters/postgres"
 	imigrate "github.com/voxel-vault/api/internal/inventory/adapters/postgres/migrations"
@@ -28,14 +29,14 @@ import (
 	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
 	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
 	"github.com/voxel-vault/api/internal/inventory/domain/rulebook/rulebooktest"
+	"github.com/voxel-vault/api/internal/ledger/adapters/authorization"
+	wlocal "github.com/voxel-vault/api/internal/ledger/adapters/inbound/local"
+	wpg "github.com/voxel-vault/api/internal/ledger/adapters/postgres"
+	wmigrate "github.com/voxel-vault/api/internal/ledger/adapters/postgres/migrations"
+	wallet "github.com/voxel-vault/api/internal/ledger/application"
+	wv1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
+	wdomain "github.com/voxel-vault/api/internal/ledger/domain"
 	"github.com/voxel-vault/api/internal/store"
-	"github.com/voxel-vault/api/internal/wallet/adapters/authorization"
-	wlocal "github.com/voxel-vault/api/internal/wallet/adapters/inbound/local"
-	wpg "github.com/voxel-vault/api/internal/wallet/adapters/postgres"
-	wmigrate "github.com/voxel-vault/api/internal/wallet/adapters/postgres/migrations"
-	wallet "github.com/voxel-vault/api/internal/wallet/application"
-	wv1 "github.com/voxel-vault/api/internal/wallet/contracts/v1"
-	wdomain "github.com/voxel-vault/api/internal/wallet/domain"
 	"gorm.io/gorm"
 )
 
@@ -107,6 +108,7 @@ func httpExec(t *testing.T, db *sql.DB, q string, args ...any) {
 		t.Fatal(err)
 	}
 }
+
 func httpStack(t *testing.T, activate bool) *httpContexts {
 	t.Helper()
 	f := &httpContexts{}
@@ -165,6 +167,7 @@ func httpStack(t *testing.T, activate bool) *httpContexts {
 	}
 	return f
 }
+
 func (f *httpContexts) freeze(t *testing.T) {
 	t.Helper()
 	var err error
@@ -173,6 +176,7 @@ func (f *httpContexts) freeze(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
 func (f *httpContexts) importItems(t *testing.T) {
 	t.Helper()
 	p, err := authorization.New([]authorization.Grant{{Producer: "legacy-opening", Actions: []wdomain.Action{wdomain.Credit}, Assets: []string{"currency", "end-shards"}, AllSubjects: true, Purposes: []wdomain.Purpose{wdomain.OpeningBalance}}})
@@ -185,6 +189,7 @@ func (f *httpContexts) importItems(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
 func (f *httpContexts) importChests(t *testing.T) {
 	t.Helper()
 	r, err := legacy.ChestOpening(f.snapshot)
@@ -196,6 +201,7 @@ func (f *httpContexts) importChests(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
 func (f *httpContexts) activate(t *testing.T) {
 	t.Helper()
 	r, err := economyruntime.New(context.Background(), f.source, f.idsn, f.wdsn, []string{"currency", "end-shards"}, f.rb, economyruntime.Options{StarterChests: "ender:1", SecurityDB: f.securityDB})
@@ -204,12 +210,16 @@ func (f *httpContexts) activate(t *testing.T) {
 	}
 	f.runtime = r
 	t.Cleanup(r.Close)
+	if err = r.EnableTransfer(context.Background(), "../../config/transfers.json", f.identity.Profiles.(identityv1.RecipientResolver)); err != nil {
+		t.Fatal(err)
+	}
 	cfg := config.Config{AllowedOrigins: []string{"http://localhost"}, StarterChests: "ender:1"}
-	f.server, err = New(f.gorm, cfg, f.identity, f.rb, &ContextPorts{Collection: r.Collection, Workshop: r.Workshop, Wallet: r.Wallet, Subjects: f.identity.Profiles, UserContext: r.UserContext}, r.Guard.Check)
+	f.server, err = New(f.gorm, cfg, f.identity, f.rb, &ContextPorts{Collection: r.Collection, Workshop: r.Workshop, Wallet: r.Wallet, Transfer: r.Transfer, Currency: r.Currency, Subjects: f.identity.Profiles, UserContext: r.UserContext, RecipientPerMinute: 10, QuotePerMinute: 30, TransferPerMinute: 30}, r.Guard.Check)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
+
 func (f *httpContexts) startWorker(t *testing.T) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -217,6 +227,7 @@ func (f *httpContexts) startWorker(t *testing.T) {
 	go func() { defer close(done); f.runtime.Run(ctx) }()
 	t.Cleanup(func() { cancel(); <-done })
 }
+
 func (f *httpContexts) request(method, path, player, key, body string) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, "http://localhost"+path, strings.NewReader(body))
 	if player != "" {
@@ -235,6 +246,7 @@ func (f *httpContexts) request(method, path, player, key, body string) *httptest
 	f.server.Handler().ServeHTTP(w, r)
 	return w
 }
+
 func decodeResponse(t *testing.T, w *httptest.ResponseRecorder, status int, v any) {
 	t.Helper()
 	if w.Code != status {
@@ -246,6 +258,7 @@ func decodeResponse(t *testing.T, w *httptest.ResponseRecorder, status int, v an
 		}
 	}
 }
+
 func (f *httpContexts) wait(t *testing.T, player, id, stage string) iv1.Operation {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
@@ -293,11 +306,13 @@ func TestContextAPIRepairsThroughSagaAndReadsSeparateWallet(t *testing.T) {
 		Balances []wv1.AssetBalance `json:"balances"`
 	}
 	decodeResponse(t, f.request("GET", "/api/v1/wallet?owner=bob", "alice", "", ""), 200, &b)
-	if len(b.Balances) != 2 || b.Balances[0].Available != "9007199254740993" || b.Balances[1].Available != "16" || b.Balances[1].Held != "0" {
+	if len(b.Balances) != 1 || b.Balances[0].Available != "9007199254740993" {
 		t.Fatal(b)
 	}
-	var h wv1.History
-	decodeResponse(t, f.request("GET", "/api/v1/wallet/transactions?asset=end-shards", "alice", "", ""), 200, &h)
+	h, err := f.runtime.Ledger.History(f.runtime.UserContext(context.Background(), "alice"), "alice", "end-shards", "", 25)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(h.Entries) != 2 || h.Entries[0].Purpose != "spending" || h.Entries[0].Units != "4" || h.Entries[0].Direction != "debit" {
 		t.Fatal(h)
 	}
@@ -325,7 +340,7 @@ func TestContextAPIBuybackWithoutBudgetRestoresItemWithoutCredit(t *testing.T) {
 		t.Fatal("unfunded item entered stock", location, err)
 	}
 	var journals int
-	if err := f.wdb.QueryRow(`SELECT count(*) FROM wallet.journals WHERE producer='inventory'`).Scan(&journals); err != nil || journals != 0 {
+	if err := f.wdb.QueryRow(`SELECT count(*) FROM ledger.journals WHERE producer='inventory'`).Scan(&journals); err != nil || journals != 0 {
 		t.Fatal("unfunded sale posted money", journals, err)
 	}
 }
@@ -347,11 +362,11 @@ func TestReadinessRequiresAllBaselinesAndKeepsLegacyFrozen(t *testing.T) {
 	f.importChests(t)
 	f.activate(t)
 	decodeResponse(t, f.request("GET", "/readyz", "", "", ""), 200, nil)
-	httpExec(t, f.wdb, `UPDATE wallet.opening_baseline SET digest='different'`)
+	httpExec(t, f.wdb, `UPDATE ledger.opening_baseline SET digest='different'`)
 	decodeResponse(t, f.request("GET", "/readyz", "", "", ""), 503, nil)
 	decodeResponse(t, f.request("POST", "/api/v1/inventory/items/alice-item/repair", "alice", "repair", "{}"), 503, nil)
 	decodeResponse(t, f.request("GET", "/api/v1/wallet", "", "", ""), 401, nil)
-	httpExec(t, f.wdb, `UPDATE wallet.opening_baseline SET digest=$1`, f.snapshot.Digest)
+	httpExec(t, f.wdb, `UPDATE ledger.opening_baseline SET digest=$1`, f.snapshot.Digest)
 	decodeResponse(t, f.request("GET", "/api/v1/wallet", "alice", "", ""), 200, nil)
 }
 
@@ -398,7 +413,7 @@ func TestContextAPIConcurrentRequestsShareOneOperation(t *testing.T) {
 	}
 	f.wait(t, "alice", id, "completed")
 	var n int
-	if err := f.wdb.QueryRow(`SELECT count(*) FROM wallet.journals WHERE producer='inventory'`).Scan(&n); err != nil || n != 1 {
+	if err := f.wdb.QueryRow(`SELECT count(*) FROM ledger.journals WHERE producer='inventory'`).Scan(&n); err != nil || n != 1 {
 		t.Fatal("duplicate capture", n, err)
 	}
 }

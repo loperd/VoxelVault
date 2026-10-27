@@ -19,63 +19,249 @@
   ],
 
   "types": [
-    { "id": "traveler", "collection": "overworld", "pool": [
-      { "id": "traveler-compass", "title": "Компас забытой тропы", "rarity": "common", "glyph": "compass" },
-      { "id": "traveler-cloak", "title": "Плащ странника", "rarity": "common", "glyph": "cloak" },
-      { "id": "traveler-lantern", "title": "Дорожный фонарь", "rarity": "common", "glyph": "lantern" },
-      { "id": "traveler-route", "title": "Потёртая карта тракта", "rarity": "common", "glyph": "map" },
-      { "id": "traveler-pick", "title": "Походная кирка", "rarity": "common", "glyph": "pickaxe" },
-      { "id": "traveler-windrose", "title": "Компас ветров", "rarity": "uncommon", "glyph": "compass" },
-      { "id": "traveler-wolfcloak", "title": "Плащ из волчьей шкуры", "rarity": "uncommon", "glyph": "cloak" },
-      { "id": "traveler-guard-sword", "title": "Меч придорожного стража", "rarity": "uncommon", "glyph": "sword" },
-      { "id": "traveler-pickaxe", "title": "Каменная кирка с рунами", "rarity": "rare", "glyph": "pickaxe" },
-      { "id": "traveler-wick", "title": "Фонарь вечного фитиля", "rarity": "rare", "glyph": "lantern" },
-      { "id": "traveler-tracker-eye", "title": "Глаз следопыта", "rarity": "epic", "glyph": "eye" },
-      { "id": "traveler-map", "title": "Карта дальних земель", "rarity": "legendary", "glyph": "map" },
-      { "id": "privilege-knight", "title": "Привилегия «Рыцарь»", "rarity": "legendary", "glyph": "helmet" }
-    ]},
-    { "id": "deep-mine", "collection": "deep-mines", "pool": [
-      { "id": "mine-crystal", "title": "Кристалл глубин", "rarity": "common", "glyph": "crystal" },
-      { "id": "mine-lantern", "title": "Фонарь шахтёра", "rarity": "common", "glyph": "lantern" },
-      { "id": "mine-pick", "title": "Кирка забойщика", "rarity": "common", "glyph": "pickaxe" },
-      { "id": "mine-quartz", "title": "Друза кварца", "rarity": "common", "glyph": "crystal" },
-      { "id": "mine-helmet-lamp", "title": "Каска с огоньком", "rarity": "common", "glyph": "lantern" },
-      { "id": "mine-emerald-vein", "title": "Изумрудная жила", "rarity": "uncommon", "glyph": "crystal" },
-      { "id": "mine-cloak", "title": "Плащ подземника", "rarity": "uncommon", "glyph": "cloak" },
-      { "id": "mine-tunnels", "title": "Карта тоннелей", "rarity": "uncommon", "glyph": "map" },
-      { "id": "mine-drill", "title": "Бур древнего мастера", "rarity": "rare", "glyph": "pickaxe" },
-      { "id": "mine-amethyst", "title": "Аметистовое сердце", "rarity": "rare", "glyph": "crystal" },
-      { "id": "mine-deepsteel", "title": "Клинок из глубинной стали", "rarity": "epic", "glyph": "sword" },
-      { "id": "mine-heart", "title": "Сердце жилы", "rarity": "legendary", "glyph": "crystal" }
-    ]},
-    { "id": "ender", "collection": "the-end", "pool": [
-      { "id": "ender-shard", "title": "Осколок портала", "rarity": "common", "glyph": "crystal" },
-      { "id": "ender-eye", "title": "Глаз странника Края", "rarity": "common", "glyph": "eye" },
-      { "id": "ender-purpur", "title": "Пурпурный осколок", "rarity": "common", "glyph": "crystal" },
-      { "id": "ender-lantern", "title": "Фонарь Края", "rarity": "common", "glyph": "lantern" },
-      { "id": "ender-voidcloth", "title": "Плащ из пустотной ткани", "rarity": "common", "glyph": "cloak" },
-      { "id": "ender-void-eye", "title": "Око пустоты", "rarity": "uncommon", "glyph": "eye" },
-      { "id": "ender-islands", "title": "Карта островов Края", "rarity": "uncommon", "glyph": "map" },
-      { "id": "ender-shell-blade", "title": "Клинок из панциря", "rarity": "uncommon", "glyph": "sword" },
-      { "id": "ender-crown", "title": "Корона пустоты", "rarity": "rare", "glyph": "crown" },
-      { "id": "ender-healing", "title": "Кристалл исцеления", "rarity": "rare", "glyph": "crystal" },
-      { "id": "ender-northless", "title": "Компас без севера", "rarity": "epic", "glyph": "compass" },
-      { "id": "ender-heart", "title": "Сердце Края", "rarity": "legendary", "glyph": "heart" }
-    ]},
-    { "id": "dragon", "collection": "dragon-reach", "pool": [
-      { "id": "dragon-scale", "title": "Чешуя древнего дракона", "rarity": "common", "glyph": "scale" },
-      { "id": "dragon-armor-shard", "title": "Обломок брони дозорного", "rarity": "common", "glyph": "scale" },
-      { "id": "dragon-ember", "title": "Тлеющий осколок", "rarity": "common", "glyph": "crystal" },
-      { "id": "dragon-beacon", "title": "Сигнальный фонарь", "rarity": "common", "glyph": "lantern" },
-      { "id": "dragon-battle-map", "title": "Карта битвы", "rarity": "common", "glyph": "map" },
-      { "id": "dragon-blade", "title": "Клинок последнего дозора", "rarity": "uncommon", "glyph": "sword" },
-      { "id": "dragon-wing-cloak", "title": "Плащ драконьего крыла", "rarity": "uncommon", "glyph": "cloak" },
-      { "id": "dragon-plate", "title": "Пластина из чешуи", "rarity": "uncommon", "glyph": "scale" },
-      { "id": "dragon-crown", "title": "Корона драконоборца", "rarity": "rare", "glyph": "crown" },
-      { "id": "dragon-eye", "title": "Глаз дракона", "rarity": "rare", "glyph": "eye" },
-      { "id": "dragon-slayer", "title": "Меч, сразивший дракона", "rarity": "epic", "glyph": "sword" },
-      { "id": "dragon-egg", "title": "Осколок драконьего яйца", "rarity": "legendary", "glyph": "egg" }
-    ]},
+    {
+      "id": "traveler",
+      "collection": "overworld",
+      "pool": [
+        {
+          "id": "traveler-compass",
+          "title": "Компас забытой тропы",
+          "rarity": "common",
+          "glyph": "compass"
+        },
+        { "id": "traveler-cloak", "title": "Плащ странника", "rarity": "common", "glyph": "cloak" },
+        {
+          "id": "traveler-lantern",
+          "title": "Дорожный фонарь",
+          "rarity": "common",
+          "glyph": "lantern"
+        },
+        {
+          "id": "traveler-route",
+          "title": "Потёртая карта тракта",
+          "rarity": "common",
+          "glyph": "map"
+        },
+        {
+          "id": "traveler-pick",
+          "title": "Походная кирка",
+          "rarity": "common",
+          "glyph": "pickaxe"
+        },
+        {
+          "id": "traveler-windrose",
+          "title": "Компас ветров",
+          "rarity": "uncommon",
+          "glyph": "compass"
+        },
+        {
+          "id": "traveler-wolfcloak",
+          "title": "Плащ из волчьей шкуры",
+          "rarity": "uncommon",
+          "glyph": "cloak"
+        },
+        {
+          "id": "traveler-guard-sword",
+          "title": "Меч придорожного стража",
+          "rarity": "uncommon",
+          "glyph": "sword"
+        },
+        {
+          "id": "traveler-pickaxe",
+          "title": "Каменная кирка с рунами",
+          "rarity": "rare",
+          "glyph": "pickaxe"
+        },
+        {
+          "id": "traveler-wick",
+          "title": "Фонарь вечного фитиля",
+          "rarity": "rare",
+          "glyph": "lantern"
+        },
+        {
+          "id": "traveler-tracker-eye",
+          "title": "Глаз следопыта",
+          "rarity": "epic",
+          "glyph": "eye"
+        },
+        {
+          "id": "traveler-map",
+          "title": "Карта дальних земель",
+          "rarity": "legendary",
+          "glyph": "map"
+        },
+        {
+          "id": "privilege-knight",
+          "title": "Привилегия «Рыцарь»",
+          "rarity": "legendary",
+          "glyph": "helmet"
+        }
+      ]
+    },
+    {
+      "id": "deep-mine",
+      "collection": "deep-mines",
+      "pool": [
+        {
+          "id": "mine-crystal",
+          "title": "Кристалл глубин",
+          "rarity": "common",
+          "glyph": "crystal"
+        },
+        { "id": "mine-lantern", "title": "Фонарь шахтёра", "rarity": "common", "glyph": "lantern" },
+        { "id": "mine-pick", "title": "Кирка забойщика", "rarity": "common", "glyph": "pickaxe" },
+        { "id": "mine-quartz", "title": "Друза кварца", "rarity": "common", "glyph": "crystal" },
+        {
+          "id": "mine-helmet-lamp",
+          "title": "Каска с огоньком",
+          "rarity": "common",
+          "glyph": "lantern"
+        },
+        {
+          "id": "mine-emerald-vein",
+          "title": "Изумрудная жила",
+          "rarity": "uncommon",
+          "glyph": "crystal"
+        },
+        { "id": "mine-cloak", "title": "Плащ подземника", "rarity": "uncommon", "glyph": "cloak" },
+        { "id": "mine-tunnels", "title": "Карта тоннелей", "rarity": "uncommon", "glyph": "map" },
+        {
+          "id": "mine-drill",
+          "title": "Бур древнего мастера",
+          "rarity": "rare",
+          "glyph": "pickaxe"
+        },
+        {
+          "id": "mine-amethyst",
+          "title": "Аметистовое сердце",
+          "rarity": "rare",
+          "glyph": "crystal"
+        },
+        {
+          "id": "mine-deepsteel",
+          "title": "Клинок из глубинной стали",
+          "rarity": "epic",
+          "glyph": "sword"
+        },
+        { "id": "mine-heart", "title": "Сердце жилы", "rarity": "legendary", "glyph": "crystal" }
+      ]
+    },
+    {
+      "id": "ender",
+      "collection": "the-end",
+      "pool": [
+        { "id": "ender-shard", "title": "Осколок портала", "rarity": "common", "glyph": "crystal" },
+        { "id": "ender-eye", "title": "Глаз странника Края", "rarity": "common", "glyph": "eye" },
+        {
+          "id": "ender-purpur",
+          "title": "Пурпурный осколок",
+          "rarity": "common",
+          "glyph": "crystal"
+        },
+        { "id": "ender-lantern", "title": "Фонарь Края", "rarity": "common", "glyph": "lantern" },
+        {
+          "id": "ender-voidcloth",
+          "title": "Плащ из пустотной ткани",
+          "rarity": "common",
+          "glyph": "cloak"
+        },
+        { "id": "ender-void-eye", "title": "Око пустоты", "rarity": "uncommon", "glyph": "eye" },
+        {
+          "id": "ender-islands",
+          "title": "Карта островов Края",
+          "rarity": "uncommon",
+          "glyph": "map"
+        },
+        {
+          "id": "ender-shell-blade",
+          "title": "Клинок из панциря",
+          "rarity": "uncommon",
+          "glyph": "sword"
+        },
+        { "id": "ender-crown", "title": "Корона пустоты", "rarity": "rare", "glyph": "crown" },
+        {
+          "id": "ender-healing",
+          "title": "Кристалл исцеления",
+          "rarity": "rare",
+          "glyph": "crystal"
+        },
+        {
+          "id": "ender-northless",
+          "title": "Компас без севера",
+          "rarity": "epic",
+          "glyph": "compass"
+        },
+        { "id": "ender-heart", "title": "Сердце Края", "rarity": "legendary", "glyph": "heart" }
+      ]
+    },
+    {
+      "id": "dragon",
+      "collection": "dragon-reach",
+      "pool": [
+        {
+          "id": "dragon-scale",
+          "title": "Чешуя древнего дракона",
+          "rarity": "common",
+          "glyph": "scale"
+        },
+        {
+          "id": "dragon-armor-shard",
+          "title": "Обломок брони дозорного",
+          "rarity": "common",
+          "glyph": "scale"
+        },
+        {
+          "id": "dragon-ember",
+          "title": "Тлеющий осколок",
+          "rarity": "common",
+          "glyph": "crystal"
+        },
+        {
+          "id": "dragon-beacon",
+          "title": "Сигнальный фонарь",
+          "rarity": "common",
+          "glyph": "lantern"
+        },
+        { "id": "dragon-battle-map", "title": "Карта битвы", "rarity": "common", "glyph": "map" },
+        {
+          "id": "dragon-blade",
+          "title": "Клинок последнего дозора",
+          "rarity": "uncommon",
+          "glyph": "sword"
+        },
+        {
+          "id": "dragon-wing-cloak",
+          "title": "Плащ драконьего крыла",
+          "rarity": "uncommon",
+          "glyph": "cloak"
+        },
+        {
+          "id": "dragon-plate",
+          "title": "Пластина из чешуи",
+          "rarity": "uncommon",
+          "glyph": "scale"
+        },
+        {
+          "id": "dragon-crown",
+          "title": "Корона драконоборца",
+          "rarity": "rare",
+          "glyph": "crown"
+        },
+        { "id": "dragon-eye", "title": "Глаз дракона", "rarity": "rare", "glyph": "eye" },
+        {
+          "id": "dragon-slayer",
+          "title": "Меч, сразивший дракона",
+          "rarity": "epic",
+          "glyph": "sword"
+        },
+        {
+          "id": "dragon-egg",
+          "title": "Осколок драконьего яйца",
+          "rarity": "legendary",
+          "glyph": "egg"
+        }
+      ]
+    },
     {
       "id": "relic",
       "collection": "quantum-vault",
@@ -167,17 +353,53 @@
     { "id": "body-cracks", "group": "damage", "parts": ["body"], "condition": 1 },
     { "id": "lid-cracks", "group": "damage", "parts": ["lid"], "condition": 1 },
     { "id": "shell-scuffs", "group": "damage", "parts": ["body", "lid"], "condition": 0.6 },
-    { "id": "latch-rust", "group": "damage", "parts": ["latch"], "condition": 1, "exclusive": "latch-corrosion" },
-    { "id": "latch-patina", "group": "damage", "parts": ["latch"], "condition": 0.7, "exclusive": "latch-corrosion" },
+    {
+      "id": "latch-rust",
+      "group": "damage",
+      "parts": ["latch"],
+      "condition": 1,
+      "exclusive": "latch-corrosion"
+    },
+    {
+      "id": "latch-patina",
+      "group": "damage",
+      "parts": ["latch"],
+      "condition": 0.7,
+      "exclusive": "latch-corrosion"
+    },
     { "id": "moss", "group": "aging", "parts": ["body", "lid"], "condition": 0.4 },
     { "id": "cobweb", "group": "aging", "parts": ["body", "lid"], "condition": 0.2 },
     { "id": "vines", "group": "aging", "parts": ["lid"], "condition": 0.3 },
     { "id": "glow-lichen", "group": "aging", "parts": ["body"], "condition": 0.3 },
     { "id": "snow", "group": "weather", "parts": ["lid"], "condition": 0, "exclusive": "cover" },
-    { "id": "frost", "group": "weather", "parts": ["body", "lid", "latch"], "condition": 0, "exclusive": "cover" },
-    { "id": "void-runes", "group": "end", "parts": ["body", "lid"], "condition": 0, "bonusMinRarity": "rare" },
-    { "id": "end-crystals", "group": "end", "parts": ["lid"], "condition": 0, "bonusMinRarity": "rare" },
-    { "id": "end-blight", "group": "end", "parts": ["body"], "condition": 0, "bonusMinRarity": "rare" }
+    {
+      "id": "frost",
+      "group": "weather",
+      "parts": ["body", "lid", "latch"],
+      "condition": 0,
+      "exclusive": "cover"
+    },
+    {
+      "id": "void-runes",
+      "group": "end",
+      "parts": ["body", "lid"],
+      "condition": 0,
+      "bonusMinRarity": "rare"
+    },
+    {
+      "id": "end-crystals",
+      "group": "end",
+      "parts": ["lid"],
+      "condition": 0,
+      "bonusMinRarity": "rare"
+    },
+    {
+      "id": "end-blight",
+      "group": "end",
+      "parts": ["body"],
+      "condition": 0,
+      "bonusMinRarity": "rare"
+    }
   ],
 
   "params": {
@@ -247,15 +469,30 @@
   },
 
   "rules": [
-    { "id": "end-only-in-end-collections", "when": { "type": { "in": ["traveler", "deep-mine"] } },
-      "set": { "trait.group.end.chance": 0 } },
-    { "id": "starter-is-intact", "when": { "source": "starter" },
-      "set": { "trait.group.damage.chance": 0, "trait.group.aging.chance": 0 } },
-    { "id": "no-frost-in-mines", "when": { "collection": "deep-mines" },
-      "set": { "trait.frost.weight": 0 } },
-    { "id": "end-night", "when": { "events": "end-night", "type": { "in": ["ender", "dragon"] } },
-      "multiply": { "trait.group.end.chance": 3 } },
-    { "id": "winter-weather", "when": { "events": "winter" },
-      "multiply": { "trait.group.weather.chance": 3, "trait.snow.weight": 2 } }
+    {
+      "id": "end-only-in-end-collections",
+      "when": { "type": { "in": ["traveler", "deep-mine"] } },
+      "set": { "trait.group.end.chance": 0 }
+    },
+    {
+      "id": "starter-is-intact",
+      "when": { "source": "starter" },
+      "set": { "trait.group.damage.chance": 0, "trait.group.aging.chance": 0 }
+    },
+    {
+      "id": "no-frost-in-mines",
+      "when": { "collection": "deep-mines" },
+      "set": { "trait.frost.weight": 0 }
+    },
+    {
+      "id": "end-night",
+      "when": { "events": "end-night", "type": { "in": ["ender", "dragon"] } },
+      "multiply": { "trait.group.end.chance": 3 }
+    },
+    {
+      "id": "winter-weather",
+      "when": { "events": "winter" },
+      "multiply": { "trait.group.weather.chance": 3, "trait.snow.weight": 2 }
+    }
   ]
 }

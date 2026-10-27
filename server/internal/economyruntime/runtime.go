@@ -14,21 +14,22 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	cv1 "github.com/voxel-vault/api/internal/currency/contracts/v1"
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
-	bridge "github.com/voxel-vault/api/internal/integrations/inventorywallet"
+	bridge "github.com/voxel-vault/api/internal/integrations/inventoryledger"
 	ilocal "github.com/voxel-vault/api/internal/inventory/adapters/inbound/local"
 	ipg "github.com/voxel-vault/api/internal/inventory/adapters/postgres"
 	ipricing "github.com/voxel-vault/api/internal/inventory/adapters/rulebook"
 	inv "github.com/voxel-vault/api/internal/inventory/application"
 	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
 	"github.com/voxel-vault/api/internal/inventory/domain/rulebook"
-	"github.com/voxel-vault/api/internal/wallet/adapters/authorization"
-	wlocal "github.com/voxel-vault/api/internal/wallet/adapters/inbound/local"
-	"github.com/voxel-vault/api/internal/wallet/adapters/outbound/events"
-	wpg "github.com/voxel-vault/api/internal/wallet/adapters/postgres"
-	wallet "github.com/voxel-vault/api/internal/wallet/application"
-	wv1 "github.com/voxel-vault/api/internal/wallet/contracts/v1"
-	wdomain "github.com/voxel-vault/api/internal/wallet/domain"
+	"github.com/voxel-vault/api/internal/ledger/adapters/authorization"
+	wlocal "github.com/voxel-vault/api/internal/ledger/adapters/inbound/local"
+	"github.com/voxel-vault/api/internal/ledger/adapters/outbound/events"
+	wpg "github.com/voxel-vault/api/internal/ledger/adapters/postgres"
+	wallet "github.com/voxel-vault/api/internal/ledger/application"
+	wv1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
+	wdomain "github.com/voxel-vault/api/internal/ledger/domain"
 )
 
 type SourceState interface {
@@ -69,6 +70,13 @@ type Runtime struct {
 	Collection iv1.CollectionClient
 	Workshop   iv1.WorkshopClient
 	Wallet     wv1.ReadClient
+	Ledger     wv1.ReadClient
+	Transfer   wv1.TransferClient
+	Currency   cv1.Provider
+	Limits     TransferLimits
+	ledgerDB   *sql.DB
+	securityDB *sql.DB
+	assets     []string
 	Guard      Guard
 	dbs        []*sql.DB
 	worker     inv.Worker
@@ -139,7 +147,7 @@ func New(ctx context.Context, source *sql.DB, inventoryDSN, walletDSN string, as
 		return nil, err
 	}
 	r.dbs = append(r.dbs, idb)
-	wdb, err := connect(ctx, walletDSN, "wallet_schema_version", 6)
+	wdb, err := connect(ctx, walletDSN, "wallet_schema_version", 7)
 	if err != nil {
 		r.Close()
 		return nil, err
@@ -171,6 +179,8 @@ func New(ctx context.Context, source *sql.DB, inventoryDSN, walletDSN string, as
 		return nil, fmt.Errorf("WALLET_ASSETS must explicitly allow player wallet reads and workshop settlement")
 	}
 	is, ws := ipg.New(idb), wpg.New(wdb)
+	r.ledgerDB, r.securityDB = wdb, options[0].SecurityDB
+	r.assets = append([]string(nil), assets...)
 	invAuth, err := InventoryAuthorizer(options[0].SecurityDB, nil)
 	if err != nil {
 		r.Close()
@@ -198,6 +208,7 @@ func New(ctx context.Context, source *sql.DB, inventoryDSN, walletDSN string, as
 	}}}
 	r.Workshop = ilocal.WorkshopClient{Service: workshop, Catalog: inv.Catalog{Reader: is, Policy: pricing, Authorizer: invAuth}}
 	r.Wallet = wlocal.Reader{Service: wallet.Reader{Store: ws, Authorizer: policy, Producer: "player-api"}, Assets: append([]string(nil), assets...)}
+	r.Ledger = r.Wallet
 	r.Guard = Guard{Source: legacy.Source{DB: source}, Inventory: is, Wallet: ws}
 	participant, err := wallet.New(ws, policy, time.Now)
 	if err != nil {

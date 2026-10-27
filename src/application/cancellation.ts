@@ -4,11 +4,11 @@ export function waitFor<T>(promise: Promise<T>, signal: AbortSignal): Promise<T>
     const onAbort = () => reject(signal.reason);
     signal.addEventListener('abort', onAbort, { once: true });
     promise.then(
-      value => {
+      (value) => {
         signal.removeEventListener('abort', onAbort);
         resolve(value);
       },
-      error => {
+      (error) => {
         signal.removeEventListener('abort', onAbort);
         reject(error);
       },

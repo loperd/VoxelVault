@@ -1,4 +1,7 @@
 {{- if .Values.ingress.enabled -}}
+{{- if not .Values.gateway.enabled }}
+{{- fail "public ingress requires the gateway" }}
+{{- end }}
 {{- /*
 Public entrance of the API (as in loncha): Cloudflare DNS → the cluster's haproxy-ingress. TLS
 terminates at Cloudflare; the frontend Worker proxies /api/* here, so the browser only ever sees the

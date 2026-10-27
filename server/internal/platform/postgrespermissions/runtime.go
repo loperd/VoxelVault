@@ -23,6 +23,10 @@ type Table struct {
 type Policy struct {
 	Tables    []Table
 	Sequences []pgx.Identifier // USAGE only: nextval/currval, never setval.
+	// Revoke lists whole-table grants an earlier release may have left to this role
+	// (a renamed schema keeps its old ACLs). Only the listed ones are removed; anything
+	// else unexpected still fails the audit.
+	Revoke []Table
 }
 
 func (p Policy) allows(schema, table, action, column string) bool {
@@ -105,6 +109,16 @@ func Apply(ctx context.Context, db *sql.DB, role string, p Policy) error {
 	for _, sequence := range p.Sequences {
 		if _, err = tx.ExecContext(ctx, `GRANT USAGE ON SEQUENCE `+sequence.Sanitize()+` TO `+quoted); err != nil {
 			return err
+		}
+	}
+	for _, t := range p.Revoke {
+		for _, r := range t.Privileges {
+			if !slices.Contains([]string{"SELECT", "INSERT", "UPDATE", "DELETE"}, r.Action) || len(r.Columns) > 0 {
+				return fmt.Errorf("invalid runtime revoke policy")
+			}
+			if _, err = tx.ExecContext(ctx, `REVOKE `+r.Action+` ON TABLE `+pgx.Identifier{t.Schema, t.Name}.Sanitize()+` FROM `+quoted); err != nil {
+				return err
+			}
 		}
 	}
 	if err = p.audit(ctx, tx, oid); err != nil {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/voxel-vault/api/internal/identity/domain"
 )
@@ -44,6 +43,7 @@ type Accounts struct {
 	Grants     func(grants []string, action, resource string) bool
 	Sessions   SessionValidator
 	Profiles   ProfileReader
+	Recipient  RecipientReader
 	Registry   Registry
 	Roles      Roles
 	Authorizer Authorizer
@@ -74,7 +74,7 @@ func (a Accounts) provider(p ProviderIdentity) bool {
 			break
 		}
 	}
-	if !allowed || !domain.ValidID(p.Provider) || len(p.Provider) > 32 || !domain.ValidID(p.ExternalID) || !utf8.ValidString(p.DisplayName) || len(p.DisplayName) > 160 || !utf8.ValidString(p.Username) || len(p.Username) > 160 {
+	if !allowed || !domain.ValidID(p.Provider) || len(p.Provider) > 32 || !domain.ValidID(p.ExternalID) || !domain.SafeProfileText(p.DisplayName, 160) || !domain.SafeProfileText(p.Username, 160) {
 		return false
 	}
 	return true

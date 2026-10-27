@@ -9,7 +9,10 @@ export interface ItemsState {
 }
 
 /** The result of a merge: the item that stayed and whether the merge mended it. */
-export interface MergeResult { readonly kept: OwnedItem; readonly mended: boolean }
+export interface MergeResult {
+  readonly kept: OwnedItem;
+  readonly mended: boolean;
+}
 
 /**
  * The player's items, as the server has them. Every action is the server's: it

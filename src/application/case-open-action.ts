@@ -10,14 +10,31 @@ export type CaseAction = 'open' | 'continue' | 'leave';
  * is unique, so "another one like it" cannot be bought; a store is a separate feature). A different
  * chest is never slipped in.
  */
-export function caseOpenAction(instances: readonly CaseInstance[], caseId: string, inspectedId?: string) {
-  const inspected = instances.find(item => item.id === inspectedId && item.caseId === caseId);
+export function caseOpenAction(
+  instances: readonly CaseInstance[],
+  caseId: string,
+  inspectedId?: string,
+) {
+  const inspected = instances.find((item) => item.id === inspectedId && item.caseId === caseId);
   const variant = inspected ? variantKey(inspected) : undefined;
-  const sameVariant = variant === undefined ? instances.filter(item => item.caseId === caseId)
-    : instances.filter(item => item.caseId === caseId && variantKey(item) === variant);
-  const target = inspected && !isConsumed(inspected) ? inspected : nextOwnedCase(sameVariant, caseId);
+  const sameVariant =
+    variant === undefined
+      ? instances.filter((item) => item.caseId === caseId)
+      : instances.filter((item) => item.caseId === caseId && variantKey(item) === variant);
+  const target =
+    inspected && !isConsumed(inspected) ? inspected : nextOwnedCase(sameVariant, caseId);
   const action: CaseAction = !target ? 'leave' : target.status === 'opening' ? 'continue' : 'open';
   // One label for opening, whichever chest of the stack it takes: «Открыть сундук» while any is left.
-  const label = action === 'leave' ? 'Вернуться в инвентарь' : action === 'continue' ? 'Продолжить открытие' : 'Открыть сундук';
-  return { target, action, label, availableCount: sameVariant.filter(item => item.status === 'available').length };
+  const label =
+    action === 'leave'
+      ? 'Вернуться в инвентарь'
+      : action === 'continue'
+        ? 'Продолжить открытие'
+        : 'Открыть сундук';
+  return {
+    target,
+    action,
+    label,
+    availableCount: sameVariant.filter((item) => item.status === 'available').length,
+  };
 }

@@ -8,7 +8,11 @@ export interface ItemPresentation {
   has(itemId: string): boolean;
   preview(itemId: string, signal: AbortSignal, condition?: ItemState): Promise<HTMLCanvasElement>;
   /** A live view inside `host` until disposed; `onReady` fires with its first frame. */
-  inspect(host: HTMLElement, itemId: string, options?: { readonly condition?: ItemState; readonly onReady?: () => void }): ItemInspection;
+  inspect(
+    host: HTMLElement,
+    itemId: string,
+    options?: { readonly condition?: ItemState; readonly onReady?: () => void },
+  ): ItemInspection;
 }
 
 export interface ItemInspection {

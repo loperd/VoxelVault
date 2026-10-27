@@ -54,7 +54,7 @@ Starting item base values by rarity are 4/8/16/32/64. State multipliers are 1/0.
 - Sale: consume the item for base × state multiplier × `item.sellRate` (initially 2.5) in common currency.
 - Merge items: consume two different damaged instances of the same item; retain the better one, with a configurable chance (initially 70%) to improve it by one step.
 
-Inventory reserves the item and Wallet settles the funds through a durable saga, with a Wallet-owned double-entry ledger; see [contexts](../architecture/contexts.md).
+Inventory reserves the item and Ledger settles the funds through a durable saga, with its own double-entry book; see [contexts](../architecture/contexts.md).
 
 ## Rulebook configuration
 
@@ -82,15 +82,67 @@ Responses contain server decisions. Ownership failures do not reveal another pla
 | `GET /api/v1/inventory/operations/{id}` | — | Operation `{operationId, itemId, action, stage, version, quote, reason?}` |
 | `POST /api/v1/inventory/operations/{id}/cancel` | — | HTTP 202, operation |
 | `POST /api/v1/inventory/items/merge` | key, `{a, b}` | Retained owned item |
-| `GET /api/v1/wallet` | — | `{balances[{asset, posted, held, available}]}`; amounts are decimal strings |
-| `GET /api/v1/wallet/transactions?asset=&cursor=&limit=` | — | `{entries[{id, asset, direction, units, purpose, reference, at}], nextCursor?}`; asset defaults to `currency`, limit 1–100 (default 25) |
+| `GET /api/v1/wallet` | — | `{balances[{asset, posted, held, available}], currencies[{asset, name, code, precision, canOperate}]}`; amounts are decimal strings |
+| `GET /api/v1/wallet/transactions?asset=&cursor=&limit=` | — | `{entries[{id, asset, direction, units, purpose, reference, status, at?}], nextCursor?}`; asset defaults to `currency`, limit 1–100 (default 25) |
+| `GET /api/v1/wallet/recipient?asset=&query=` | Exact handle or stable ID | `{id, handle, displayName}`; recipient must have currency access |
+| `POST /api/v1/wallet/quotes` | `{asset, recipient, units}`; exact minimum-unit string | Immutable quote, HTTP 201; 60-second expiry, fees, debit and receipt |
+| `POST /api/v1/wallet/transfers` | key, `{quoteId}` | Committed `{transferId, journalId, currencyId, state, debitUnits, receiptUnits}`; safe to retry with the same key |
 | `POST /api/v1/admin/users/{userId}/chests` | key, `{caseId, count}` | `{userId, caseId, issued}`, HTTP 201 |
 | `GET /api/v1/cases/{type}/catalog` | — | Type item pool and weight shares |
 
-Workshop actions settle asynchronously through the Inventory–Wallet saga: insufficient funds cancel the operation rather than fail the request. Poll the operation until its stage is final, then reread items and wallet.
+Workshop actions settle asynchronously through the Inventory–Ledger saga: insufficient funds cancel the operation rather than fail the request. Poll the operation until its stage is final, then reread items and wallet.
 
 Chest DTOs include `id`, `caseId`, status, seed (exact, as a string), revision, rarity, condition, `contents[{item,weight}]`, `traits[{id,intensity,seed}]`, origin, optional session/drop/destruction moment/opening time. Owned items include item definition, instance state and origin. Offers carry amounts as `{resource, value}` with `value` a decimal string: optional repair, salvage, sale, optional selected merge partner and merge-repair chance. An item removed from the rulebook may remain listed without offers.
 
 `chance` in catalog/display DTOs is the server-provided weight share for the relevant pool or contents. It does not authorize client-side selection or issuance. Merge odds describe trait keep/upgrade and how many distinct contents survive; the same server plan drives execution.
 
+Transaction history includes active holds and released holds alongside committed journal entries. Status is explicit: `held`, `captured`, `credited` or `released`. Capturing a hold replaces its pending row with the committed debit; it does not display two money movements. Held/released amounts have no debit/credit sign in Wallet. Recorded event timestamps are used for holds; when a legacy hold has no recorded timestamp, `at` is omitted. Holds and journals share owner-bound pagination.
+
+Internal transfer confirmation is synchronous: success means all Ledger postings committed. `TRANSFER_CONFIG` selects administrator-owned currency and commission configuration; the bundled 1% inside tax is an example, not a fixed economic rule. Amounts use `int64` minimum units and currency-specific precision (0–18); legacy `currency` remains precision 0. An uncommitted expired quote returns 409 `quote_expired`; insufficient available funds returns 409 `insufficient_funds`.
+
 Errors are `{error: code}` (`contextError` in `server/internal/httpapi/contexts.go`): 400 `invalid`, 403 `forbidden`, 404 `not_found` (missing or unowned), 409 `conflict` or `not_ready` (incompatible state, session conflict, invalid merge pair), 503 otherwise. Malformed bodies and missing keys answer 400 before reaching the contexts.
+
+
+## Transfer boundary hardening
+
+Recipient lookup accepts exact safe identifiers. Legacy Telegram-derived `tg_<id>` handles
+are not lookup keys; own profiles and recipient resolution expose an opaque `u_<account-id>`
+handle instead, preserving stored account IDs and historical records. Control and invisible
+formatting characters are rejected at Identity input/read boundaries and again in the Wallet
+adapter; confirmation isolates recipient text with `bdi`.
+
+A completed quote still checks whether the confirmation key belongs to a different quote.
+Unused keys on completed-quote replay do not create command rows. Generic settlement
+producers cannot use the reserved `user-transfer` namespace. Fee account provisioning
+requires the canonical treasury account identity.
+
+Inactive accounts reject new reserve/capture/credit/payout movement. Cancel/close commands
+can still release existing holds. Read-only receipts and owned history remain available;
+no operation silently reactivates an account. Wallet history combines Ledger owner checks
+with Currency read eligibility, retaining historical rows and holdings after revocation.
+A quote priced under another currency access revision or fee rule version is refused at confirmation with 409 `quote_expired`; nothing is reserved.
+
+HTTP transfer routes use per-user/route counters in a fixed global minute window. Window
+rotation drops the old map in constant time; this is a per-process limiter, not a distributed
+quota. Persisted quote caps independently limit created rows per second and per day
+(`Limits.QuotesPerSecond`/`QuotesPerDay` in `TRANSFER_CONFIG`, no code defaults; bundled 3 and 2000)
+per sender, including expired/completed quotes, and return HTTP 429 `rate_limited`. The per-route HTTP limiter numbers are `Limits.RecipientRequestsPerMinute`/`QuoteRequestsPerMinute`/`TransferRequestsPerMinute` (bundled 10/30/30).
+A quote for a blocked sender or recipient is refused at quote time as well as at confirmation. Records
+are retained; these are write-rate limits, not a fixed lifetime storage bound.
+
+### Account restrictions
+
+`ledger.account_restrictions` holds `send` and `receive` blocks (a frozen account has both).
+Rows are never deleted; a block is effective from `created_at` until the earlier of
+`expires_at` and `lifted_at`. The API runtime role has only SELECT and INSERT on it, so a
+compromised API cannot lift a block; lifting is an operator action that records `lifted_by`.
+Confirmation checks both accounts while holding their locks. A sender block returns 403; a
+receive block applies to user-to-user transfers only and the sender sees the neutral
+`not_found`. Quotes taken before a block are refused at confirmation.
+
+More than `Limits.TransfersPerMinute` confirmed transfers in a minute rejects the next one
+with 429 `rate_limited` and writes a time-limited `send` block of `Limits.SuspendMinutes`
+(never indefinite, one active auto-block per account). Operators add, lift and list
+restrictions with `/account-restrict` (see the Helm README); there is no appeal flow.
+
+Restriction changes are published through the generic outbox (`internal/platform/outbox`, table `ledger.outbox`, topic `account-restrictions`) as `restriction.added`, `restriction.lifted` and `restriction.expired`. They are written in the same transaction as the change (auto-blocks included); expiry has no write of its own, so the `restriction-expire` CronJob publishes it. Event ids are `restriction:<id>:<kind>`, so each fact exists once. The body holds ids, kind, `expiresAt` and actor, never the internal reason. A consumer reads the topic with `Table.Topic("account-restrictions", "")` and must deduplicate by id; Ledger's receipt queues ignore these events (`kind` filter). No consumer ships yet.

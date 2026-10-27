@@ -1,4 +1,7 @@
-import type { SessionCheckpoint, SessionJournal } from '../../../application/ports/session-journal.ts';
+import type {
+  SessionCheckpoint,
+  SessionJournal,
+} from '../../../application/ports/session-journal.ts';
 
 /**
  * Where an opening is, for as long as the page lives: a case screen rebuilt mid-opening carries
@@ -7,7 +10,13 @@ import type { SessionCheckpoint, SessionJournal } from '../../../application/por
  */
 export class MemorySessionJournal implements SessionJournal {
   private checkpoint?: SessionCheckpoint;
-  load(): SessionCheckpoint | undefined { return this.checkpoint; }
-  save(checkpoint: SessionCheckpoint): void { this.checkpoint = checkpoint; }
-  clear(): void { this.checkpoint = undefined; }
+  load(): SessionCheckpoint | undefined {
+    return this.checkpoint;
+  }
+  save(checkpoint: SessionCheckpoint): void {
+    this.checkpoint = checkpoint;
+  }
+  clear(): void {
+    this.checkpoint = undefined;
+  }
 }

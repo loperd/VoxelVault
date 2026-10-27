@@ -1,0 +1,35 @@
+{
+  "Version": "internal-transfer-v1",
+  "Currency": [
+    {
+      "ID": "currency",
+      "Code": "VVC",
+      "Name": "Монеты",
+      "Revision": "currency-v1",
+      "Precision": 0,
+      "Active": true,
+      "Everyone": true
+    }
+  ],
+  "Limits": {
+    "QuotesPerSecond": 3,
+    "QuotesPerDay": 2000,
+    "TransfersPerMinute": 10,
+    "SuspendMinutes": 60,
+    "RecipientRequestsPerMinute": 10,
+    "QuoteRequestsPerMinute": 30,
+    "TransferRequestsPerMinute": 30
+  },
+  "Rule": [
+    {
+      "ID": "general-tax",
+      "Version": "1",
+      "Currency": "currency",
+      "Imposition": "inside",
+      "GeneralTax": true,
+      "Numerator": 1,
+      "Denominator": 100,
+      "Destination": [{ "Subject": "platform-tax", "Weight": 1 }]
+    }
+  ]
+}

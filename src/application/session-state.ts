@@ -23,13 +23,13 @@ export type SessionDetails =
   /** The chest broke apart under the energy: the session ends without a reward. */
   | { readonly phase: 'destroyed'; readonly sessionId: string }
   | {
-    readonly phase: 'flashing' | 'spinning' | 'settling' | 'revealing' | 'prize-visible';
-    readonly sessionId: string;
-    readonly selection: TargetSelection;
-    readonly plan: SpinPlan;
-    /** The prize fell damaged; absent means intact. */
-    readonly condition?: ItemState;
-  }
+      readonly phase: 'flashing' | 'spinning' | 'settling' | 'revealing' | 'prize-visible';
+      readonly sessionId: string;
+      readonly selection: TargetSelection;
+      readonly plan: SpinPlan;
+      /** The prize fell damaged; absent means intact. */
+      readonly condition?: ItemState;
+    }
   | { readonly phase: 'failed'; readonly failure: SessionFailure };
 
 export type SessionState = SessionData & SessionDetails;

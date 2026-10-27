@@ -17,11 +17,11 @@ import (
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
 	imigrate "github.com/voxel-vault/api/internal/inventory/adapters/postgres/migrations"
 	"github.com/voxel-vault/api/internal/inventory/domain/chest"
+	wmigrate "github.com/voxel-vault/api/internal/ledger/adapters/postgres/migrations"
 	"github.com/voxel-vault/api/internal/rulebookjson"
 	"github.com/voxel-vault/api/internal/security/adapters/policyconfig"
 	security "github.com/voxel-vault/api/internal/security/application"
 	"github.com/voxel-vault/api/internal/store"
-	wmigrate "github.com/voxel-vault/api/internal/wallet/adapters/postgres/migrations"
 )
 
 func testDatabase(t *testing.T, suffix string) (*sql.DB, string) {
@@ -221,7 +221,7 @@ func TestOfflineCutoverAndReadOnlyReadiness(t *testing.T) {
 			t.Fatal("missing issuance policy allowed import")
 		}
 		var journals int
-		if err := wdb.QueryRow(`SELECT count(*) FROM wallet.journals`).Scan(&journals); err != nil || journals != 0 {
+		if err := wdb.QueryRow(`SELECT count(*) FROM ledger.journals`).Scan(&journals); err != nil || journals != 0 {
 			t.Fatal("unapproved import changed Wallet", journals, err)
 		}
 	})
@@ -232,7 +232,7 @@ func TestOfflineCutoverAndReadOnlyReadiness(t *testing.T) {
 			t.Fatal("unscoped inventory import allowed")
 		}
 		var journals int
-		if err := wdb.QueryRow(`SELECT count(*) FROM wallet.journals`).Scan(&journals); err != nil || journals != 0 {
+		if err := wdb.QueryRow(`SELECT count(*) FROM ledger.journals`).Scan(&journals); err != nil || journals != 0 {
 			t.Fatal("unauthorized import changed Wallet", journals, err)
 		}
 	})
@@ -247,8 +247,8 @@ func TestOfflineCutoverAndReadOnlyReadiness(t *testing.T) {
 		query string
 		want  string
 	}{
-		{wdb, `SELECT sum(p.units)::text FROM wallet.postings p JOIN wallet.accounts a ON a.id=p.account_id WHERE a.role='player_liability' AND p.side='credit'`, "9007199254740993"},
-		{wdb, `SELECT count(*)::text FROM wallet.journals`, "1"},
+		{wdb, `SELECT sum(p.units)::text FROM ledger.postings p JOIN ledger.accounts a ON a.id=p.account_id WHERE a.role='player_liability' AND p.side='credit'`, "9007199254740993"},
+		{wdb, `SELECT count(*)::text FROM ledger.journals`, "1"},
 		{idb, `SELECT count(*)::text FROM inventory.items`, "1"},
 		{idb, `SELECT count(*)::text FROM inventory.chests`, "1"},
 		{idb, `SELECT count(*)::text FROM inventory.collection_commands`, "0"},

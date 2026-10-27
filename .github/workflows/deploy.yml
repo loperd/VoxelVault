@@ -14,7 +14,7 @@ name: deploy
 on:
   push:
     branches: [master]
-    tags: ["[0-9]+.[0-9]+.[0-9]+"]
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
   pull_request:
 
 concurrency:
@@ -35,7 +35,7 @@ jobs:
           POSTGRES_USER: economy_test
           POSTGRES_PASSWORD: economy_test
           POSTGRES_DB: legacy_test
-        ports: ["5432:5432"]
+        ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U economy_test -d legacy_test"
           --health-interval 5s --health-timeout 5s --health-retries 12
@@ -74,7 +74,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
-        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+        with:
+          {
+            registry: ghcr.io,
+            username: '${{ github.actor }}',
+            password: '${{ secrets.GITHUB_TOKEN }}',
+          }
       - uses: docker/build-push-action@v6
         with:
           context: server
@@ -122,5 +127,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "4.20.0"
+          wranglerVersion: '4.20.0'
           command: deploy

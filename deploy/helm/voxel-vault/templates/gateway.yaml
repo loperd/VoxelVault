@@ -1,4 +1,10 @@
 {{- if .Values.gateway.enabled }}
+{{- if not .Values.gateway.networkPolicy.enabled }}
+{{- fail "gateway backend NetworkPolicy must be enabled" }}
+{{- end }}
+{{- if eq .Values.gateway.existingSecret .Values.secrets.existingSecret }}
+{{- fail "gateway and API must use distinct Secrets" }}
+{{- end }}
 {{- if ne .Values.service.type "ClusterIP" }}
 {{- fail "the backend service must be ClusterIP when the gateway is enabled" }}
 {{- end }}
@@ -84,6 +90,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.gateway.existingSecret }}
                   key: INTERNAL_TOKEN
+            - name: GATEWAY_IDENTITY_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.gateway.existingSecret }}
+                  key: IDENTITY_INTERNAL_TOKEN
             # Telegram Login (OIDC) and the Identity-backed session live in the gateway; the API only
             # resolves accounts and sessions behind it. The secret comes from the chart's own Secret.
             - name: TG_OIDC_CLIENT_ID
@@ -91,7 +102,7 @@ spec:
             - name: TG_OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secrets.existingSecret }}
+                  name: {{ .Values.gateway.existingSecret }}
                   key: TG_OIDC_CLIENT_SECRET
                   optional: true
             - name: GATEWAY_IDENTITY_MODE

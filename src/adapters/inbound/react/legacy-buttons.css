@@ -18,13 +18,20 @@
   letter-spacing: 0.045em;
   text-transform: uppercase;
   text-align: center;
-  transition: transform 140ms ease, color 140ms ease, background-color 140ms ease, border-color 140ms ease, box-shadow 160ms ease, filter 140ms ease;
+  transition:
+    transform 140ms ease,
+    color 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 160ms ease,
+    filter 140ms ease;
 }
 /* One button everywhere: solid, bright, in the hue of the case on screen (the brand teal outside a
    case). The case colour can be nearly grey (common), so its chroma is raised to a clear minimum
    and its lightness capped for white text. No ghost variant, no outline, no slab, no halo —
    .btn-transparent is kept only as a name and looks the same. */
-.btn-green, .btn-transparent {
+.btn-green,
+.btn-transparent {
   --btn: #2fb87a;
   --btn-deep: #19805a;
   color: #fff;
@@ -34,17 +41,33 @@
   text-shadow: 0 1px 2px #0007;
 }
 @supports (color: oklch(from red l c h)) {
-  .btn-green, .btn-transparent {
-    --btn: oklch(from var(--case-accent, #86ead0) clamp(.55, l, .65) max(c, .16) h);
-    --btn-deep: oklch(from var(--case-accent, #86ead0) clamp(.42, calc(l - .17), .5) max(c, .15) h);
-    box-shadow: 0 10px 24px -10px oklch(from var(--btn-deep) .18 c h);
+  .btn-green,
+  .btn-transparent {
+    --btn: oklch(from var(--case-accent, #86ead0) clamp(0.55, l, 0.65) max(c, 0.16) h);
+    --btn-deep: oklch(
+      from var(--case-accent, #86ead0) clamp(0.42, calc(l - 0.17), 0.5) max(c, 0.15) h
+    );
+    box-shadow: 0 10px 24px -10px oklch(from var(--btn-deep) 0.18 c h);
   }
 }
-.btn-green:active:not(:disabled), .btn-transparent:active:not(:disabled) { transform: translateY(1px); filter: brightness(.96); }
-.btn:disabled { opacity: 0.5; cursor: default; }
+.btn-green:active:not(:disabled),
+.btn-transparent:active:not(:disabled) {
+  transform: translateY(1px);
+  filter: brightness(0.96);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 @media (hover: hover) and (pointer: fine) {
-  .btn-green:hover:not(:disabled), .btn-transparent:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
+  .btn-green:hover:not(:disabled),
+  .btn-transparent:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .btn { transition: none; }
+  .btn {
+    transition: none;
+  }
 }

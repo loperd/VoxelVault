@@ -23,14 +23,14 @@ import (
 	imigrate "github.com/voxel-vault/api/internal/inventory/adapters/postgres/migrations"
 	inv "github.com/voxel-vault/api/internal/inventory/application"
 	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
+	"github.com/voxel-vault/api/internal/ledger/adapters/authorization"
+	wlocal "github.com/voxel-vault/api/internal/ledger/adapters/inbound/local"
+	wpg "github.com/voxel-vault/api/internal/ledger/adapters/postgres"
+	wmigrate "github.com/voxel-vault/api/internal/ledger/adapters/postgres/migrations"
+	wallet "github.com/voxel-vault/api/internal/ledger/application"
+	wv1 "github.com/voxel-vault/api/internal/ledger/contracts/v1"
+	wdomain "github.com/voxel-vault/api/internal/ledger/domain"
 	"github.com/voxel-vault/api/internal/store"
-	"github.com/voxel-vault/api/internal/wallet/adapters/authorization"
-	wlocal "github.com/voxel-vault/api/internal/wallet/adapters/inbound/local"
-	wpg "github.com/voxel-vault/api/internal/wallet/adapters/postgres"
-	wmigrate "github.com/voxel-vault/api/internal/wallet/adapters/postgres/migrations"
-	wallet "github.com/voxel-vault/api/internal/wallet/application"
-	wv1 "github.com/voxel-vault/api/internal/wallet/contracts/v1"
-	wdomain "github.com/voxel-vault/api/internal/wallet/domain"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -200,7 +200,7 @@ func TestFrozenBaselineAcrossThreeIndependentDatabases(t *testing.T) {
 	}
 	f.apply(t, s)
 	f.apply(t, s)
-	if count(t, f.wdb, "wallet.journals") != 2 || count(t, f.wdb, "wallet.postings") != 4 || count(t, f.idb, "inventory.items") != 2 {
+	if count(t, f.wdb, "ledger.journals") != 2 || count(t, f.wdb, "ledger.postings") != 4 || count(t, f.idb, "inventory.items") != 2 {
 		t.Fatal("duplicated baseline")
 	}
 	for _, expected := range []struct {
@@ -245,7 +245,7 @@ func TestImportResumesAfterEitherContextCommitsWithoutReply(t *testing.T) {
 	f := setup(t)
 	s := f.freeze(t)
 	r, err := cutover.Apply(ctx, s, lostWallet{f.wallet}, f.inventory)
-	if err == nil || r.WalletImported || count(t, f.wdb, "wallet.journals") != 2 || count(t, f.idb, "inventory.items") != 0 {
+	if err == nil || r.WalletImported || count(t, f.wdb, "ledger.journals") != 2 || count(t, f.idb, "inventory.items") != 0 {
 		t.Fatal(r, err)
 	}
 	// Reconstruct all target adapters, as on process restart.
@@ -256,7 +256,7 @@ func TestImportResumesAfterEitherContextCommitsWithoutReply(t *testing.T) {
 	}
 	f.wallet, f.inventory = f.clients(t, []string{"coins", "ore"}, wdomain.OpeningBalance)
 	f.apply(t, s)
-	if count(t, f.wdb, "wallet.journals") != 2 {
+	if count(t, f.wdb, "ledger.journals") != 2 {
 		t.Fatal("duplicate opening money")
 	}
 }
@@ -265,7 +265,7 @@ func TestTamperingAndChangedBaselineCannotOverwriteTargets(t *testing.T) {
 	f := setup(t)
 	s := f.freeze(t)
 	s.Balances[0].Units = "1"
-	if _, err := cutover.Apply(ctx, s, f.wallet, f.inventory); err == nil || count(t, f.wdb, "wallet.journals") != 0 {
+	if _, err := cutover.Apply(ctx, s, f.wallet, f.inventory); err == nil || count(t, f.wdb, "ledger.journals") != 0 {
 		t.Fatal("tampered snapshot applied", err)
 	}
 	s = f.freeze(t)
@@ -274,7 +274,7 @@ func TestTamperingAndChangedBaselineCannotOverwriteTargets(t *testing.T) {
 	if err := s.Seal(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := cutover.Apply(ctx, s, f.wallet, f.inventory); err == nil || count(t, f.wdb, "wallet.journals") != 2 {
+	if _, err := cutover.Apply(ctx, s, f.wallet, f.inventory); err == nil || count(t, f.wdb, "ledger.journals") != 2 {
 		t.Fatal("different pinned baseline accepted", err)
 	}
 }
@@ -290,7 +290,7 @@ func TestOpeningCapabilityChecksAllAssetsBeforeWriting(t *testing.T) {
 		if _, err := cutover.Apply(ctx, s, w, i); err == nil {
 			t.Fatal("unauthorized opening accepted")
 		}
-		if count(t, f.wdb, "wallet.journals") != 0 || count(t, f.wdb, "wallet.opening_baseline") != 0 {
+		if count(t, f.wdb, "ledger.journals") != 0 || count(t, f.wdb, "ledger.opening_baseline") != 0 {
 			t.Fatal("authorization failure partially wrote money")
 		}
 	}
@@ -300,16 +300,16 @@ func TestOpeningCapabilityChecksAllAssetsBeforeWriting(t *testing.T) {
 func TestLocalImportFailureRollsBackAndRecoversForward(t *testing.T) {
 	f := setup(t)
 	s := f.freeze(t)
-	exec(t, f.wdb, `ALTER TABLE wallet.outbox ADD CONSTRAINT inject_failure CHECK(false) NOT VALID`)
+	exec(t, f.wdb, `ALTER TABLE ledger.outbox ADD CONSTRAINT inject_failure CHECK(false) NOT VALID`)
 	if _, err := cutover.Apply(ctx, s, f.wallet, f.inventory); err == nil {
 		t.Fatal("injected Wallet failure ignored")
 	}
 	for _, table := range []string{"commands", "intents", "accounts", "journals", "postings", "outbox", "opening_baseline"} {
-		if count(t, f.wdb, "wallet."+table) != 0 {
+		if count(t, f.wdb, "ledger."+table) != 0 {
 			t.Fatal("Wallet import partially committed", table)
 		}
 	}
-	exec(t, f.wdb, `ALTER TABLE wallet.outbox DROP CONSTRAINT inject_failure`)
+	exec(t, f.wdb, `ALTER TABLE ledger.outbox DROP CONSTRAINT inject_failure`)
 	exec(t, f.idb, `ALTER TABLE inventory.items ADD CONSTRAINT inject_failure CHECK(id<>'item-b') NOT VALID`)
 	r, err := cutover.Apply(ctx, s, f.wallet, f.inventory)
 	if err == nil || !r.WalletImported || count(t, f.idb, "inventory.items") != 0 || count(t, f.idb, "inventory.opening_baseline") != 0 {
@@ -322,11 +322,11 @@ func TestLocalImportFailureRollsBackAndRecoversForward(t *testing.T) {
 func TestImportRejectsNonemptyTargetsAndPostImportActivity(t *testing.T) {
 	f := setup(t)
 	s := f.freeze(t)
-	exec(t, f.wdb, `INSERT INTO wallet.accounts(id,subject,asset,role) VALUES('existing','alice','coins','player_liability')`)
+	exec(t, f.wdb, `INSERT INTO ledger.accounts(id,subject,asset,role) VALUES('existing','alice','coins','player_liability')`)
 	if _, err := cutover.Apply(ctx, s, f.wallet, f.inventory); err == nil {
 		t.Fatal("nonempty Wallet accepted")
 	}
-	exec(t, f.wdb, `DELETE FROM wallet.accounts WHERE id='existing'`)
+	exec(t, f.wdb, `DELETE FROM ledger.accounts WHERE id='existing'`)
 	exec(t, f.idb, `INSERT INTO inventory.items(id,owner,definition,condition,origin,status) VALUES('existing','alice','lamp','intact','','available')`)
 	if _, err := cutover.Apply(ctx, s, f.wallet, f.inventory); err == nil {
 		t.Fatal("nonempty Inventory accepted")
@@ -372,7 +372,7 @@ func TestConcurrentIdenticalImportsHaveOneEffect(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if count(t, f.wdb, "wallet.journals") != 2 || count(t, f.idb, "inventory.items") != 2 {
+	if count(t, f.wdb, "ledger.journals") != 2 || count(t, f.idb, "inventory.items") != 2 {
 		t.Fatal("concurrent imports duplicated effects")
 	}
 }
@@ -466,7 +466,7 @@ func TestEmptyBaselineIsPinnedWithoutZeroPostings(t *testing.T) {
 	s := f.freeze(t)
 	f.apply(t, s)
 	f.apply(t, s)
-	if count(t, f.wdb, "wallet.journals") != 0 || count(t, f.wdb, "wallet.opening_baseline") != 1 || count(t, f.idb, "inventory.opening_baseline") != 1 {
+	if count(t, f.wdb, "ledger.journals") != 0 || count(t, f.wdb, "ledger.opening_baseline") != 1 || count(t, f.idb, "inventory.opening_baseline") != 1 {
 		t.Fatal("empty baseline was not pinned")
 	}
 }

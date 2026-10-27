@@ -1,11 +1,7 @@
 {
   "extends": "./tsconfig.core.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022"
-    ]
+    "lib": ["ES2022"]
   },
-  "include": [
-    "src/domain"
-  ]
+  "include": ["src/domain"]
 }

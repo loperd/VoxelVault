@@ -33,5 +33,5 @@ func TestParseGrantsReadsTheStarterChests(t *testing.T) {
 }
 
 func TestRoutesDoNotConflict(t *testing.T) {
-	(&Server{mux: http.NewServeMux()}).routes()
+	(&Server{mux: http.NewServeMux(), contexts: &ContextPorts{}}).routes()
 }

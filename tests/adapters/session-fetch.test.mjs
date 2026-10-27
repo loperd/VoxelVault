@@ -7,7 +7,7 @@ const API = 'https://vv.test/api/v1/inventory';
 /** A fake network: `answers[url]` is a list of statuses (the last repeats), or a function that throws. */
 function network(answers) {
   const calls = [];
-  const fetcher = async url => {
+  const fetcher = async (url) => {
     calls.push(url);
     const list = answers[url];
     if (typeof list === 'function') return list();
@@ -36,11 +36,17 @@ test('calls that hit 401 together share one refresh', async () => {
   const { fetcher, calls } = network({ [API]: [401, 401, 200], [REFRESH]: [200] });
   const fetchSession = sessionFetch(fetcher, REFRESH, () => assert.fail('not expired'));
   await Promise.all([fetchSession(API), fetchSession(API)]);
-  assert.equal(calls.filter(url => url === REFRESH).length, 1);
+  assert.equal(calls.filter((url) => url === REFRESH).length, 1);
 });
 
 test('no network for the refresh keeps the session; auth endpoints pass through', async () => {
-  const { fetcher, calls } = network({ [API]: [401], [REFRESH]: () => { throw new TypeError('offline'); }, 'https://vv.test/api/v1/auth/logout': [401] });
+  const { fetcher, calls } = network({
+    [API]: [401],
+    [REFRESH]: () => {
+      throw new TypeError('offline');
+    },
+    'https://vv.test/api/v1/auth/logout': [401],
+  });
   const fetchSession = sessionFetch(fetcher, REFRESH, () => assert.fail('not expired'));
   assert.equal((await fetchSession(API)).status, 401);
   assert.equal((await fetchSession('https://vv.test/api/v1/auth/logout')).status, 401);

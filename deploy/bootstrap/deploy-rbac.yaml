@@ -38,11 +38,11 @@ metadata:
   namespace: voxel-vault
 rules:
   # Core: config, services, the chart's SA, and secrets (Helm keeps release state there).
-  - apiGroups: [""]
+  - apiGroups: ['']
     resources: [configmaps, services, serviceaccounts, secrets]
     verbs: [get, list, watch, create, update, patch, delete]
   # Pods/events read-only: `helm --wait` waits for readiness and reports failures.
-  - apiGroups: [""]
+  - apiGroups: ['']
     resources: [pods, pods/log, events, persistentvolumeclaims]
     verbs: [get, list, watch]
   - apiGroups: [apps]

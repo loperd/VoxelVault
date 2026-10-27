@@ -16,10 +16,10 @@ import (
 	inv "github.com/voxel-vault/api/internal/inventory/application"
 	iv1 "github.com/voxel-vault/api/internal/inventory/contracts/v1"
 	idomain "github.com/voxel-vault/api/internal/inventory/domain"
+	wpg "github.com/voxel-vault/api/internal/ledger/adapters/postgres"
+	wmigrate "github.com/voxel-vault/api/internal/ledger/adapters/postgres/migrations"
 	"github.com/voxel-vault/api/internal/platform/postgrespermissions"
 	"github.com/voxel-vault/api/internal/store"
-	wpg "github.com/voxel-vault/api/internal/wallet/adapters/postgres"
-	wmigrate "github.com/voxel-vault/api/internal/wallet/adapters/postgres/migrations"
 )
 
 func runtimeRole(t *testing.T, admin *sql.DB, dsn, suffix string, policy postgrespermissions.Policy) (*sql.DB, string, string) {
@@ -159,11 +159,11 @@ func TestContextRuntimeWithDedicatedDatabaseRoles(t *testing.T) {
 		{idb, `UPDATE public.inventory_schema_version SET version_id=99`},
 		{idb, `UPDATE inventory.lifecycle_entries SET cause='{}'`},
 		{idb, `DELETE FROM inventory.lifecycle_links`},
-		{wdb, `CREATE TABLE wallet.runtime_probe(id int)`},
-		{wdb, `UPDATE wallet.journals SET intent_id='bad'`},
-		{wdb, `DELETE FROM wallet.postings`},
-		{wdb, `TRUNCATE wallet.journals CASCADE`},
-		{wdb, `UPDATE wallet.opening_baseline SET digest='bad'`},
+		{wdb, `CREATE TABLE ledger.runtime_probe(id int)`},
+		{wdb, `UPDATE ledger.journals SET intent_id='bad'`},
+		{wdb, `DELETE FROM ledger.postings`},
+		{wdb, `TRUNCATE ledger.journals CASCADE`},
+		{wdb, `UPDATE ledger.opening_baseline SET digest='bad'`},
 		{wdb, `UPDATE public.wallet_schema_version SET version_id=99`},
 	} {
 		assertDeniedSQL(t, c.db, c.q)
@@ -178,7 +178,7 @@ func TestContextRuntimeWithDedicatedDatabaseRoles(t *testing.T) {
 		t.Fatal("unexpected column-level legacy Wallet access accepted")
 	}
 	httpExec(t, adminSource, `REVOKE SELECT(value) ON public.wallet_balances FROM `+pgx.Identifier{sourceRole}.Sanitize())
-	httpExec(t, f.wdb, `GRANT UPDATE ON wallet.opening_baseline TO `+pgx.Identifier{walletRole}.Sanitize())
+	httpExec(t, f.wdb, `GRANT UPDATE ON ledger.opening_baseline TO `+pgx.Identifier{walletRole}.Sanitize())
 	if err := postgrespermissions.Apply(context.Background(), f.wdb, walletRole, wpg.RuntimePrivileges()); err == nil {
 		t.Fatal("mutable opening baseline privilege accepted")
 	}
@@ -199,23 +199,23 @@ func TestRuntimeGrantsRejectExcessRightsAtomically(t *testing.T) {
 			t.Fatalf("expected grant success=%v, got %v", allow, err)
 		}
 	}
-	httpExec(t, admin, `REVOKE SELECT ON wallet.journals FROM `+quoted)
-	httpExec(t, admin, `GRANT UPDATE ON wallet.opening_baseline TO `+quoted)
+	httpExec(t, admin, `REVOKE SELECT ON ledger.journals FROM `+quoted)
+	httpExec(t, admin, `GRANT UPDATE ON ledger.opening_baseline TO `+quoted)
 	apply(false)
 	// The failed operation must not leave its earlier GRANT statements committed.
-	assertDeniedSQL(t, db, `SELECT * FROM wallet.journals`)
-	httpExec(t, admin, `REVOKE UPDATE ON wallet.opening_baseline FROM `+quoted)
+	assertDeniedSQL(t, db, `SELECT * FROM ledger.journals`)
+	httpExec(t, admin, `REVOKE UPDATE ON ledger.opening_baseline FROM `+quoted)
 	apply(true)
-	httpExec(t, admin, `GRANT SELECT ON wallet.journals TO `+quoted+` WITH GRANT OPTION`)
+	httpExec(t, admin, `GRANT SELECT ON ledger.journals TO `+quoted+` WITH GRANT OPTION`)
 	apply(false)
-	httpExec(t, admin, `REVOKE GRANT OPTION FOR SELECT ON wallet.journals FROM `+quoted)
+	httpExec(t, admin, `REVOKE GRANT OPTION FOR SELECT ON ledger.journals FROM `+quoted)
 	apply(true)
 	httpExec(t, admin, `ALTER ROLE `+quoted+` CREATEDB`)
 	apply(false)
 	httpExec(t, admin, `ALTER ROLE `+quoted+` NOCREATEDB`)
-	httpExec(t, admin, `GRANT SELECT ON wallet.opening_baseline TO PUBLIC`)
+	httpExec(t, admin, `GRANT SELECT ON ledger.opening_baseline TO PUBLIC`)
 	apply(false)
-	httpExec(t, admin, `REVOKE SELECT ON wallet.opening_baseline FROM PUBLIC`)
+	httpExec(t, admin, `REVOKE SELECT ON ledger.opening_baseline FROM PUBLIC`)
 	var owner string
 	if err := admin.QueryRow(`SELECT current_user`).Scan(&owner); err != nil {
 		t.Fatal(err)

@@ -5,16 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MC Roulette — Canvas 2D preview</title>
     <style>
-      * { box-sizing: border-box; }
-      body { margin: 0; background: #0c1217; color: #f1f5f7; font: 16px system-ui; }
-      main { width: min(1120px, 100%); margin: 48px auto; padding: 16px; }
-      #viewport { position: relative; height: clamp(540px, 75vw, 640px); background: #17222c; }
-      canvas { position: absolute; top: 44%; transform: translateY(-50%); display: block; width: 100%; height: 164px; }
-      [hidden] { display: none !important; }
-      button { min-height: 44px; padding: 12px 24px; margin: 16px 8px 0 0; cursor: pointer; }
-      button:focus-visible { outline: 3px solid #99e382; outline-offset: 3px; }
-      #status { min-height: 24px; }
-      @media (max-width: 720px) { #viewport { height: auto; aspect-ratio: 1; } }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #0c1217;
+        color: #f1f5f7;
+        font: 16px system-ui;
+      }
+      main {
+        width: min(1120px, 100%);
+        margin: 48px auto;
+        padding: 16px;
+      }
+      #viewport {
+        position: relative;
+        height: clamp(540px, 75vw, 640px);
+        background: #17222c;
+      }
+      canvas {
+        position: absolute;
+        top: 44%;
+        transform: translateY(-50%);
+        display: block;
+        width: 100%;
+        height: 164px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      button {
+        min-height: 44px;
+        padding: 12px 24px;
+        margin: 16px 8px 0 0;
+        cursor: pointer;
+      }
+      button:focus-visible {
+        outline: 3px solid #99e382;
+        outline-offset: 3px;
+      }
+      #status {
+        min-height: 24px;
+      }
+      @media (max-width: 720px) {
+        #viewport {
+          height: auto;
+          aspect-ratio: 1;
+        }
+      }
     </style>
   </head>
   <body>

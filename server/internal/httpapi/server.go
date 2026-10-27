@@ -27,13 +27,15 @@ type Server struct {
 	starter      []iv1.Grant
 	contexts     *ContextPorts
 	economyGuard func(context.Context) error
+	limits       limiter
 }
 
 // New serves the API; rb is the chest economy's rulebook in force. It receives only published
 // context ports. The composition root owns all database wiring and supplies a guard that fails
 // closed during migration/outages.
 func New(db *gorm.DB, cfg config.Config, identity *IdentityPorts, rb *rulebook.Rulebook, ports *ContextPorts, guard func(context.Context) error) (*Server, error) {
-	if ports == nil || ports.Collection == nil || ports.Workshop == nil || ports.Wallet == nil || ports.Subjects == nil || ports.UserContext == nil || guard == nil {
+	if ports == nil || ports.Collection == nil || ports.Workshop == nil || ports.Wallet == nil || ports.Transfer == nil || ports.Currency == nil || ports.Subjects == nil || ports.UserContext == nil || guard == nil ||
+		ports.RecipientPerMinute < 1 || ports.QuotePerMinute < 1 || ports.TransferPerMinute < 1 {
 		return nil, fmt.Errorf("complete context ports and readiness guard are required")
 	}
 	if identity == nil || identity.Profiles == nil || identity.Sessions == nil || identity.Security == nil || identity.Peer == nil {

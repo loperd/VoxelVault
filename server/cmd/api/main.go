@@ -23,6 +23,22 @@ import (
 
 func run() error {
 	cfg := config.Load()
+	if cfg.DatabaseURL == "" {
+		return fmt.Errorf("DATABASE_URL is required")
+	}
+	if cfg.IdentityDatabaseURL == "" || cfg.SecurityDatabaseURL == "" || cfg.GatewayInternalToken == "" || cfg.IdentityInternalToken == "" {
+		return fmt.Errorf("Identity, Security and distinct gateway peer and identity credentials are required")
+	}
+	if cfg.IdentityInternalToken == cfg.GatewayInternalToken {
+		return fmt.Errorf("gateway peer and identity credentials must be distinct")
+	}
+	peer, err := gatewayhttp.New(cfg.GatewayInternalToken)
+	if err != nil {
+		return err
+	}
+	if _, err := gatewayhttp.New(cfg.IdentityInternalToken); err != nil {
+		return fmt.Errorf("identity credential: %w", err)
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	db, err := store.OpenRuntime(cfg.DatabaseURL)
@@ -39,9 +55,6 @@ func run() error {
 		return err
 	}
 	log.Printf("Economy rulebook %s loaded", rb.Revision())
-	if cfg.IdentityDatabaseURL == "" || cfg.SecurityDatabaseURL == "" || cfg.GatewayInternalToken == "" {
-		return fmt.Errorf("Identity, Security and the gateway peer credential are required")
-	}
 	startup, cancel := context.WithTimeout(ctx, 10*time.Second)
 	identity, err := identityruntime.Open(startup, cfg.IdentityDatabaseURL, cfg.IdentityGatewayID)
 	cancel()
@@ -55,10 +68,6 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	peer, err := gatewayhttp.New(cfg.GatewayInternalToken)
-	if err != nil {
-		return err
-	}
 	identityPorts := &httpapi.IdentityPorts{Peer: peer, Profiles: identity.Profiles, Sessions: identity.Sessions, Security: identity.Security}
 	startup, cancel = context.WithTimeout(ctx, 15*time.Second)
 	runtime, err := economyruntime.New(startup, sqlDB, cfg.InventoryDatabaseURL, cfg.WalletDatabaseURL, cfg.WalletAssets, rb, economyruntime.Options{StarterChests: cfg.StarterChests, SecurityDB: identity.SecurityDB})
@@ -67,7 +76,14 @@ func run() error {
 		return err
 	}
 	defer runtime.Close()
-	ports := &httpapi.ContextPorts{Collection: runtime.Collection, Workshop: runtime.Workshop, Wallet: runtime.Wallet, Subjects: identity.Profiles, UserContext: runtime.UserContext}
+	startup, cancel = context.WithTimeout(ctx, 10*time.Second)
+	err = runtime.EnableTransfer(startup, cfg.TransferConfigPath, identity.Recipient)
+	cancel()
+	if err != nil {
+		return fmt.Errorf("transfer configuration: %w", err)
+	}
+	ports := &httpapi.ContextPorts{Collection: runtime.Collection, Workshop: runtime.Workshop, Wallet: runtime.Wallet, Transfer: runtime.Transfer, Currency: runtime.Currency, Subjects: identity.Profiles, UserContext: runtime.UserContext,
+		RecipientPerMinute: runtime.Limits.RecipientRequestsPerMinute, QuotePerMinute: runtime.Limits.QuoteRequestsPerMinute, TransferPerMinute: runtime.Limits.TransferRequestsPerMinute}
 	economyDone := make(chan struct{})
 	go func() { defer close(economyDone); runtime.Run(ctx) }()
 	defer func() { stop(); <-economyDone }()
@@ -76,7 +92,7 @@ func run() error {
 		return err
 	}
 	handler := api.Handler()
-	internal, err := identityhttp.New(identity.Sessions, cfg.GatewayInternalToken, identity.Accounts)
+	internal, err := identityhttp.New(identity.Sessions, cfg.IdentityInternalToken, identity.Accounts)
 	if err != nil {
 		return err
 	}
@@ -96,7 +112,15 @@ func run() error {
 		downstream.ServeHTTP(w, r)
 	})
 	handler = mux
-	server := &http.Server{Addr: cfg.Address, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
+	// https://pkg.go.dev/net/http@go1.26.0#Server
+	server := &http.Server{
+		Addr: cfg.Address, Handler: handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    64 << 10,
+	}
 	done := make(chan error, 1)
 	go func() { done <- server.ListenAndServe() }()
 	log.Printf("Voxel Vault API listening on %s", cfg.Address)

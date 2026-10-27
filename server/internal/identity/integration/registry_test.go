@@ -10,6 +10,7 @@ import (
 	"github.com/voxel-vault/api/internal/identity/adapters/postgres"
 	"github.com/voxel-vault/api/internal/identity/adapters/postgres/migrations"
 	"github.com/voxel-vault/api/internal/platform/resourcegrants"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -492,5 +493,79 @@ func TestProviderLinkRequiresCurrentSessionAndTokenGrantCeiling(t *testing.T) {
 	}
 	if n := count(t, f.accounts, `SELECT count(*) FROM identity.provider_links WHERE provider='google'`); n != 0 {
 		t.Fatal("failed proof mutated provider mapping", n)
+	}
+}
+
+func TestRecipientRejectsMalformedQueriesAndUnsafeDisplayNames(t *testing.T) {
+	f := setup(t)
+	f.service.Recipient = postgres.Registry{DB: f.accounts}
+	id, err := f.service.Resolve(ctx, provider("recipient"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.accounts.Exec(`UPDATE identity.accounts SET display_name=$2 WHERE id=$1`, id, "Bob\u202e"); err != nil {
+		t.Fatal(err)
+	}
+	role(t, f.accounts, postgres.RuntimePrivileges())
+	role(t, f.security, securitypg.RuntimePrivileges())
+	for _, query := range []string{"bob\x00", string([]byte{0xff}), "bob\n", "bob\u202e"} {
+		if _, err := f.service.ResolveRecipient(ctx, query); !errors.Is(err, domain.ErrInvalid) {
+			t.Fatalf("query %q: %v", query, err)
+		}
+	}
+	for _, bad := range []string{"Bob\x00", "Bob\u202e", "Bob\u200b", "Bob\u2028", "Bob\u2029"} {
+		p := provider("unsafe")
+		p.DisplayName = bad
+		if _, err := f.service.Resolve(ctx, p); !errors.Is(err, domain.ErrInvalid) {
+			t.Fatalf("provider %q: %v", bad, err)
+		}
+	}
+	if _, err = f.service.ResolveRecipient(ctx, id); !errors.Is(err, domain.ErrInvalid) {
+		t.Fatal("unsafe persisted name returned", err)
+	}
+}
+
+func TestRecipientLookupDoesNotRevealLegacyTelegramHandles(t *testing.T) {
+	f := setup(t)
+	f.service.Recipient = postgres.Registry{DB: f.accounts}
+	id, err := f.service.Resolve(ctx, provider("123456"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.accounts.Exec(`UPDATE identity.accounts SET handle='tg_123456' WHERE id=$1`, id); err != nil {
+		t.Fatal(err)
+	}
+	role(t, f.accounts, postgres.RuntimePrivileges())
+	role(t, f.security, securitypg.RuntimePrivileges())
+	if _, err = f.service.ResolveRecipient(ctx, "tg_123456"); !errors.Is(err, application.ErrConflict) {
+		t.Fatal("legacy Telegram ID was discoverable", err)
+	}
+	if p, err := f.service.Profile(ctx, id); err != nil || p.Handle != "u_"+id {
+		t.Fatal("own profile must show the usable opaque handle", p, err)
+	}
+	for _, query := range []string{id, "u_" + id} {
+		p, err := f.service.ResolveRecipient(ctx, query)
+		if err != nil || p.ID != id || p.Handle != "u_"+id {
+			t.Fatal(p, err)
+		}
+	}
+}
+
+func TestOpaqueRecipientHandleSupportsMaximumLengthAccountID(t *testing.T) {
+	f := setup(t)
+	f.service.Recipient = postgres.Registry{DB: f.accounts}
+	id := strings.Repeat("a", 160)
+	f.service.ID = func() (string, error) { return id, nil }
+	if _, err := f.service.Resolve(ctx, provider("long-account")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.accounts.Exec(`UPDATE identity.accounts SET handle='tg_123456' WHERE id=$1`, id); err != nil {
+		t.Fatal(err)
+	}
+	role(t, f.accounts, postgres.RuntimePrivileges())
+	role(t, f.security, securitypg.RuntimePrivileges())
+	p, err := f.service.ResolveRecipient(ctx, "u_"+id)
+	if err != nil || p.ID != id || p.Handle != "u_"+id {
+		t.Fatal(p, err)
 	}
 }

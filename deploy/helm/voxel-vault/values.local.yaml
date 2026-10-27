@@ -4,18 +4,18 @@
 #   helm upgrade --install voxel-vault ./deploy/helm/voxel-vault -f ./deploy/helm/voxel-vault/values.local.yaml \
 #     --kube-context orbstack --namespace voxel-vault --create-namespace
 env:
-  FRONTEND_URL: "https://vault.loper.me/"
-  WEBAUTHN_RP_ID: "vault.loper.me"
-  WEBAUTHN_ORIGINS: "https://vault.loper.me"
-  ALLOWED_ORIGINS: "https://vault.loper.me"
-  COOKIE_SECURE: "true"
+  FRONTEND_URL: 'https://vault.loper.me/'
+  WEBAUTHN_RP_ID: 'vault.loper.me'
+  WEBAUTHN_ORIGINS: 'https://vault.loper.me'
+  ALLOWED_ORIGINS: 'https://vault.loper.me'
+  COOKIE_SECURE: 'true'
   # BotFather: trusted origin https://vault.loper.me, this redirect URI.
-  TELEGRAM_REDIRECT_URL: "https://vault.loper.me/api/v1/auth/telegram/callback"
+  TELEGRAM_REDIRECT_URL: 'https://vault.loper.me/api/v1/auth/telegram/callback'
 
 gateway:
   config:
     telegramAuth:
-      redirectUrl: "https://vault.loper.me/api/v1/auth/telegram/callback"
+      redirectUrl: 'https://vault.loper.me/api/v1/auth/telegram/callback'
     cors:
       allowedOrigins:
         - https://vault.loper.me
@@ -30,12 +30,11 @@ ingress:
   sslRedirect: false
   hsts: false
 
-
 # Local Vault (dev mode, in-cluster, ns vault) through VSO: KV-v2 secret/local/voxel-vault.
 secrets:
   source: vso
   vso:
-    address: "http://vault.vault.svc:8200"
-    role: "voxel-vault-local"
-    mount: "secret"
-    path: "local/voxel-vault"
+    address: 'http://vault.vault.svc:8200'
+    role: 'voxel-vault-local'
+    mount: 'secret'
+    path: 'local/voxel-vault'

@@ -1,4 +1,10 @@
-export type DataErrorCode = 'INVALID_DTO' | 'INVALID_URL' | 'HTTP_ERROR' | 'INVALID_JSON' | 'OPERATION_PENDING' | 'OPERATION_REJECTED';
+export type DataErrorCode =
+  | 'INVALID_DTO'
+  | 'INVALID_URL'
+  | 'HTTP_ERROR'
+  | 'INVALID_JSON'
+  | 'OPERATION_PENDING'
+  | 'OPERATION_REJECTED';
 
 export class DataError extends Error {
   readonly code: DataErrorCode;

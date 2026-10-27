@@ -18,7 +18,29 @@ import type { SoundPreference } from './SoundControl.tsx';
 import { Button } from './Button.tsx';
 import { ErrorNotice } from './ErrorNotice.tsx';
 
-export function App({ captureWreck, catalog, session, preview, sceneElement, rouletteElement, transitionElement, backgroundUrl, world, onRetryInitialization, onOpenGesture, soundPreference, recentFind, onOpenRequest, onPrizeClose, openLabel, availableCaseCount, archiveCount, archiveView, casePalette, inspectedCase }: {
+export function App({
+  captureWreck,
+  catalog,
+  session,
+  preview,
+  sceneElement,
+  rouletteElement,
+  transitionElement,
+  backgroundUrl,
+  world,
+  onRetryInitialization,
+  onOpenGesture,
+  soundPreference,
+  recentFind,
+  onOpenRequest,
+  onPrizeClose,
+  openLabel,
+  availableCaseCount,
+  archiveCount,
+  archiveView,
+  casePalette,
+  inspectedCase,
+}: {
   readonly onOpenRequest?: () => void;
   readonly onPrizeClose?: () => void;
   readonly casePalette?: CaseVisualTheme;
@@ -50,19 +72,56 @@ export function App({ captureWreck, catalog, session, preview, sceneElement, rou
   if (state.phase === 'disposed') return null;
   const worldImage = worldStill ?? backgroundUrl;
   return (
-    <main className={`page-shell app${session ? ' app--game' : ''}`} style={{ ...(casePalette ? { '--case-accent': casePalette.accent, '--case-accent-highlight': casePalette.highlight,
-      '--case-accent-deep': casePalette.deep, '--case-accent-glow': casePalette.glow, '--case-effect': casePalette.accent } : {}), ...(worldImage ? { '--case-world-image': `url("${worldImage}")` } : {}), ...(backgroundUrl ? { '--case-static-image': `url("${backgroundUrl}")`, backgroundImage:
-      `linear-gradient(180deg, rgba(5, 12, 13, 0.42), rgba(5, 12, 13, 0.3) 42%, rgba(5, 12, 13, 0.68)), url("${backgroundUrl}")` } : {}),
-      // Its own stacking context: the world (z-index -1) sits over the case picture, under everything else.
-      isolation: 'isolate' } as CSSProperties}>
-      {world && <PixelWorldBackground world={world.id} chest={world.chest} guest={world.guest} session={session} onStill={setWorldStill} />}
+    <main
+      className={`page-shell app${session ? ' app--game' : ''}`}
+      style={
+        {
+          ...(casePalette
+            ? {
+                '--case-accent': casePalette.accent,
+                '--case-accent-highlight': casePalette.highlight,
+                '--case-accent-deep': casePalette.deep,
+                '--case-accent-glow': casePalette.glow,
+                '--case-effect': casePalette.accent,
+              }
+            : {}),
+          ...(worldImage ? { '--case-world-image': `url("${worldImage}")` } : {}),
+          ...(backgroundUrl
+            ? {
+                '--case-static-image': `url("${backgroundUrl}")`,
+                backgroundImage: `linear-gradient(180deg, rgba(5, 12, 13, 0.42), rgba(5, 12, 13, 0.3) 42%, rgba(5, 12, 13, 0.68)), url("${backgroundUrl}")`,
+              }
+            : {}),
+          // Its own stacking context: the world (z-index -1) sits over the case picture, under everything else.
+          isolation: 'isolate',
+        } as CSSProperties
+      }
+    >
+      {world && (
+        <PixelWorldBackground
+          world={world.id}
+          chest={world.chest}
+          guest={world.guest}
+          session={session}
+          onStill={setWorldStill}
+        />
+      )}
       <div className="app__content page-container">
-        {!session && <header className="app__header">
-          <p className="eyebrow">Minecraft</p>
-          <h1>Voxel Vault</h1>
-        </header>}
+        {!session && (
+          <header className="app__header">
+            <p className="eyebrow">Minecraft</p>
+            <h1>Voxel Vault</h1>
+          </header>
+        )}
         {preview && <ChestPreviewPanel preview={preview} element={sceneElement} />}
-        {session && <GameViewport session={session} scene={sceneElement} roulette={rouletteElement} transition={transitionElement} />}
+        {session && (
+          <GameViewport
+            session={session}
+            scene={sceneElement}
+            roulette={rouletteElement}
+            transition={transitionElement}
+          />
+        )}
         {(state.phase === 'idle' || state.phase === 'loading') && (
           <div className="feedback" role="status" aria-live="polite">
             <span className="loader" aria-hidden="true" />
@@ -70,15 +129,41 @@ export function App({ captureWreck, catalog, session, preview, sceneElement, rou
           </div>
         )}
         {state.phase === 'failed' && (
-          <ErrorNotice title="Не удалось загрузить предметы" actions={<Button onClick={() => {
-            void (onRetryInitialization ? onRetryInitialization() : catalog.retry());
-          }}>Повторить</Button>}>
+          <ErrorNotice
+            title="Не удалось загрузить предметы"
+            actions={
+              <Button
+                onClick={() => {
+                  void (onRetryInitialization ? onRetryInitialization() : catalog.retry());
+                }}
+              >
+                Повторить
+              </Button>
+            }
+          >
             <p>Проверьте соединение и попробуйте ещё раз.</p>
           </ErrorNotice>
         )}
-        {state.phase === 'ready' && (session
-          ? <SessionPanel soundPreference={soundPreference} captureWreck={captureWreck} inspectedCase={inspectedCase} availableCaseCount={availableCaseCount} archiveCount={archiveCount} archiveView={archiveView} onOpenRequest={onOpenRequest} onPrizeClose={onPrizeClose} openLabel={openLabel} recentFind={recentFind} session={session} items={state.items} onOpenGesture={onOpenGesture} />
-          : <Catalog items={state.items} />)}
+        {state.phase === 'ready' &&
+          (session ? (
+            <SessionPanel
+              soundPreference={soundPreference}
+              captureWreck={captureWreck}
+              inspectedCase={inspectedCase}
+              availableCaseCount={availableCaseCount}
+              archiveCount={archiveCount}
+              archiveView={archiveView}
+              onOpenRequest={onOpenRequest}
+              onPrizeClose={onPrizeClose}
+              openLabel={openLabel}
+              recentFind={recentFind}
+              session={session}
+              items={state.items}
+              onOpenGesture={onOpenGesture}
+            />
+          ) : (
+            <Catalog items={state.items} />
+          ))}
       </div>
     </main>
   );

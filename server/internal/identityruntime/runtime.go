@@ -27,6 +27,7 @@ type Runtime struct {
 	Sessions       v1.Sessions
 	Accounts       v1.Accounts
 	Profiles       v1.Profiles
+	Recipient      v1.RecipientResolver
 	Security       sv1.Subjects
 	SecurityDB     *sql.DB
 	DB             *sql.DB

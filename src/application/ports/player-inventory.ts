@@ -20,9 +20,15 @@ export interface PlayerInventory {
  * `kept`, each with the chance `keep`.
  */
 export interface MergeOdds {
-  readonly traits: readonly { readonly id: string; readonly keep: number; readonly upgrade: number }[];
+  readonly traits: readonly {
+    readonly id: string;
+    readonly keep: number;
+    readonly upgrade: number;
+  }[];
   readonly contents: { readonly total: number; readonly kept: number; readonly keep: number };
 }
 
 /** The opening session tells the owner when the outcome is on screen. */
-export interface CaseOwnership { reveal(sessionId: string): void }
+export interface CaseOwnership {
+  reveal(sessionId: string): void;
+}

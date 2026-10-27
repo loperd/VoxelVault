@@ -10,7 +10,7 @@ export class ChestPreviewController implements ChestPreview {
 
   constructor(scene: ChestDropPort) {
     this.scene = scene;
-    this.unsubscribeErrors = scene.subscribeErrors(error => this.fail(error));
+    this.unsubscribeErrors = scene.subscribeErrors((error) => this.fail(error));
   }
 
   readonly getState = (): ChestPreviewState => this.state;
@@ -18,12 +18,14 @@ export class ChestPreviewController implements ChestPreview {
   readonly subscribe = (listener: () => void): (() => void) => {
     if (this.state.phase === 'disposed') return () => {};
     this.listeners.add(listener);
-    return () => { this.listeners.delete(listener); };
+    return () => {
+      this.listeners.delete(listener);
+    };
   };
 
   async initialize(): Promise<void> {
     if (this.state.phase !== 'idle' && this.state.phase !== 'failed') return;
-    await this.run('loading', async signal => {
+    await this.run('loading', async (signal) => {
       await this.invoke(() => this.scene.prepare(signal), signal);
       await this.invoke(() => this.scene.drop(signal), signal);
     });
@@ -31,7 +33,7 @@ export class ChestPreviewController implements ChestPreview {
 
   async replay(): Promise<void> {
     if (this.state.phase !== 'ready') return;
-    await this.run('resetting', async signal => {
+    await this.run('resetting', async (signal) => {
       await this.invoke(() => this.scene.reset(signal), signal);
       await this.invoke(() => this.scene.drop(signal), signal);
     });
@@ -45,8 +47,9 @@ export class ChestPreviewController implements ChestPreview {
     if (this.state.phase === 'disposed') return;
     this.abort?.abort();
     this.unsubscribeErrors();
-    try { this.publish({ phase: 'disposed' }); }
-    finally {
+    try {
+      this.publish({ phase: 'disposed' });
+    } finally {
       this.listeners.clear();
       this.scene.dispose();
     }
@@ -70,16 +73,22 @@ export class ChestPreviewController implements ChestPreview {
   }
 
   private invoke(invoke: () => Promise<void>, signal: AbortSignal): Promise<void> {
-    return waitFor(Promise.resolve().then(() => {
-      signal.throwIfAborted();
-      return invoke();
-    }), signal);
+    return waitFor(
+      Promise.resolve().then(() => {
+        signal.throwIfAborted();
+        return invoke();
+      }),
+      signal,
+    );
   }
 
   private fail(error: unknown): void {
     if (this.state.phase === 'disposed') return;
     this.abort?.abort();
-    this.publish({ phase: 'failed', message: error instanceof Error ? error.message : 'The scene failed.' });
+    this.publish({
+      phase: 'failed',
+      message: error instanceof Error ? error.message : 'The scene failed.',
+    });
   }
 
   private publish(state: ChestPreviewState): void {

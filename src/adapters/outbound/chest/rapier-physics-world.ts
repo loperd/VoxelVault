@@ -7,7 +7,10 @@ let initialization: Promise<void> | undefined;
 
 export async function createRapierPhysicsWorld(signal: AbortSignal): Promise<PhysicsWorldPort> {
   signal.throwIfAborted();
-  const ready = initialization ??= initializeRapier().catch(error => { initialization = undefined; throw error; });
+  const ready = (initialization ??= initializeRapier().catch((error) => {
+    initialization = undefined;
+    throw error;
+  }));
   await waitFor(ready, signal);
   signal.throwIfAborted();
   return new RapierPhysicsWorld();
@@ -25,34 +28,58 @@ class RapierPhysicsWorld implements PhysicsWorldPort {
     const world = new RAPIER.World(PHYSICS_CONFIG.gravity);
     try {
       const floor = PHYSICS_CONFIG.floorHalfExtents;
-      const body = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, -floor.y, 0));
-      world.createCollider(RAPIER.ColliderDesc.cuboid(floor.x, floor.y, floor.z)
-        .setFriction(PHYSICS_CONFIG.friction)
-        .setRestitution(PHYSICS_CONFIG.floorRestitution)
-        .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Multiply)
-        .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Multiply), body);
+      const body = world.createRigidBody(
+        RAPIER.RigidBodyDesc.fixed().setTranslation(0, -floor.y, 0),
+      );
+      world.createCollider(
+        RAPIER.ColliderDesc.cuboid(floor.x, floor.y, floor.z)
+          .setFriction(PHYSICS_CONFIG.friction)
+          .setRestitution(PHYSICS_CONFIG.floorRestitution)
+          .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Multiply)
+          .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Multiply),
+        body,
+      );
       this.world = world;
-    } catch (error) { world.free(); throw error; }
+    } catch (error) {
+      world.free();
+      throw error;
+    }
   }
 
   resetChest(colliders: readonly BoxCollider[], pose: Pose): void {
     assertChestDefinition(colliders, pose);
     const world = this.requireWorld();
-    if (this.chest) { world.removeRigidBody(this.chest); this.chest = undefined; }
+    if (this.chest) {
+      world.removeRigidBody(this.chest);
+      this.chest = undefined;
+    }
     const { position, rotation } = pose;
-    const body = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(position.x, position.y, position.z).setRotation(rotation)
-      .setLinearDamping(0.1).setAngularDamping(0.2).setCanSleep(true).setCcdEnabled(true));
+    const body = world.createRigidBody(
+      RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation(position.x, position.y, position.z)
+        .setRotation(rotation)
+        .setLinearDamping(0.1)
+        .setAngularDamping(0.2)
+        .setCanSleep(true)
+        .setCcdEnabled(true),
+    );
     try {
       for (const { center, halfExtents } of colliders) {
-        world.createCollider(RAPIER.ColliderDesc.cuboid(halfExtents.x, halfExtents.y, halfExtents.z)
-          .setTranslation(center.x, center.y, center.z).setFriction(PHYSICS_CONFIG.friction)
-          .setRestitution(PHYSICS_CONFIG.chestRestitution)
-          .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Multiply)
-          .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Multiply), body);
+        world.createCollider(
+          RAPIER.ColliderDesc.cuboid(halfExtents.x, halfExtents.y, halfExtents.z)
+            .setTranslation(center.x, center.y, center.z)
+            .setFriction(PHYSICS_CONFIG.friction)
+            .setRestitution(PHYSICS_CONFIG.chestRestitution)
+            .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Multiply)
+            .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Multiply),
+          body,
+        );
       }
       this.chest = body;
-    } catch (error) { world.removeRigidBody(body); throw error; }
+    } catch (error) {
+      world.removeRigidBody(body);
+      throw error;
+    }
   }
 
   step(deltaSeconds: number): void {
@@ -67,8 +94,12 @@ class RapierPhysicsWorld implements PhysicsWorldPort {
   setChestMoving(moving: boolean): void {
     const chest = this.chest;
     if (!chest) throw new Error('The chest body has not been created.');
-    chest.setBodyType(moving ? RAPIER.RigidBodyType.Dynamic : RAPIER.RigidBodyType.KinematicPositionBased, true);
-    chest.setLinvel({ x: 0, y: 0, z: 0 }, true); chest.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    chest.setBodyType(
+      moving ? RAPIER.RigidBodyType.Dynamic : RAPIER.RigidBodyType.KinematicPositionBased,
+      true,
+    );
+    chest.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    chest.setAngvel({ x: 0, y: 0, z: 0 }, true);
   }
 
   settle(): void {

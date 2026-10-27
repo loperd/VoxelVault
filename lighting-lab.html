@@ -4,26 +4,148 @@
     <meta charset="UTF-8" />
     <title>Voxel Vault — lighting lab</title>
     <style>
-      html, body { margin: 0; background: #000; overflow: hidden; font: 13px/1.35 system-ui, sans-serif; color: #e8e4dc; }
-      #scene { position: relative; width: 1600px; height: 900px; }
-      #scene.grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-      .cell { position: relative; overflow: hidden; }
-      .label { position: absolute; left: 10px; top: 8px; z-index: 1; padding: 2px 8px; border-radius: 4px; background: #000a; font-weight: 600; }
-      .panel { position: fixed; top: 0; right: 0; bottom: 0; width: 330px; overflow-y: auto; padding: 12px 14px; box-sizing: border-box; background: #14120fee; border-left: 1px solid #ffffff1a; }
-      .panel h2 { margin: 0 0 2px; font-size: 15px; }
-      .panel h3 { margin: 14px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #c9a970; }
-      .panel .pack, .panel .info { margin: 0 0 8px; color: #a9a196; font-size: 12px; }
-      .panel select, .panel textarea { width: 100%; box-sizing: border-box; background: #221f1a; color: inherit; border: 1px solid #ffffff22; border-radius: 4px; padding: 5px; }
-      .panel textarea { font: 11px/1.3 ui-monospace, monospace; margin-top: 12px; }
-      .panel label { display: grid; grid-template-columns: 112px 1fr 38px; align-items: center; gap: 2px 6px; margin: 4px 0; }
-      .panel label small { grid-column: 1 / -1; color: #8f877c; font-size: 11px; }
-      .panel label input[type=color] { width: 44px; height: 20px; padding: 0; border: 0; background: none; }
-      .panel output { text-align: right; font-variant-numeric: tabular-nums; color: #a9a196; }
-      .panel .problems { margin: 0 0 8px; padding: 6px 8px 6px 22px; border-radius: 4px; background: #5a1a14; color: #ffd8d0; font-size: 12px; }
-      .panel .row { display: flex; gap: 6px; margin: 8px 0; }
-      .panel button { flex: 1; padding: 6px; background: #3a3226; color: inherit; border: 1px solid #ffffff22; border-radius: 4px; cursor: pointer; }
-      .panel button:hover { background: #4a4030; }
-      @media (max-width: 1000px) { #scene { width: 100vw; height: 56vw; } .panel { top: auto; left: 0; width: auto; height: 44vh; border-left: 0; border-top: 1px solid #ffffff1a; } }
+      html,
+      body {
+        margin: 0;
+        background: #000;
+        overflow: hidden;
+        font:
+          13px/1.35 system-ui,
+          sans-serif;
+        color: #e8e4dc;
+      }
+      #scene {
+        position: relative;
+        width: 1600px;
+        height: 900px;
+      }
+      #scene.grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      .cell {
+        position: relative;
+        overflow: hidden;
+      }
+      .label {
+        position: absolute;
+        left: 10px;
+        top: 8px;
+        z-index: 1;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #000a;
+        font-weight: 600;
+      }
+      .panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 330px;
+        overflow-y: auto;
+        padding: 12px 14px;
+        box-sizing: border-box;
+        background: #14120fee;
+        border-left: 1px solid #ffffff1a;
+      }
+      .panel h2 {
+        margin: 0 0 2px;
+        font-size: 15px;
+      }
+      .panel h3 {
+        margin: 14px 0 4px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #c9a970;
+      }
+      .panel .pack,
+      .panel .info {
+        margin: 0 0 8px;
+        color: #a9a196;
+        font-size: 12px;
+      }
+      .panel select,
+      .panel textarea {
+        width: 100%;
+        box-sizing: border-box;
+        background: #221f1a;
+        color: inherit;
+        border: 1px solid #ffffff22;
+        border-radius: 4px;
+        padding: 5px;
+      }
+      .panel textarea {
+        font:
+          11px/1.3 ui-monospace,
+          monospace;
+        margin-top: 12px;
+      }
+      .panel label {
+        display: grid;
+        grid-template-columns: 112px 1fr 38px;
+        align-items: center;
+        gap: 2px 6px;
+        margin: 4px 0;
+      }
+      .panel label small {
+        grid-column: 1 / -1;
+        color: #8f877c;
+        font-size: 11px;
+      }
+      .panel label input[type='color'] {
+        width: 44px;
+        height: 20px;
+        padding: 0;
+        border: 0;
+        background: none;
+      }
+      .panel output {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        color: #a9a196;
+      }
+      .panel .problems {
+        margin: 0 0 8px;
+        padding: 6px 8px 6px 22px;
+        border-radius: 4px;
+        background: #5a1a14;
+        color: #ffd8d0;
+        font-size: 12px;
+      }
+      .panel .row {
+        display: flex;
+        gap: 6px;
+        margin: 8px 0;
+      }
+      .panel button {
+        flex: 1;
+        padding: 6px;
+        background: #3a3226;
+        color: inherit;
+        border: 1px solid #ffffff22;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .panel button:hover {
+        background: #4a4030;
+      }
+      @media (max-width: 1000px) {
+        #scene {
+          width: 100vw;
+          height: 56vw;
+        }
+        .panel {
+          top: auto;
+          left: 0;
+          width: auto;
+          height: 44vh;
+          border-left: 0;
+          border-top: 1px solid #ffffff1a;
+        }
+      }
     </style>
   </head>
   <body>

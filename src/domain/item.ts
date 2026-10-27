@@ -1,7 +1,7 @@
 export type ItemId = string;
 /** The rulebook's item rarities, lowest first. */
 export const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
-export type Rarity = typeof RARITIES[number];
+export type Rarity = (typeof RARITIES)[number];
 
 export interface Item {
   readonly id: ItemId;
@@ -11,7 +11,6 @@ export interface Item {
   readonly displayWeight: number;
 }
 import { DomainError } from './error.ts';
-
 
 export function assertItem(value: unknown): asserts value is Item {
   if (!value || typeof value !== 'object') {
@@ -28,8 +27,11 @@ export function assertItem(value: unknown): asserts value is Item {
   if (typeof item.rarity !== 'string' || !(RARITIES as readonly string[]).includes(item.rarity)) {
     throw new DomainError('INVALID_ITEM', 'Item rarity is not supported.');
   }
-  if (typeof item.displayWeight !== 'number'
-      || !Number.isFinite(item.displayWeight) || item.displayWeight < 0) {
+  if (
+    typeof item.displayWeight !== 'number' ||
+    !Number.isFinite(item.displayWeight) ||
+    item.displayWeight < 0
+  ) {
     throw new DomainError('INVALID_ITEM', 'Display weight must be finite and nonnegative.');
   }
 }
@@ -51,7 +53,7 @@ export function copyCatalog(items: readonly Item[]): readonly Item[] {
   }
 
   const catalog = Array.from(items, copyItem);
-  if (new Set(catalog.map(item => item.id)).size !== catalog.length) {
+  if (new Set(catalog.map((item) => item.id)).size !== catalog.length) {
     throw new DomainError('DUPLICATE_ITEM', 'Catalog item ids must be unique.');
   }
   return Object.freeze(catalog);
