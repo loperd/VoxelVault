@@ -86,7 +86,7 @@ func open(t *testing.T, asRuntime bool) (*sql.DB, *postgres.Store) {
 		t.Fatal("repeat migration", err)
 	}
 	var version int64
-	if err := db.QueryRow(`SELECT max(version_id) FROM wallet_schema_version`).Scan(&version); err != nil || version != 7 {
+	if err := db.QueryRow(`SELECT max(version_id) FROM wallet_schema_version`).Scan(&version); err != nil || version != 10 {
 		t.Fatal(version, err)
 	}
 	if !asRuntime {

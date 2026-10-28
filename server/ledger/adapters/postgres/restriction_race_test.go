@@ -83,7 +83,7 @@ func TestBurstCapHoldsAcrossCurrencies(t *testing.T) {
 			c.Terms.Asset = a
 			execute(t, openService(t, store), c)
 			dest := domain.TreasuryAccount("tax", a)
-			if err := store.Transact(ctx, func(tx application.Tx) error { return tx.LockAccounts([]domain.Account{dest}) }); err != nil {
+			if err := store.OpenAccount(ctx, dest); err != nil {
 				t.Fatal(err)
 			}
 			fee[a] = feeCalculator{fees.Rule{ID: "tax", Version: "1", GeneralTax: true, Imposition: fees.Inside, Numerator: 1, Denominator: 100,

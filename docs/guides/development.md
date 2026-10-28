@@ -33,7 +33,6 @@ The API uses PostgreSQL and runs its configured migrations/seed setup on startup
 | `COOKIE_SECURE` | Secure session-cookie setting |
 | `TELEGRAM_CLIENT_ID`, `TELEGRAM_CLIENT_SECRET`, `TELEGRAM_REDIRECT_URL` | Optional Telegram login |
 | `STARTER_CHESTS` | One-time starter stock, `case:count,...` |
-| `ECONOMY_CONFIG` | Rulebook path, default `config/economy.json` |
 
 Passkeys, the Telegram redirect and session cookies belong to the frontend origin. Telegram development uses a trusted HTTPS tunnel rather than a localhost redirect. Kubernetes configuration and secrets are documented in the [chart](../../deploy/helm/voxel-vault/README.md) and [bootstrap](../../deploy/bootstrap/README.md) guides.
 

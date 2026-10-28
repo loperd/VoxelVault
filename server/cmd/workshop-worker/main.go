@@ -10,7 +10,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/voxel-vault/api/internal/economyruntime"
 	bridge "github.com/voxel-vault/api/internal/integrations/inventoryledger"
-	"github.com/voxel-vault/api/internal/rulebookjson"
 	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
 	pricing "github.com/voxel-vault/api/inventory/adapters/rulebook"
 	inv "github.com/voxel-vault/api/inventory/application"
@@ -71,21 +70,17 @@ func run(once bool) error {
 	if err != nil {
 		return fmt.Errorf("WORKSHOP_WALLET_ASSETS must explicitly allow the settlement assets")
 	}
-	idb, err := connect(startup, "INVENTORY_DATABASE_URL", "inventory_schema_version", 4)
+	idb, err := connect(startup, "INVENTORY_DATABASE_URL", "inventory_schema_version", 5)
 	if err != nil {
 		return err
 	}
 	defer idb.Close()
-	wdb, err := connect(startup, "WALLET_DATABASE_URL", "wallet_schema_version", 7)
+	wdb, err := connect(startup, "WALLET_DATABASE_URL", "wallet_schema_version", 10)
 	if err != nil {
 		return err
 	}
 	defer wdb.Close()
-	config := os.Getenv("ECONOMY_CONFIG")
-	if config == "" {
-		config = "config/economy.json"
-	}
-	rb, err := rulebookjson.Load(config)
+	rb, err := economyruntime.LoadRulebook(startup, os.Getenv("INVENTORY_DATABASE_URL"))
 	if err != nil {
 		return err
 	}

@@ -71,7 +71,8 @@ type Runtime struct {
 	Workshop   iv1.WorkshopClient
 	Wallet     wv1.ReadClient
 	Ledger     wv1.ReadClient
-	Transfer   wv1.TransferClient
+	Admin      *wpg.Store
+	Transfer  wv1.TransferClient
 	Currency   cv1.Provider
 	Limits     TransferLimits
 	ledgerDB   *sql.DB
@@ -142,12 +143,12 @@ func New(ctx context.Context, source *sql.DB, inventoryDSN, walletDSN string, as
 			return nil, fmt.Errorf("WALLET_ASSETS must include rulebook material %s", rb.Material(kind))
 		}
 	}
-	idb, err := connect(ctx, inventoryDSN, "inventory_schema_version", 4)
+	idb, err := connect(ctx, inventoryDSN, "inventory_schema_version", 5)
 	if err != nil {
 		return nil, err
 	}
 	r.dbs = append(r.dbs, idb)
-	wdb, err := connect(ctx, walletDSN, "wallet_schema_version", 7)
+	wdb, err := connect(ctx, walletDSN, "wallet_schema_version", 10)
 	if err != nil {
 		r.Close()
 		return nil, err
@@ -179,7 +180,7 @@ func New(ctx context.Context, source *sql.DB, inventoryDSN, walletDSN string, as
 		return nil, fmt.Errorf("WALLET_ASSETS must explicitly allow player wallet reads and workshop settlement")
 	}
 	is, ws := ipg.New(idb), wpg.New(wdb)
-	r.ledgerDB, r.securityDB = wdb, options[0].SecurityDB
+	r.ledgerDB, r.securityDB, r.Admin = wdb, options[0].SecurityDB, ws
 	r.assets = append([]string(nil), assets...)
 	invAuth, err := InventoryAuthorizer(options[0].SecurityDB, nil)
 	if err != nil {

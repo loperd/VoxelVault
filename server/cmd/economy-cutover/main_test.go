@@ -17,6 +17,7 @@ import (
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
 	"github.com/voxel-vault/api/internal/rulebookjson"
 	"github.com/voxel-vault/api/internal/store"
+	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
 	imigrate "github.com/voxel-vault/api/inventory/adapters/postgres/migrations"
 	"github.com/voxel-vault/api/inventory/domain/chest"
 	wmigrate "github.com/voxel-vault/api/ledger/adapters/postgres/migrations"
@@ -127,7 +128,6 @@ func TestOfflineCutoverAndReadOnlyReadiness(t *testing.T) {
 	t.Setenv("WALLET_DATABASE_URL", walletDSN)
 	t.Setenv("WALLET_ASSETS", strings.Join(assets, ","))
 	t.Setenv("CUTOVER_WALLET_ASSETS", strings.Join(assets, ","))
-	t.Setenv("ECONOMY_CONFIG", config)
 	t.Setenv("CUTOVER_INVENTORY_SOURCES", "cli-rehearsal")
 	manifest := filepath.Join(t.TempDir(), "snapshot.json")
 	command := func(action string) []byte {
@@ -174,6 +174,13 @@ func TestOfflineCutoverAndReadOnlyReadiness(t *testing.T) {
 		if err := target.up(ctx, target.db); err != nil {
 			t.Fatal(err)
 		}
+	}
+	doc, err := os.ReadFile(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = ipg.SeedRulebook(ctx, idb, rb.Revision(), doc); err != nil {
+		t.Fatal(err)
 	}
 	command("source-migrate")
 	t.Run("unfrozen source rejected", func(t *testing.T) { check(t, false) })

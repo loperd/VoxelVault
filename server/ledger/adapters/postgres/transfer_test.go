@@ -113,7 +113,7 @@ func TestTransferAtomicIdempotentAndAccessChecked(t *testing.T) {
 			db, store := database(t)
 			execute(t, service(t, store), command("fund", "fund", domain.Credit, 1000))
 			destination := domain.TreasuryAccount("tax", "coins")
-			if err := store.Transact(ctx, func(tx application.Tx) error { return tx.LockAccounts([]domain.Account{destination}) }); err != nil {
+			if err := store.OpenAccount(ctx, destination); err != nil {
 				t.Fatal(err)
 			}
 			access := &transferAccess{}
@@ -265,7 +265,7 @@ func TestConcurrentTransferAndFailedPostingNeverLoseMoney(t *testing.T) {
 	store.LimitTransfers(100, 60)
 	execute(t, service(t, store), command("fund", "fund", domain.Credit, 1000))
 	destination := domain.TreasuryAccount("tax", "coins")
-	if err := store.Transact(ctx, func(tx application.Tx) error { return tx.LockAccounts([]domain.Account{destination}) }); err != nil {
+	if err := store.OpenAccount(ctx, destination); err != nil {
 		t.Fatal(err)
 	}
 	var seq atomic.Int64
@@ -417,7 +417,7 @@ func restrictionService(t *testing.T) (*sql.DB, *application.TransferService, co
 	db, store := database(t)
 	execute(t, service(t, store), command("fund", "fund", domain.Credit, 1000))
 	destination := domain.TreasuryAccount("tax", "coins")
-	if err := store.Transact(ctx, func(tx application.Tx) error { return tx.LockAccounts([]domain.Account{destination}) }); err != nil {
+	if err := store.OpenAccount(ctx, destination); err != nil {
 		t.Fatal(err)
 	}
 	var seq atomic.Int64
@@ -648,5 +648,15 @@ func TestAutoBlockPublishesOneAddedEvent(t *testing.T) {
 	}
 	if got := restrictionEvents(t, db); got["restriction.added"] != 1 || len(got) != 1 {
 		t.Fatal(got)
+	}
+}
+
+func TestAccountsRequireAValidSubject(t *testing.T) {
+	db, store := operatorDatabase(t)
+	if err := store.OpenAccount(ctx, domain.TreasuryAccount("", "coins")); err == nil {
+		t.Fatal("an account without a subject must not open")
+	}
+	if _, err := db.Exec(`INSERT INTO ledger.accounts(id,subject,asset,role) VALUES('x','','coins','player_liability')`); err == nil {
+		t.Fatal("the schema must refuse an empty subject")
 	}
 }

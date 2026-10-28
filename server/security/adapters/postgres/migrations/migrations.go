@@ -16,7 +16,7 @@ func Up(ctx context.Context, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	p, err := goose.NewProvider(goose.DialectPostgres, db, nil, goose.WithDisableGlobalRegistry(true), goose.WithTableName(VersionTable), goose.WithSessionLocker(locker), goose.WithGoMigrations(goose.NewGoMigration(2, &goose.GoFunc{RunTx: upRoles}, nil), goose.NewGoMigration(1, &goose.GoFunc{RunTx: up}, &goose.GoFunc{RunTx: func(context.Context, *sql.Tx) error { return errors.New("security migrations are forward-only") }})))
+	p, err := goose.NewProvider(goose.DialectPostgres, db, nil, goose.WithDisableGlobalRegistry(true), goose.WithTableName(VersionTable), goose.WithSessionLocker(locker), goose.WithGoMigrations(goose.NewGoMigration(3, &goose.GoFunc{RunTx: upPolicy}, &goose.GoFunc{RunTx: func(context.Context, *sql.Tx) error { return errors.New("security migrations are forward-only") }}), goose.NewGoMigration(2, &goose.GoFunc{RunTx: upRoles}, nil), goose.NewGoMigration(1, &goose.GoFunc{RunTx: up}, &goose.GoFunc{RunTx: func(context.Context, *sql.Tx) error { return errors.New("security migrations are forward-only") }})))
 	if err != nil {
 		return err
 	}
@@ -45,5 +45,15 @@ func upRoles(ctx context.Context, tx *sql.Tx) error {
 	_, err = tx.ExecContext(ctx, `LOCK TABLE public.casbin_rule IN EXCLUSIVE MODE;
  INSERT INTO security.role_bindings(subject,role) SELECT DISTINCT c.v0,c.v1 FROM public.casbin_rule c JOIN public.users u ON u.id=c.v0 WHERE c.ptype='g' ON CONFLICT DO NOTHING;
  INSERT INTO security.role_events(subject,role,actor,policy_version,at) SELECT subject,role,'identity-retirement','security-retirement-v1',now() FROM security.role_bindings;`)
+	return err
+}
+
+func upPolicy(ctx context.Context, tx *sql.Tx) error {
+	_, err := tx.ExecContext(ctx, `CREATE TABLE security.policy_revisions(
+ version text PRIMARY KEY,document jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE security.policy_active(
+ singleton boolean PRIMARY KEY CHECK(singleton),version text NOT NULL REFERENCES security.policy_revisions(version)
+);`)
 	return err
 }

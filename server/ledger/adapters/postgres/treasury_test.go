@@ -28,6 +28,9 @@ func treasuryServices(t *testing.T, store *postgres.Store) (*application.Service
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err = store.OpenAccount(ctx, domain.TreasuryAccount("buyback", "coins")); err != nil {
+		t.Fatal(err)
+	}
 	return s, application.TreasuryOpeningService{Store: store, Authorizer: fixtureIssuance{policy}, Producer: "funding", Clock: time.Now}
 }
 

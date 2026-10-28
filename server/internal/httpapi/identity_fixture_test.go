@@ -3,6 +3,8 @@ package httpapi
 import (
 	"context"
 	"database/sql"
+	"github.com/voxel-vault/api/internal/securityruntime"
+	"os"
 	"strings"
 	"testing"
 
@@ -34,12 +36,19 @@ func (f *httpContexts) setupIdentity(t *testing.T, dsn string) {
 	if e := imigrate.Up(ctx, f.source); e != nil {
 		t.Fatal(e)
 	}
+	policy, e := os.ReadFile("../../config/security.json")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = securityruntime.SeedPolicy(ctx, f.source, policy); e != nil {
+		t.Fatal(e)
+	}
 	rt, e := identityruntime.Open(ctx, dsn, "project-gateway")
 	if e != nil {
 		t.Fatal(e)
 	}
 	t.Cleanup(rt.Close)
-	if e = rt.EnableAccounts(ctx, dsn, "player", []string{"telegram"}, "../../config/security.json"); e != nil {
+	if e = rt.EnableAccounts(ctx, dsn, "player", []string{"telegram"}); e != nil {
 		t.Fatal(e)
 	}
 	f.sessions = map[string]string{}

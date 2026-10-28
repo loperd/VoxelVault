@@ -20,7 +20,8 @@ func Provider(db *sql.DB) (*goose.Provider, error) {
 			goose.NewGoMigration(3, &goose.GoFunc{RunTx: upCollection}, &goose.GoFunc{RunTx: func(context.Context, *sql.Tx) error { return errors.New("inventory migrations are forward-only") }}),
 			goose.NewGoMigration(4, &goose.GoFunc{RunTx: upLifecycle}, &goose.GoFunc{RunTx: func(context.Context, *sql.Tx) error {
 				return errors.New("inventory lifecycle migrations are forward-only")
-			}})))
+			}}),
+			goose.NewGoMigration(5, &goose.GoFunc{RunTx: upRulebook}, &goose.GoFunc{RunTx: func(context.Context, *sql.Tx) error { return errors.New("inventory migrations are forward-only") }})))
 }
 
 func Up(ctx context.Context, db *sql.DB) error {

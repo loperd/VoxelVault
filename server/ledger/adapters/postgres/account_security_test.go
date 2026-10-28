@@ -1,7 +1,6 @@
 package postgres_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -10,10 +9,6 @@ import (
 	"github.com/voxel-vault/api/ledger/application"
 	"github.com/voxel-vault/api/ledger/domain"
 )
-
-type allowAccount struct{}
-
-func (allowAccount) AuthorizeAccount(context.Context, string) error { return nil }
 
 func TestInactiveAccountBlocksNewMoneyMovementsButAllowsHoldRelease(t *testing.T) {
 	db, store := database(t)
@@ -69,23 +64,28 @@ func TestInactivePayoutAccountsAreRejectedBeforePostings(t *testing.T) {
 	}
 }
 
-func TestAccountProvisioningRejectsNoncanonicalIdentity(t *testing.T) {
+func TestTreasuryAccountsOpenOnlyExplicitlyAndCanonically(t *testing.T) {
 	db, store := database(t)
-	s := application.AccountService{Store: store, Authorizer: allowAccount{}}
 	valid := domain.TreasuryAccount("tax", "coins")
 	invalid := valid
 	invalid.ID = "arbitrary-id"
-	if err := s.Open(ctx, invalid); !errors.Is(err, domain.ErrInvalid) {
+	if err := store.OpenAccount(ctx, invalid); !errors.Is(err, domain.ErrInvalid) {
 		t.Fatal(err)
 	}
 	if count(t, db, "accounts") != 0 {
 		t.Fatal("invalid account persisted")
 	}
-	if err := s.Open(ctx, valid); err != nil {
-		t.Fatal(err)
+	err := store.Transact(ctx, func(tx application.Tx) error { return tx.LockAccounts([]domain.Account{valid}) })
+	if !errors.Is(err, domain.ErrAccountNotOpen) || count(t, db, "accounts") != 0 {
+		t.Fatalf("a posting must not open a treasury account: %v", err)
+	}
+	for range 2 {
+		if err := store.OpenAccount(ctx, valid); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if count(t, db, "accounts") != 1 {
-		t.Fatal("canonical account not provisioned")
+		t.Fatal("canonical account not provisioned once")
 	}
 }
 

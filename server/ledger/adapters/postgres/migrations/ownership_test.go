@@ -91,7 +91,7 @@ INSERT INTO wallet.treasury_openings(treasury,asset,fingerprint,request,receipt)
 		}
 	}
 	var version int
-	if err := db.QueryRowContext(ctx, `SELECT max(version_id) FROM wallet_schema_version`).Scan(&version); err != nil || version != 7 {
+	if err := db.QueryRowContext(ctx, `SELECT max(version_id) FROM wallet_schema_version`).Scan(&version); err != nil || version != 10 {
 		t.Fatal(version, err)
 	}
 	var posted, held int64

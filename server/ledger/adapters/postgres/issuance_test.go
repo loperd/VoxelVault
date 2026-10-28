@@ -107,6 +107,9 @@ func TestTreasuryApprovalsRequireNamedSourceReferenceAndCap(t *testing.T) {
 			t.Fatal("denied funding wrote state", table)
 		}
 	}
+	if err = store.OpenAccount(ctx, domain.TreasuryAccount("buyback", "coins")); err != nil {
+		t.Fatal(err)
+	}
 	// Having the economic capability alone never approves issuance.
 	bare, err := authorization.New([]authorization.Grant{grant})
 	if err != nil {

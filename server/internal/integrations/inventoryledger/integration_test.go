@@ -135,6 +135,9 @@ func (f *fixture) openBuyback(t *testing.T, units int64) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err = f.ws.OpenAccount(ctx, wdomain.TreasuryAccount(bridge.DefaultBuybackTreasury, "coins")); err != nil {
+		t.Fatal(err)
+	}
 	_, err = (wallet.TreasuryOpeningService{Store: f.ws, Authorizer: allowIssuance{p}, Producer: "test-funding", Clock: func() time.Time { return f.now }}).Open(ctx, wallet.TreasuryOpening{Treasury: bridge.DefaultBuybackTreasury, Asset: "coins", Units: units, Source: "fixture", Reference: "budget"})
 	if err != nil {
 		t.Fatal(err)

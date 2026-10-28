@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -122,12 +123,17 @@ func (t *unit) lockAccounts(input []domain.Account, requireActive bool) error {
 	accounts := append([]domain.Account(nil), input...)
 	sort.Slice(accounts, func(i, j int) bool { return accounts[i].ID < accounts[j].ID })
 	for _, a := range accounts {
-		if _, err := t.tx.ExecContext(t.ctx, `INSERT INTO ledger.accounts(id,subject,asset,role) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING`, a.ID, a.Subject, a.Asset, a.Role); err != nil {
-			return err
+		if a.Role != "treasury_liability" {
+			if _, err := t.tx.ExecContext(t.ctx, `INSERT INTO ledger.accounts(id,subject,asset,role) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING`, a.ID, a.Subject, a.Asset, a.Role); err != nil {
+				return err
+			}
 		}
 		var subject, asset, role string
 		var active bool
 		if err := t.tx.QueryRowContext(t.ctx, `SELECT subject,asset,role,active FROM ledger.accounts WHERE id=$1 FOR UPDATE`, a.ID).Scan(&subject, &asset, &role, &active); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return domain.ErrAccountNotOpen
+			}
 			return err
 		}
 		if subject != a.Subject || asset != a.Asset || role != a.Role {

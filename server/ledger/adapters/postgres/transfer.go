@@ -10,11 +10,28 @@ import (
 	"github.com/voxel-vault/api/ledger/domain"
 )
 
+// OpenAccount is the only way a treasury account comes to exist; opening twice is harmless.
 func (s *Store) OpenAccount(ctx context.Context, a domain.Account) error {
-	return s.Transact(
-		ctx,
-		func(tx application.Tx) error { return tx.LockAccounts([]domain.Account{a}) },
-	)
+	if !domain.ValidID(a.Subject) || a.Role != "treasury_liability" || a != domain.TreasuryAccount(a.Subject, a.Asset) {
+		return domain.ErrInvalid
+	}
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO ledger.accounts(id,subject,asset,role) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING`, a.ID, a.Subject, a.Asset, a.Role); err != nil {
+		return err
+	}
+	if ok, err := s.HasAccount(ctx, a); err != nil || !ok {
+		if err == nil {
+			err = domain.ErrConflict
+		}
+		return err
+	}
+	return nil
+}
+
+// HasAccount reports whether the account row exists.
+func (s *Store) HasAccount(ctx context.Context, a domain.Account) (bool, error) {
+	var found bool
+	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM ledger.accounts WHERE id=$1 AND subject=$2 AND asset=$3 AND role=$4)`, a.ID, a.Subject, a.Asset, a.Role).Scan(&found)
+	return found, err
 }
 
 func (s *Store) SaveTransferQuote(ctx context.Context, q application.TransferQuote) error {

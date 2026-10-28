@@ -16,7 +16,7 @@ import (
 	"github.com/voxel-vault/api/internal/economyruntime"
 	"github.com/voxel-vault/api/internal/httpapi"
 	"github.com/voxel-vault/api/internal/identityruntime"
-	"github.com/voxel-vault/api/internal/rulebookjson"
+	"github.com/voxel-vault/api/internal/ledgeradmin"
 	"github.com/voxel-vault/api/internal/store"
 	"github.com/voxel-vault/api/platform/gatewayhttp"
 )
@@ -44,12 +44,14 @@ func run() error {
 		return err
 	}
 	defer sqlDB.Close()
-	rb, err := rulebookjson.Load(cfg.EconomyPath)
+	startup, cancel := context.WithTimeout(ctx, 10*time.Second)
+	rb, err := economyruntime.LoadRulebook(startup, cfg.InventoryDatabaseURL)
+	cancel()
 	if err != nil {
 		return err
 	}
 	log.Printf("Economy rulebook %s loaded", rb.Revision())
-	startup, cancel := context.WithTimeout(ctx, 10*time.Second)
+	startup, cancel = context.WithTimeout(ctx, 10*time.Second)
 	identity, err := identityruntime.Open(startup, cfg.IdentityDatabaseURL, cfg.IdentityGatewayID)
 	cancel()
 	if err != nil {
@@ -57,7 +59,7 @@ func run() error {
 	}
 	defer identity.Close()
 	startup, cancel = context.WithTimeout(ctx, 10*time.Second)
-	err = identity.EnableAccounts(startup, cfg.SecurityDatabaseURL, cfg.DefaultRole, cfg.IdentityProviders, cfg.SecurityPolicyPath)
+	err = identity.EnableAccounts(startup, cfg.SecurityDatabaseURL, cfg.DefaultRole, cfg.IdentityProviders)
 	cancel()
 	if err != nil {
 		return err
@@ -71,7 +73,7 @@ func run() error {
 	}
 	defer runtime.Close()
 	startup, cancel = context.WithTimeout(ctx, 10*time.Second)
-	err = runtime.EnableTransfer(startup, cfg.TransferConfigPath, identity.Recipient)
+	err = runtime.EnableTransfer(startup, identity.Recipient)
 	cancel()
 	if err != nil {
 		return fmt.Errorf("transfer configuration: %w", err)
@@ -97,6 +99,7 @@ func run() error {
 	downstream := handler
 	mux.Handle("/internal/sessions/", internal)
 	mux.Handle("/internal/auth/", internal)
+	mux.Handle("/internal/ledger-admin/", ledgeradmin.New(runtime.Admin))
 	mux.Handle("/", downstream)
 	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
 		if err := identity.Ready(r.Context()); err != nil {

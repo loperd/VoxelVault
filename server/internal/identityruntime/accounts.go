@@ -13,7 +13,6 @@ import (
 	roles "github.com/voxel-vault/api/identity/adapters/security"
 	"github.com/voxel-vault/api/identity/application"
 	"github.com/voxel-vault/api/internal/securityruntime"
-	"github.com/voxel-vault/api/platform/configjson"
 	"github.com/voxel-vault/api/security/adapters/policyconfig"
 	security "github.com/voxel-vault/api/security/application"
 )
@@ -34,15 +33,11 @@ func AccountsAuthorizer(gateway string) (application.Authorizer, error) {
 }
 
 // EnableAccounts is a composition step: call it before starting handlers/workers.
-func (r *Runtime) EnableAccounts(ctx context.Context, securityDSN, defaultRole string, providers []string, policyPath string) error {
+func (r *Runtime) EnableAccounts(ctx context.Context, securityDSN, defaultRole string, providers []string) error {
 	if securityDSN == "" || len(providers) == 0 {
 		return fmt.Errorf("Security connection and providers are required")
 	}
-	var spec security.RolePolicySpec
-	if err := configjson.Read(policyPath, 1<<20, &spec); err != nil {
-		return err
-	}
-	sec, err := securityruntime.Open(ctx, securityDSN, "identity-registrar", defaultRole, spec)
+	sec, err := securityruntime.Open(ctx, securityDSN, "identity-registrar", defaultRole)
 	if err != nil {
 		return err
 	}

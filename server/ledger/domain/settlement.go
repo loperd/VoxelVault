@@ -15,6 +15,8 @@ var (
 	ErrConflict  = errors.New("wallet intent conflicts with its existing purpose or terms")
 	ErrNotReady  = errors.New("wallet intent is not ready; retry the same command")
 	ErrInvariant = errors.New("wallet funds invariant violated")
+	// ErrAccountNotOpen: treasury accounts are opened explicitly, never by a posting.
+	ErrAccountNotOpen = errors.New("treasury account is not open")
 )
 
 type Action string
@@ -59,6 +61,8 @@ const (
 	OpeningBalance  Purpose = "opening_balance"
 	Buyback         Purpose = "buyback"
 	TreasuryOpening Purpose = "treasury_opening"
+	TaxSweep        Purpose = "tax_sweep"
+	Allocation      Purpose = "allocation"
 )
 
 type Terms struct {

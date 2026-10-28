@@ -58,7 +58,7 @@ Inventory reserves the item and Ledger settles the funds through a durable saga,
 
 ## Rulebook configuration
 
-`server/inventory/domain/rulebook` holds the pure model. `server/internal/rulebookjson` decodes the JSON configuration and rejects unknown fields. The API reads `ECONOMY_CONFIG` on startup; the default is `config/economy.json` and the container uses `/config/economy.json`.
+`server/inventory/domain/rulebook` holds the pure model. `server/internal/rulebookjson` decodes the JSON configuration and rejects unknown fields. The API, the workshop worker and the cutover check read the active revision from `inventory.rulebook_revisions` (pointer `inventory.rulebook_active`) on startup; `economy-seed` imports `config/economy.json` there once. Revisions are never rewritten.
 
 A parameter has a default and conditional rules. Conditions may refer to type, collection, trait, item state, issue source, time and named events. Rules can set, multiply, add, allow or deny. More-specific `set` rules win, with explicit priority as the tie breaker; values are constrained to valid ranges. Collection/type defaults use the same conditional mechanism rather than separate inheritance.
 
@@ -98,7 +98,7 @@ Chest DTOs include `id`, `caseId`, status, seed (exact, as a string), revision, 
 
 Transaction history includes active holds and released holds alongside committed journal entries. Status is explicit: `held`, `captured`, `credited` or `released`. Capturing a hold replaces its pending row with the committed debit; it does not display two money movements. Held/released amounts have no debit/credit sign in Wallet. Recorded event timestamps are used for holds; when a legacy hold has no recorded timestamp, `at` is omitted. Holds and journals share owner-bound pagination.
 
-Internal transfer confirmation is synchronous: success means all Ledger postings committed. `TRANSFER_CONFIG` selects administrator-owned currency and commission configuration; the bundled 1% inside tax is an example, not a fixed economic rule. Amounts use `int64` minimum units and currency-specific precision (0–18); legacy `currency` remains precision 0. An uncommitted expired quote returns 409 `quote_expired`; insufficient available funds returns 409 `insufficient_funds`.
+Internal transfer confirmation is synchronous: success means all Ledger postings committed. The active `ledger.transfer_config_revisions` row holds the administrator-owned currency, commission and limit configuration (`economy-seed` imports `config/transfers.json` once); the bundled 1% inside tax is an example, not a fixed economic rule. Amounts use `int64` minimum units and currency-specific precision (0–18); legacy `currency` remains precision 0. An uncommitted expired quote returns 409 `quote_expired`; insufficient available funds returns 409 `insufficient_funds`.
 
 Errors are `{error: code}` (`contextError` in `server/internal/httpapi/contexts.go`): 400 `invalid`, 403 `forbidden`, 404 `not_found` (missing or unowned), 409 `conflict` or `not_ready` (incompatible state, session conflict, invalid merge pair), 503 otherwise. Malformed bodies and missing keys answer 400 before reaching the contexts.
 
@@ -125,7 +125,7 @@ A quote priced under another currency access revision or fee rule version is ref
 HTTP transfer routes use per-user/route counters in a fixed global minute window. Window
 rotation drops the old map in constant time; this is a per-process limiter, not a distributed
 quota. Persisted quote caps independently limit created rows per second and per day
-(`Limits.QuotesPerSecond`/`QuotesPerDay` in `TRANSFER_CONFIG`, no code defaults; bundled 3 and 2000)
+(`Limits.QuotesPerSecond`/`QuotesPerDay` in the transfer configuration, no code defaults; bundled 3 and 2000)
 per sender, including expired/completed quotes, and return HTTP 429 `rate_limited`. The per-route HTTP limiter numbers are `Limits.RecipientRequestsPerMinute`/`QuoteRequestsPerMinute`/`TransferRequestsPerMinute` (bundled 10/30/30).
 A quote for a blocked sender or recipient is refused at quote time as well as at confirmation. Records
 are retained; these are write-rate limits, not a fixed lifetime storage bound.
@@ -146,3 +146,7 @@ with 429 `rate_limited` and writes a time-limited `send` block of `Limits.Suspen
 restrictions with `/account-restrict` (see the Helm README); there is no appeal flow.
 
 Restriction changes are published through the generic outbox (`platform/outbox`, table `ledger.outbox`, topic `account-restrictions`) as `restriction.added`, `restriction.lifted` and `restriction.expired`. They are written in the same transaction as the change (auto-blocks included); expiry has no write of its own, so the `restriction-expire` CronJob publishes it. Event ids are `restriction:<id>:<kind>`, so each fact exists once. The body holds ids, kind, `expiresAt` and actor, never the internal reason. A consumer reads the topic with `Table.Topic("account-restrictions", "")` and must deduplicate by id; Ledger's receipt queues ignore these events (`kind` filter). No consumer ships yet.
+
+## Admin requests
+
+Money moves that no player action causes run as admin requests, never from config or code. Today there is one action, `allocate` (`treasury` → `inventory-buyback`, or any two open treasury accounts): `ledgerctl allocate FROM TO ASSET UNITS` creates the request, three parties each run `ledgerctl sign ID` (it shows the payload first), then `ledgerctl execute ID`. Three signatures from three distinct parties are a code constant (`AdminParties`); two keys of one party count once. Public keys are registered by `economy-seed` from `ADMIN_KEYS=key_id:party:hex-public-key,...` and are never replaced. Secret keys (`ledgerctl keygen`) stay with their holders; `ledgerctl` talks to `/internal/ledger-admin/` of the API (`LEDGER_ADMIN_URL`), which must not be exposed through the public ingress. Every step lands in `ledger.admin_audit`, a hash chain checked by `Store.VerifyAdminAudit`.

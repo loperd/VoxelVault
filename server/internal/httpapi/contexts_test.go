@@ -96,6 +96,9 @@ func (f *httpContexts) fundBuyback(t *testing.T, units int64) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err = wpg.New(f.wdb).OpenAccount(context.Background(), wdomain.TreasuryAccount(bridge.DefaultBuybackTreasury, "currency")); err != nil {
+		t.Fatal(err)
+	}
 	_, err = (wallet.TreasuryOpeningService{Store: wpg.New(f.wdb), Authorizer: allowIssuance{policy}, Producer: "funding-test", Clock: time.Now}).Open(context.Background(), wallet.TreasuryOpening{Treasury: bridge.DefaultBuybackTreasury, Asset: "currency", Units: units, Source: "test-allocation", Reference: "buyback-budget"})
 	if err != nil {
 		t.Fatal(err)
@@ -210,7 +213,14 @@ func (f *httpContexts) activate(t *testing.T) {
 	}
 	f.runtime = r
 	t.Cleanup(r.Close)
-	if err = r.EnableTransfer(context.Background(), "../../config/transfers.json", f.identity.Profiles.(identityv1.RecipientResolver)); err != nil {
+	doc, err := os.ReadFile("../../config/transfers.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = economyruntime.SeedLedger(context.Background(), f.wdb, doc); err != nil {
+		t.Fatal(err)
+	}
+	if err = r.EnableTransfer(context.Background(), f.identity.Profiles.(identityv1.RecipientResolver)); err != nil {
 		t.Fatal(err)
 	}
 	cfg := config.Config{AllowedOrigins: []string{"http://localhost"}, StarterChests: "ender:1"}

@@ -34,7 +34,7 @@ proxying to the backend. Gateway credentials/provider secrets must be provisione
 `secret/data/voxelvault/gateway/prod` is not consumed. Preserve database credentials when
 moving the collection. The Vault policy must allow the project service account to read
 the canonical path. Provision context runtime privileges with `/runtime-grants` after
-migrations. `SECURITY_POLICY_FILE` contains trusted role definitions;
+migrations. The trusted role definitions are the active policy revision in the Security database (`/economy-seed` stores `/config/security.json` once);
 `IDENTITY_PROVIDERS` limits accepted provider names. Replaying onboarding never restores
 a revoked role. Passkey verification is not enabled until provided by the shared gateway.
 
@@ -59,10 +59,11 @@ VSO overwrites the Secret with the KV: fill the KV, the read policy and the Kube
 
 ## Economy context activation
 
-The image contains `/api`, `/wallet-migrate`, `/inventory-migrate`, `/economy-cutover` and
+The image contains `/api`, `/wallet-migrate`, `/inventory-migrate`, `/security-migrate`, `/economy-seed`, `/economy-cutover` and
 `/workshop-worker`, `/runtime-grants` for explicit runtime permission setup and `/treasury-open`
 for a separately authorized opening allocation, and `/account-restrict` (operator `WALLET_DATABASE_URL`:
 `add|lift|list` send/receive restrictions).
+`/tax-sweep` (run by the `taxSweep` CronJob hourly with the runtime `WALLET_DATABASE_URL`) moves everything available on `platform-tax` into `treasury`, once per hour window.
 `/restriction-expire` (run by the `restrictionExpiry` CronJob every 5 minutes with the runtime `WALLET_DATABASE_URL`) publishes `restriction.expired`.
 Its default entrypoint remains `/api`; Kubernetes `command` or Docker
 `--entrypoint` selects an operator tool. No tool requires a shell in the distroless image.
@@ -80,6 +81,8 @@ in the operator environment, run these binaries in order:
 ```sh
 /wallet-migrate
 /inventory-migrate
+/security-migrate
+/economy-seed
 /economy-cutover -action source-migrate
 /economy-cutover -action export -source <stable-deployment-id> -manifest /snapshots/economy.json
 /economy-cutover -action import -manifest /snapshots/economy.json
@@ -93,7 +96,8 @@ in the operator environment, run these binaries in order:
 The operator uses `LEGACY_DATABASE_URL`, `INVENTORY_DATABASE_URL` and `WALLET_DATABASE_URL`.
 `CUTOVER_WALLET_ASSETS` explicitly authorizes opening imports. `WALLET_ASSETS` is the API/check
 asset allowlist and must contain currency, all rulebook materials and any historical assets
-players need to access. `ECONOMY_CONFIG` defaults to the image's bundled rulebook. Mount a
+players need to access. The rulebook is read from the active revision in the Inventory database;
+`/economy-seed [config-dir]` (needs `INVENTORY_DATABASE_URL`, `WALLET_DATABASE_URL`, `SECURITY_DATABASE_URL`) stores the image's bundled `/config` files (economy, transfers, security) in their databases once and never replaces an active revision. Mount a
 private writable snapshot volume for export and preserve it for resumable imports.
 
 `CUTOVER_INVENTORY_SOURCES` is a separate trusted comma-separated source allowlist for
@@ -142,8 +146,7 @@ opening exports/imports or reset balances for this ownership upgrade. Rehearse t
 upgrade and verify pending intents, holds, history and replay receipts on a copy first.
 There is no mixed-version writer compatibility window.
 
-`TRANSFER_CONFIG` must reference the currency/commission configuration (the image
-bundles `/config/transfers.json`). Include every configured currency in `WALLET_ASSETS`.
+The currency/commission configuration is read from the active revision in the Ledger database; `/economy-seed` stores the image's bundled `/config/transfers.json` there once and opens the treasury accounts it lists (`platform-tax`, `treasury`, `inventory-buyback`). The API only checks that they exist and refuses to start otherwise. Include every configured currency in `WALLET_ASSETS`.
 Configured fee accounts start empty; startup cannot allocate funds. Group-restricted
 configuration requires a membership adapter and fails startup without one; group
 administration is outside the current slice.

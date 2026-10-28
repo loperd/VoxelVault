@@ -22,6 +22,10 @@ func RuntimePrivileges() postgrespermissions.Policy {
 	for _, name := range []string{"opening_baseline", "chest_baseline"} {
 		p.Tables = append(p.Tables, postgrespermissions.Table{Schema: "inventory", Name: name, Privileges: []postgrespermissions.Privilege{{Action: "SELECT", Columns: []string{"singleton", "source", "digest"}}}})
 	}
+	// Configuration is read-only for the runtime: revisions change only through operator tools.
+	for _, name := range []string{"rulebook_revisions", "rulebook_active"} {
+		p.Tables = append(p.Tables, postgrespermissions.Table{Schema: "inventory", Name: name, Privileges: []postgrespermissions.Privilege{{Action: "SELECT"}}})
+	}
 	p.Tables = append(p.Tables, postgrespermissions.Table{Schema: "public", Name: "inventory_schema_version", Privileges: []postgrespermissions.Privilege{{Action: "SELECT"}}})
 	return p
 }

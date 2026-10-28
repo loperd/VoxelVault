@@ -3,8 +3,10 @@
 package securityruntime
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"strings"
@@ -30,7 +32,7 @@ func (r *Runtime) Ready(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if version != 2 {
+	if version != 3 {
 		return fmt.Errorf("Security registration schema or policy storage is unavailable")
 	}
 	return nil
@@ -63,7 +65,9 @@ func (a decisionAdapter) Decide(ctx context.Context, r application.Request) (app
 	d, err := a.Client.Decide(ctx, v1.Request{Context: r.Context, ActorKind: r.Actor.Kind, ActorID: r.Actor.ID, Permission: r.Permission, ResourceKind: r.ResourceKind, ResourceID: r.ResourceID, Owner: r.Owner, Source: r.Source})
 	return application.Decision{Allowed: d.Allowed, PolicyVersion: d.PolicyVersion}, err
 }
-func Open(ctx context.Context, dsn, actor, role string, spec application.RolePolicySpec) (*Runtime, error) {
+
+// Open connects and builds the role policy from the active revision in the Security database.
+func Open(ctx context.Context, dsn, actor, role string) (*Runtime, error) {
 	if dsn == "" {
 		return nil, fmt.Errorf("SECURITY_DATABASE_URL is required")
 	}
@@ -76,10 +80,43 @@ func Open(ctx context.Context, dsn, actor, role string, spec application.RolePol
 		r.Close()
 		return nil, err
 	}
+	doc, err := postgres.ActivePolicy(ctx, db)
+	if err != nil {
+		r.Close()
+		return nil, err
+	}
+	spec, err := ParsePolicy(doc)
+	if err != nil {
+		r.Close()
+		return nil, err
+	}
 	r.Subjects, err = New(db, actor, role, spec)
 	if err != nil {
 		r.Close()
 		return nil, err
 	}
 	return r, nil
+}
+
+// ParsePolicy reads one strict role policy document and validates it.
+func ParsePolicy(doc []byte) (application.RolePolicySpec, error) {
+	var spec application.RolePolicySpec
+	d := json.NewDecoder(bytes.NewReader(doc))
+	d.DisallowUnknownFields()
+	if err := d.Decode(&spec); err != nil || d.More() {
+		return spec, fmt.Errorf("role policy is invalid: %v", err)
+	}
+	if _, err := application.NewRolePolicy(spec); err != nil {
+		return spec, err
+	}
+	return spec, nil
+}
+
+// SeedPolicy stores the role policy once; it never replaces the active revision.
+func SeedPolicy(ctx context.Context, db *sql.DB, doc []byte) error {
+	spec, err := ParsePolicy(doc)
+	if err != nil {
+		return err
+	}
+	return postgres.SeedPolicy(ctx, db, spec.Version, doc)
 }

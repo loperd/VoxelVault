@@ -20,6 +20,7 @@
     "QuoteRequestsPerMinute": 30,
     "TransferRequestsPerMinute": 30
   },
+  "Account": ["platform-tax", "treasury", "inventory-buyback"],
   "Rule": [
     {
       "ID": "general-tax",

@@ -31,6 +31,9 @@ func Provider(db *sql.DB) (*goose.Provider, error) {
 			goose.NewGoMigration(5, &goose.GoFunc{RunTx: upOpening}, down),
 			goose.NewGoMigration(6, &goose.GoFunc{RunTx: upTreasury}, down),
 			goose.NewGoMigration(7, &goose.GoFunc{RunTx: upOwnership}, down),
+			goose.NewGoMigration(8, &goose.GoFunc{RunTx: upTransferConfig}, down),
+			goose.NewGoMigration(9, &goose.GoFunc{RunTx: upAdmin}, down),
+			goose.NewGoMigration(10, &goose.GoFunc{RunTx: upSubjectRequired}, down),
 		))
 }
 func Up(ctx context.Context, db *sql.DB) error {

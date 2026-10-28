@@ -22,7 +22,6 @@ import (
 	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
 	lmigrate "github.com/voxel-vault/api/internal/economycutover/adapters/legacy/migrations"
 	"github.com/voxel-vault/api/internal/economyruntime"
-	"github.com/voxel-vault/api/internal/rulebookjson"
 	ilocal "github.com/voxel-vault/api/inventory/adapters/inbound/local"
 	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
 	inv "github.com/voxel-vault/api/inventory/application"
@@ -90,11 +89,7 @@ func run(ctx context.Context, action, path, source string, out io.Writer) error 
 			return err
 		}
 		defer db.Close()
-		config := strings.TrimSpace(os.Getenv("ECONOMY_CONFIG"))
-		if config == "" {
-			config = "config/economy.json"
-		}
-		rb, err := rulebookjson.Load(config)
+		rb, err := economyruntime.LoadRulebook(check, os.Getenv("INVENTORY_DATABASE_URL"))
 		if err != nil {
 			return err
 		}

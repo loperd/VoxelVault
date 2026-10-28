@@ -1,10 +1,12 @@
 package economyruntime
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -22,7 +24,6 @@ import (
 	lapp "github.com/voxel-vault/api/ledger/application"
 	lv1 "github.com/voxel-vault/api/ledger/contracts/v1"
 	ldomain "github.com/voxel-vault/api/ledger/domain"
-	"github.com/voxel-vault/api/platform/configjson"
 	"github.com/voxel-vault/api/security/adapters/policyconfig"
 	securitypg "github.com/voxel-vault/api/security/adapters/postgres"
 	security "github.com/voxel-vault/api/security/application"
@@ -51,6 +52,44 @@ type TransferConfig struct {
 	Currency []TransferCurrencyConfig
 	Rule     []TransferRuleConfig
 	Limits   TransferLimits
+	// Account lists the treasury subjects opened for every configured currency.
+	Account []string
+}
+
+// RequiredAccounts are the treasury accounts that must be open: the listed subjects for every
+// currency, and every commission destination.
+func (c TransferConfig) RequiredAccounts() map[string]ldomain.Account {
+	account := map[string]ldomain.Account{}
+	add := func(subject, currency string) {
+		if ldomain.ValidID(subject) {
+			a := ldomain.TreasuryAccount(subject, currency)
+			account[a.ID] = a
+		}
+	}
+	for _, cur := range c.Currency {
+		for _, subject := range c.Account {
+			add(subject, cur.ID)
+		}
+	}
+	for _, r := range c.Rule {
+		for _, d := range r.Destination {
+			if !d.Burn {
+				add(d.Subject, r.Currency)
+			}
+		}
+	}
+	return account
+}
+
+// ParseTransferConfig reads one strict transfer configuration document.
+func ParseTransferConfig(doc []byte) (TransferConfig, error) {
+	var spec TransferConfig
+	d := json.NewDecoder(bytes.NewReader(doc))
+	d.DisallowUnknownFields()
+	if err := d.Decode(&spec); err != nil || d.More() {
+		return TransferConfig{}, fmt.Errorf("transfer configuration is invalid: %v", err)
+	}
+	return spec, nil
 }
 
 // TransferLimits has no code defaults: every field must be set in the config file.
@@ -138,33 +177,8 @@ func (a commissionPermission) Authorize(
 	return err
 }
 
-type accountPermission struct{ Client sv1.Client }
-
-func (a accountPermission) AuthorizeAccount(ctx context.Context, id string) error {
-	d, err := a.Client.Decide(
-		ctx,
-		sv1.Request{
-			Context:      "ledger",
-			ActorKind:    "service",
-			ActorID:      "ledger-configuration",
-			Permission:   "ledger.account.open",
-			ResourceKind: "account",
-			ResourceID:   id,
-			Owner:        "ledger-configuration",
-			Source:       "ledger-configuration",
-		},
-	)
-	if err != nil {
-		return err
-	}
-	if !d.Allowed || d.PolicyVersion == "" {
-		return lapp.ErrForbidden
-	}
-	return nil
-}
-
 // ConfigureTransfer is startup composition, never an HTTP administration action.
-// The configuration may create empty fee accounts, but cannot issue money.
+// It opens no accounts: every account the configuration names must already exist.
 func ConfigureTransfer(
 	ctx context.Context,
 	db, rolesDB *sql.DB,
@@ -191,8 +205,7 @@ func ConfigureTransfer(
 			)
 		}
 	}
-	accountIDs := []string{}
-	account := map[string]ldomain.Account{}
+	account := spec.RequiredAccounts()
 	feeRule := []fdomain.Rule{}
 	for _, r := range spec.Rule {
 		rule := fdomain.Rule{
@@ -212,7 +225,6 @@ func ConfigureTransfer(
 				}
 				a := ldomain.TreasuryAccount(d.Subject, r.Currency)
 				ref = a.ID
-				account[ref] = a
 			}
 			rule.Destination = append(
 				rule.Destination,
@@ -221,33 +233,10 @@ func ConfigureTransfer(
 		}
 		feeRule = append(feeRule, rule)
 	}
-	for id := range account {
-		accountIDs = append(accountIDs, id)
-	}
-	rules = append(
-		rules,
-		security.Rule{
-			Context:      "ledger",
-			Permission:   "ledger.account.open",
-			Role:         "ledger-configuration",
-			ActorKind:    "service",
-			ResourceKind: "account",
-			Scope:        security.ResourceScope,
-			ResourceIDs:  accountIDs,
-			Sources:      []string{"ledger-configuration"},
-		},
-	)
 	client, err := policyconfig.New(
 		policyconfig.Policy{
 			Version: "ledger-transfer-v1",
 			Rules:   rules,
-			Bindings: []policyconfig.Binding{
-				{
-					Kind:  "service",
-					ID:    "ledger-configuration",
-					Roles: []string{"ledger-configuration"},
-				},
-			},
 		},
 		securitypg.Roles{DB: rolesDB},
 	)
@@ -302,10 +291,13 @@ func ConfigureTransfer(
 	}
 	store := lpg.New(db).LimitQuotes(spec.Limits.QuotesPerSecond, spec.Limits.QuotesPerDay).
 		LimitTransfers(spec.Limits.TransfersPerMinute, spec.Limits.SuspendMinutes)
-	provision := lapp.AccountService{Store: store, Authorizer: accountPermission{client}}
 	for _, a := range account {
-		if err = provision.Open(ctx, a); err != nil {
+		ok, err := store.HasAccount(ctx, a)
+		if err != nil {
 			return nil, nil, err
+		}
+		if !ok {
+			return nil, nil, fmt.Errorf("account %s is not open; run economy-seed", a.ID)
 		}
 	}
 	transfer, err := lapp.NewTransfer(
@@ -333,11 +325,14 @@ func ConfigureTransfer(
 
 func (r *Runtime) EnableTransfer(
 	ctx context.Context,
-	path string,
 	recipient iv1.RecipientResolver,
 ) error {
-	var spec TransferConfig
-	if err := configjson.Read(path, 1<<20, &spec); err != nil {
+	doc, err := lpg.New(r.ledgerDB).ActiveTransferConfig(ctx)
+	if err != nil {
+		return err
+	}
+	spec, err := ParseTransferConfig(doc)
+	if err != nil {
 		return err
 	}
 	for _, c := range spec.Currency {

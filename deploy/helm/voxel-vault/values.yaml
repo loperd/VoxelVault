@@ -13,6 +13,10 @@ replicaCount: 1
 restrictionExpiry:
   enabled: true
   schedule: '*/5 * * * *'
+# Moves the transfer tax from platform-tax into the treasury (once per hour window).
+taxSweep:
+  enabled: true
+  schedule: '5 * * * *'
 
 service:
   type: ClusterIP
