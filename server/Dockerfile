@@ -5,8 +5,8 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/ \
     ./cmd/api ./cmd/wallet-migrate ./cmd/inventory-migrate \
-    ./cmd/economy-cutover ./cmd/workshop-worker ./cmd/runtime-grants ./cmd/treasury-open ./cmd/identity-migrate \
-    ./cmd/security-migrate ./cmd/account-restrict ./cmd/restriction-expire
+    ./cmd/economy-cutover ./cmd/workshop-worker ./cmd/runtime-grants ./cmd/treasury-open \
+    ./cmd/account-restrict ./cmd/restriction-expire
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/ /

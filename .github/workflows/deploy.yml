@@ -60,7 +60,6 @@ jobs:
       - uses: azure/setup-helm@v4
         with: { version: v3.18.3 }
       - run: helm lint deploy/helm/voxel-vault -f deploy/helm/voxel-vault/values.prod.yaml
-      - run: python3 -m unittest discover -s tests/deployment -p test_migration_job.py
 
   api:
     needs: test
@@ -89,17 +88,6 @@ jobs:
       # cluster's older VSO CRDs do not declare (VaultStaticSecret.spec.destination.excludeRaw).
       - uses: azure/setup-helm@v4
         with: { version: v3.18.3 }
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - name: Apply Identity and Security migrations
-        env:
-          KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
-        run: |
-          umask 077
-          printf '%s' "$KUBECONFIG_B64" | base64 -d > "$RUNNER_TEMP/kubeconfig"
-          KUBECONFIG="$RUNNER_TEMP/kubeconfig" python3 deploy/migrate-identity.py \
-            --image "$IMAGE:$GITHUB_REF_NAME" --release "$GITHUB_REF_NAME"
-          rm -f "$RUNNER_TEMP/kubeconfig"
       - name: helm upgrade
         env:
           KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}

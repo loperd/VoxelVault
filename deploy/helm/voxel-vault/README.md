@@ -19,20 +19,6 @@ access/refresh tokens and cookies belong to the gateway. Internal backend hooks 
 publicly routed. The API verifies the gateway credential, the live Identity session,
 current Security permissions and the token's grant ceiling on every protected request.
 
-Identity schema version 3 owns accounts, provider links, registration receipts, sessions
-and preserved passkey credentials. Security schema version 2 owns role bindings,
-registration receipts and role audit events. Run Security migrations before Identity
-migrations with operator connections. The Identity retirement migration preserves account
-IDs and starter markers, verifies role migration, then removes obsolete public auth tables
-without `CASCADE`. Unmigrated dependencies prevent destructive retirement. Old browser
-sessions are invalidated; reauthentication is required.
-
-`deploy/migrate-identity.py` runs these forward-only migrations as an explicit release Job.
-Its Secret keys are `IDENTITY_MIGRATION_DATABASE_URL` and
-`SECURITY_MIGRATION_DATABASE_URL`; runtime connections remain separate. Stop the old API
-and save a database backup before the first retirement migration. Later migrations are
-idempotent. No migration runs during API startup.
-
 The API requires explicit `DATABASE_URL`, `IDENTITY_DATABASE_URL`, `SECURITY_DATABASE_URL`,
 and `GATEWAY_INTERNAL_TOKEN`, alongside the Inventory/Ledger
 runtime connections. `GATEWAY_INTERNAL_TOKEN` matches the gateway's `INTERNAL_TOKEN`, used for
