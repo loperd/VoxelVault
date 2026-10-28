@@ -1,7 +1,0 @@
-{
-  "repository": "https://gitlab.com/overseerio/gateway.git",
-  "commit": "973004046c535fff18f969366ff92d528edde1de",
-  "image": "voxel-vault-gateway:973004046c53-44d72eefe6f7",
-  "patch": "gateway-identity-token.patch",
-  "patch_sha256": "44d72eefe6f73e13163bfa60612744d771f92f4b6542dba7c995b03690fb5a91"
-}

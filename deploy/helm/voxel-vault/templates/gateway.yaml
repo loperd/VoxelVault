@@ -90,11 +90,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.gateway.existingSecret }}
                   key: INTERNAL_TOKEN
-            - name: GATEWAY_IDENTITY_INTERNAL_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.gateway.existingSecret }}
-                  key: IDENTITY_INTERNAL_TOKEN
             # Telegram Login (OIDC) and the Identity-backed session live in the gateway; the API only
             # resolves accounts and sessions behind it. The secret comes from the chart's own Secret.
             - name: TG_OIDC_CLIENT_ID

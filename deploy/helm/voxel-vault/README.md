@@ -6,26 +6,13 @@ The project gateway, private Go API and optional single-node PostgreSQL.
 
 Ingress targets a separate Overseer Gateway deployment in this release. The API remains
 ClusterIP; a NetworkPolicy permits backend traffic only from this release's gateway pods.
-The gateway has `SESSION_SECRET`, `INTERNAL_TOKEN`, `IDENTITY_INTERNAL_TOKEN` and
+The gateway has `SESSION_SECRET`, `INTERNAL_TOKEN` and
 `TG_OIDC_CLIENT_SECRET` keys in
 `gateway.existingSecret`; it receives no backend database credentials. Provision that
 Secret independently, including through the deployment's Vault/VSO workflow if applicable.
 
-Build the pinned shared source with the reviewed credential-separation patch. The source
-commit and patch SHA-256 determine the image tag; local source edits never enter the build:
-
-```sh
-python3 deploy/build-gateway.py --source /path/to/overseer-gateway
-```
-
-For a remote cluster, use `--tag <registry/image:tag>`, publish the resulting image and set
-`gateway.image.repository` / `gateway.image.tag` before upgrading. The checked-in default
-image is for local OrbStack deployment. The shared source revision and patch digest are recorded in
-`deploy/gateway-source.json`. `--check-only` applies the exact patch and runs its gateway
-tests without Docker. The patch also pins the Go 1.26.10 security toolchain and updates the MTProto dependency
-`github.com/gotd/td` to the fixed v0.145.1 release. Publish the
-new gateway image before using these manifests; the unpatched upstream image cannot
-authenticate the separate Identity callback credential.
+The gateway is the shared Overseer Gateway image (`registry.gitlab.com/overseerio/gateway`, tag
+`gateway.image.tag`), built by that repository's CI; this chart carries no patched build.
 
 `gateway.config` configures the shared gateway's routes and providers. Telegram OIDC,
 access/refresh tokens and cookies belong to the gateway. Internal backend hooks are never
@@ -47,18 +34,17 @@ and save a database backup before the first retirement migration. Later migratio
 idempotent. No migration runs during API startup.
 
 The API requires explicit `DATABASE_URL`, `IDENTITY_DATABASE_URL`, `SECURITY_DATABASE_URL`,
-`GATEWAY_INTERNAL_TOKEN` and `IDENTITY_INTERNAL_TOKEN`, alongside the Inventory/Ledger
-runtime connections. `GATEWAY_INTERNAL_TOKEN` matches the gateway's `INTERNAL_TOKEN` for
-forwarded user requests. `IDENTITY_INTERNAL_TOKEN` matches its separately configured
-`GATEWAY_IDENTITY_INTERNAL_TOKEN` for `/internal/auth/*` and `/internal/sessions/*` calls.
-Both credentials must be distinct and at least 32 bytes; neither is the JWT signing key.
-The API selects only its seven context credential keys from its Secret and receives no
+and `GATEWAY_INTERNAL_TOKEN`, alongside the Inventory/Ledger
+runtime connections. `GATEWAY_INTERNAL_TOKEN` matches the gateway's `INTERNAL_TOKEN`, used for
+forwarded user requests and `/internal/auth/*` and `/internal/sessions/*` calls. It must be at
+least 32 bytes and is not the JWT signing key.
+The API selects only its six context credential keys from its Secret and receives no
 `SESSION_SECRET` or provider client secret. Gateway and API Secret names must differ.
 Ingress without the gateway, public backend Services and a disabled backend NetworkPolicy
 are rejected during Helm rendering. Gateway cookie/bearer credentials are stripped before
 proxying to the backend. Gateway credentials/provider secrets must be provisioned in
 `gateway.existingSecret` independently of API VSO data. Production VSO reads the canonical KV-v2 path
-`secret/data/prod/voxel-vault/gateway`; the obsolete
+`secret/data/prod/voxel-vault` (API) and `secret/data/prod/voxel-vault/gateway` (gateway only, `secrets.vso.gatewayPath`); the obsolete
 `secret/data/voxelvault/gateway/prod` is not consumed. Preserve database credentials when
 moving the collection. The Vault policy must allow the project service account to read
 the canonical path. Provision context runtime privileges with `/runtime-grants` after

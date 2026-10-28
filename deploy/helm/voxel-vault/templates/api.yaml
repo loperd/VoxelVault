@@ -61,7 +61,7 @@ spec:
             - configMapRef:
                 name: {{ include "voxel-vault.fullname" . }}-env
           env:
-            {{- range $key := list "DATABASE_URL" "INVENTORY_DATABASE_URL" "WALLET_DATABASE_URL" "IDENTITY_DATABASE_URL" "SECURITY_DATABASE_URL" "GATEWAY_INTERNAL_TOKEN" "IDENTITY_INTERNAL_TOKEN" }}
+            {{- range $key := list "DATABASE_URL" "INVENTORY_DATABASE_URL" "WALLET_DATABASE_URL" "IDENTITY_DATABASE_URL" "SECURITY_DATABASE_URL" "GATEWAY_INTERNAL_TOKEN" }}
             - name: {{ $key }}
               valueFrom:
                 secretKeyRef:

@@ -50,4 +50,29 @@ spec:
     - kind: Deployment
       name: {{ include "voxel-vault.fullname" . }}
   {{- end }}
+{{- if .Values.secrets.vso.gatewayPath }}
+---
+# Gateway-only credentials come from their own KV path into the distinct gateway Secret.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: {{ include "voxel-vault.fullname" . }}-gateway
+  labels:
+    {{- include "voxel-vault.labels" . | nindent 4 }}
+spec:
+  type: kv-v2
+  mount: {{ .Values.secrets.vso.mount | quote }}
+  path: {{ .Values.secrets.vso.gatewayPath | quote }}
+  vaultAuthRef: {{ include "voxel-vault.fullname" . }}
+  refreshAfter: {{ .Values.secrets.vso.refreshAfter | quote }}
+  destination:
+    name: {{ required "gateway.existingSecret is required" .Values.gateway.existingSecret | quote }}
+    create: true
+    excludeRaw: {{ .Values.secrets.vso.excludeRaw }}
+  {{- if .Values.secrets.vso.rolloutRestart }}
+  rolloutRestartTargets:
+    - kind: Deployment
+      name: {{ include "voxel-vault.fullname" . }}-gateway
+  {{- end }}
+{{- end }}
 {{- end }}

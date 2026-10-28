@@ -76,22 +76,21 @@ def require_credentials(kube, operator_secret, runtime_secret, gateway_secret):
     if not operator.get('WALLET_MIGRATION_DATABASE_URL'):
         raise ValueError('operator Secret requires WALLET_MIGRATION_DATABASE_URL')
     for key in ('DATABASE_URL', 'INVENTORY_DATABASE_URL', 'WALLET_DATABASE_URL',
-                'GATEWAY_INTERNAL_TOKEN', 'IDENTITY_INTERNAL_TOKEN'):
+                'GATEWAY_INTERNAL_TOKEN'):
         if not runtime.get(key):
             raise ValueError(f'runtime Secret requires {key}')
     peer = base64.b64decode(runtime['GATEWAY_INTERNAL_TOKEN'], validate=True)
-    identity = base64.b64decode(runtime['IDENTITY_INTERNAL_TOKEN'], validate=True)
     gateway = kube.get('secret', gateway_secret).get('data', {})
-    for key in ('SESSION_SECRET', 'INTERNAL_TOKEN', 'IDENTITY_INTERNAL_TOKEN'):
+    for key in ('SESSION_SECRET', 'INTERNAL_TOKEN'):
         if not gateway.get(key):
             raise ValueError(f'gateway Secret requires {key}')
-    if base64.b64decode(gateway['INTERNAL_TOKEN'], validate=True) != peer or base64.b64decode(gateway['IDENTITY_INTERNAL_TOKEN'], validate=True) != identity:
-        raise ValueError('gateway and API transport credentials do not match')
+    if base64.b64decode(gateway['INTERNAL_TOKEN'], validate=True) != peer:
+        raise ValueError('gateway and API peer credentials do not match')
     signer = base64.b64decode(gateway['SESSION_SECRET'], validate=True)
-    if len(signer) < 32 or signer in (peer, identity):
-        raise ValueError('gateway signer must be independent of both transport credentials')
-    if len(peer) < 32 or len(identity) < 32 or peer == identity:
-        raise ValueError('runtime peer and identity credentials must be distinct and at least 32 bytes')
+    if len(signer) < 32 or signer == peer:
+        raise ValueError('gateway signer must be independent of the peer credential')
+    if len(peer) < 32:
+        raise ValueError('runtime peer credential must be at least 32 bytes')
 
 
 def upgrade_job(args, state):
@@ -175,7 +174,7 @@ def main():
     parser.add_argument('--context', required=True)
     parser.add_argument('--namespace', required=True)
     parser.add_argument('--image', required=True, help='New Ledger-compatible API/worker image')
-    parser.add_argument('--gateway-image', required=True, help='Gateway image built with the pinned identity-token patch')
+    parser.add_argument('--gateway-image', required=True, help='Gateway image to run')
     parser.add_argument('--gateway-secret', required=True)
     parser.add_argument('--helm-release', required=True)
     parser.add_argument('--helm-values', type=Path, action='append', required=True)

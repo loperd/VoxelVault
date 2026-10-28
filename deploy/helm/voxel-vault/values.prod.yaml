@@ -18,9 +18,6 @@ ingress:
   host: api-voxelvault.mono.place
 
 gateway:
-  image:
-    repository: registry.gitlab.com/overseerio/gateway
-    tag: '973004046c53-44d72eefe6f7'
   # Gateway-only signing and provider credentials use a distinct Secret.
   existingSecret: voxel-vault-gateway-secrets
   config:
@@ -47,4 +44,5 @@ secrets:
     address: 'http://vault.vault.svc:8200'
     role: 'voxel-vault-prod'
     mount: 'secret'
-    path: 'prod/voxel-vault/gateway'
+    path: 'prod/voxel-vault'
+    gatewayPath: 'prod/voxel-vault/gateway'

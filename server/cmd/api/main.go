@@ -26,18 +26,12 @@ func run() error {
 	if cfg.DatabaseURL == "" {
 		return fmt.Errorf("DATABASE_URL is required")
 	}
-	if cfg.IdentityDatabaseURL == "" || cfg.SecurityDatabaseURL == "" || cfg.GatewayInternalToken == "" || cfg.IdentityInternalToken == "" {
-		return fmt.Errorf("Identity, Security and distinct gateway peer and identity credentials are required")
-	}
-	if cfg.IdentityInternalToken == cfg.GatewayInternalToken {
-		return fmt.Errorf("gateway peer and identity credentials must be distinct")
+	if cfg.IdentityDatabaseURL == "" || cfg.SecurityDatabaseURL == "" || cfg.GatewayInternalToken == "" {
+		return fmt.Errorf("Identity, Security and gateway peer credentials are required")
 	}
 	peer, err := gatewayhttp.New(cfg.GatewayInternalToken)
 	if err != nil {
 		return err
-	}
-	if _, err := gatewayhttp.New(cfg.IdentityInternalToken); err != nil {
-		return fmt.Errorf("identity credential: %w", err)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -92,7 +86,7 @@ func run() error {
 		return err
 	}
 	handler := api.Handler()
-	internal, err := identityhttp.New(identity.Sessions, cfg.IdentityInternalToken, identity.Accounts)
+	internal, err := identityhttp.New(identity.Sessions, cfg.GatewayInternalToken, identity.Accounts)
 	if err != nil {
 		return err
 	}

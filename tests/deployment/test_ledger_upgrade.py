@@ -72,7 +72,7 @@ class LedgerUpgradeTest(unittest.TestCase):
             self.assertTrue(all(c['securityContext']['runAsUser'] == 65532 for c in pod['initContainers'] + pod['containers']))
 
     def test_chart_update_keeps_writers_stopped_and_never_uses_atomic_rollback(self):
-        args = SimpleNamespace(image='registry.example/api:new', gateway_image='registry.example/gateway:patched',
+        args = SimpleNamespace(image='registry.example/api:new', gateway_image='registry.example/gateway:new',
                                context='fixture', namespace='test', helm_release='release', chart=Path('/chart'),
                                helm_values=[Path('/values.yaml')], gateway_secret='gateway-only',
                                runtime_secret='runtime-only', timeout=30)
@@ -83,23 +83,23 @@ class LedgerUpgradeTest(unittest.TestCase):
         self.assertNotIn('--atomic', command)
         self.assertIn('replicaCount=0', command)
         self.assertIn('image.tag="new"', command)
-        self.assertIn('gateway.image.tag="patched"', command)
+        self.assertIn('gateway.image.tag="new"', command)
         self.assertIn('gateway.existingSecret="gateway-only"', command)
         self.assertIn('secrets.existingSecret="runtime-only"', command)
 
-    def test_preflight_rejects_mismatched_transport_keys_and_reused_signer(self):
+    def test_preflight_rejects_mismatched_peer_key_and_reused_signer(self):
         encode = lambda value: base64.b64encode(value).decode()
-        peer, identity, signer = [encode(letter * 32) for letter in (b'p', b'i', b's')]
+        peer, signer = [encode(letter * 32) for letter in (b'p', b's')]
         secrets = {'operator': {'WALLET_MIGRATION_DATABASE_URL': encode(b'url')},
                    'runtime': {key: encode(b'url') for key in ('DATABASE_URL', 'INVENTORY_DATABASE_URL', 'WALLET_DATABASE_URL')},
-                   'gateway': {'SESSION_SECRET': signer, 'INTERNAL_TOKEN': peer, 'IDENTITY_INTERNAL_TOKEN': identity}}
-        secrets['runtime'].update(GATEWAY_INTERNAL_TOKEN=peer, IDENTITY_INTERNAL_TOKEN=identity)
+                   'gateway': {'SESSION_SECRET': signer, 'INTERNAL_TOKEN': peer}}
+        secrets['runtime'].update(GATEWAY_INTERNAL_TOKEN=peer)
         kube = SimpleNamespace(get=lambda kind, name: {'data': secrets[name]})
         upgrade.require_credentials(kube, 'operator', 'runtime', 'gateway')
-        secrets['gateway']['IDENTITY_INTERNAL_TOKEN'] = peer
+        secrets['gateway']['INTERNAL_TOKEN'] = signer
         with self.assertRaises(ValueError):
             upgrade.require_credentials(kube, 'operator', 'runtime', 'gateway')
-        secrets['gateway']['IDENTITY_INTERNAL_TOKEN'] = identity
+        secrets['gateway']['INTERNAL_TOKEN'] = peer
         secrets['gateway']['SESSION_SECRET'] = peer
         with self.assertRaises(ValueError):
             upgrade.require_credentials(kube, 'operator', 'runtime', 'gateway')
