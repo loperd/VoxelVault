@@ -162,38 +162,6 @@ Configured fee accounts start empty; startup cannot allocate funds. Group-restri
 configuration requires a membership adapter and fails startup without one; group
 administration is outside the current slice.
 
-The maintenance script `deploy/upgrade-ledger.py` plans the existing activated-installation
-upgrade without changing the cluster by default. Supply an explicit Kubernetes context,
-namespace, every writer deployment/container, the new API/worker image, runtime role,
-operator Secret, runtime Secret, gateway Secret/image, Helm release/values, environment
-ConfigMap and private state-file path (list the Helm-managed API writer first):
-
-```sh
-python3 deploy/upgrade-ledger.py --context <context> --namespace <namespace> \
-  --image <registry/api:new-version> --writer <api-deployment>/api \
-  --writer <separate-worker-deployment>/worker --runtime-role <ledger-runtime-role> \
-  --operator-secret <operator-secret> --runtime-secret <runtime-secret> \
-  --gateway-image <registry/gateway:patched-version> --gateway-secret <gateway-secret> \
-  --helm-release <release> --helm-values deploy/helm/voxel-vault/values.prod.yaml \
-  --configmap <application-env> --image-pull-secret ghcr-pull \
-  --state-file <private-upgrade-state.json>
-```
-
-Omit the second writer only when no separate worker exists; list every other writer.
-Pause any reconciler that can restore old writers before executing maintenance. The
-operator Secret needs `WALLET_MIGRATION_DATABASE_URL`; the runtime Secret needs the live
-runtime URLs and distinct gateway/Identity credentials. After reviewing the plan and
-completing backup/rehearsal, `--execute` drains the listed pods, migrates with operator
-credentials, explicitly revokes obsolete hold DELETE grants, reapplies runtime grants,
-checks readiness with runtime credentials, applies the Helm credential wiring and new
-gateway while API replicas remain zero, sets only the new images, and restores the
-original replica counts in both Helm and the Deployment. Helm atomic rollback is never
-used: a failed migration or rollout must not resurrect an old schema writer. A failed migration/grant check leaves writers stopped. Resume
-with the same state file and arguments after correcting the cause; each attempt keeps a
-separate Job. No automatic rollback starts an old binary, and no opening import/export or
-balance reset is part of this upgrade. No live maintenance was executed while preparing
-this script.
-
 Player sales use the named `inventory-buyback`
 treasury and cannot use currency reward issuance. An empty treasury rejects buyback;
 Inventory restores the reserved item after the payout-close fence. Salvage remains a
