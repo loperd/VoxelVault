@@ -51,7 +51,7 @@ Starting item base values by rarity are 4/8/16/32/64. State multipliers are 1/0.
 
 - Repair: only damaged items; spend the item's base value in its collection material to improve one state step.
 - Salvage: consume the item for base × state multiplier in its collection material.
-- Sale: consume the item for base × state multiplier × `item.sellRate` (initially 2.5) in common currency.
+- Sale: consume the item for base × state multiplier × `item.sellRate` (0.7, bounded to 0.6–0.75: the treasury buys below the price it resells at) in common currency, paid from the `inventory-buyback` treasury. The transfer tax is posted to that same treasury.
 - Merge items: consume two different damaged instances of the same item; retain the better one, with a configurable chance (initially 70%) to improve it by one step.
 
 Inventory reserves the item and Ledger settles the funds through a durable saga, with its own double-entry book; see [contexts](../architecture/contexts.md).
