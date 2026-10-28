@@ -210,7 +210,8 @@ func (t *unit) CompleteTransfer(subject, key, quote string, r application.Transf
 	return nil
 }
 
-const activeCondition = `created_at<=now() AND lifted_at IS NULL AND (expires_at IS NULL OR expires_at>now())`
+// clock_timestamp, not now(): a transaction older than a committed block must still see it.
+const activeCondition = `created_at<=clock_timestamp() AND lifted_at IS NULL AND (expires_at IS NULL OR expires_at>now())`
 const activeRestriction = `SELECT EXISTS(SELECT 1 FROM ledger.account_restrictions WHERE account_id=$1 AND kind=$2 AND ` + activeCondition + `)`
 
 // CheckTransferAllowed must run with both accounts locked, so a concurrent operator block
@@ -218,6 +219,10 @@ const activeRestriction = `SELECT EXISTS(SELECT 1 FROM ledger.account_restrictio
 func (t *unit) CheckTransferAllowed(subject, sender, recipient string) error {
 	if t.s.transfersPerMinute < 1 || t.s.suspendMinutes < 1 {
 		return application.ErrTransferRateLimit
+	}
+	// Per-subject lock: the cap spans currencies, whose account locks are disjoint.
+	if _, err := t.tx.ExecContext(t.ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, "transfer:"+subject); err != nil {
+		return err
 	}
 	if err := checkRestrictions(t.ctx, t.tx, sender, recipient); err != nil {
 		return err
