@@ -29,7 +29,7 @@
       "GeneralTax": true,
       "Numerator": 1,
       "Denominator": 100,
-      "Destination": [{ "Subject": "inventory-buyback", "Weight": 1 }]
+      "Destination": [{ "Subject": "platform-tax", "Weight": 1 }]
     }
   ]
 }
