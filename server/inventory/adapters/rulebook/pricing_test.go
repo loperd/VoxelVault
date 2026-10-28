@@ -24,3 +24,19 @@ func TestPricingTranslatesCurrentServerRules(t *testing.T) {
 		}
 	}
 }
+
+func TestOffersPriceEveryActionAndPairTwins(t *testing.T) {
+	rb := rulebooktest.Build(t)
+	p := adapter.Pricing{Current: func() *rules.Rulebook { return rb }, Clock: func() time.Time { return time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC) }}
+	item := func(id, status string) domain.Item {
+		return domain.Item{ID: id, Owner: "player", Definition: "item-a", Condition: "heavy", Origin: "chest", Status: status}
+	}
+	offers := p.Offers([]domain.Item{item("a", domain.Available), item("b", domain.Available), item("c", domain.Locked)})
+	o := offers["a"]
+	if o.MergeWith != "b" || o.Sell.Asset != "currency" || o.Sell.Units != 5 || o.Salvage.Units != 2 || o.Repair == nil || o.Repair.Units != 4 {
+		t.Fatal(o)
+	}
+	if _, ok := offers["c"]; ok {
+		t.Fatal("a locked item is not offered")
+	}
+}
