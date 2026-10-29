@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
+	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -109,7 +111,12 @@ func TestBurstCapHoldsAcrossCurrencies(t *testing.T) {
 		}
 		var name string
 		db.QueryRow(`SELECT current_database()`).Scan(&name)
-		admin, _ := sql.Open("pgx", "postgres://postgres@127.0.0.1:54329/"+name+"?sslmode=disable")
+		adminURL, err := url.Parse(os.Getenv("TEST_WALLET_DATABASE_URL"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		adminURL.Path = "/" + name
+		admin, _ := sql.Open("pgx", adminURL.String())
 		if _, err = admin.Exec(`CREATE FUNCTION ledger.zz_sleep() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(` + sleep + `); RETURN NEW; END $$;
 			CREATE TRIGGER zz BEFORE INSERT ON ledger.journals FOR EACH ROW EXECUTE FUNCTION ledger.zz_sleep()`); err != nil {
 			t.Fatal(err)
