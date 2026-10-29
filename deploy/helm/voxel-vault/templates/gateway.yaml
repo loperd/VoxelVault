@@ -70,7 +70,7 @@ spec:
               value: {{ .Values.gateway.port | quote }}
             - name: GATEWAY_CONFIG
               value: /etc/gateway/gateway.yaml
-            - name: LONCHA_UPSTREAM_URL
+            - name: GATEWAY_UPSTREAM_URL
               value: "http://{{ include "voxel-vault.fullname" . }}:{{ .Values.service.port }}"
             - name: GATEWAY_TOKEN_ISSUER
               value: "{{ include "voxel-vault.fullname" . }}-gateway"
@@ -80,12 +80,12 @@ spec:
               value: vv_gateway_session
             - name: GATEWAY_REFRESH_COOKIE
               value: vv_gateway_refresh
-            - name: LONCHA_SESSION_SECRET
+            - name: GATEWAY_SESSION_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ required "gateway.existingSecret is required" .Values.gateway.existingSecret }}
                   key: SESSION_SECRET
-            - name: LONCHA_INTERNAL_TOKEN
+            - name: GATEWAY_INTERNAL_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.gateway.existingSecret }}

@@ -41,7 +41,7 @@ gateway:
       port: '${PORT}'
     upstreams:
       api:
-        url: '${LONCHA_UPSTREAM_URL}'
+        url: '${GATEWAY_UPSTREAM_URL}'
     routes:
       # Everything under /api/v1/ needs the gateway session: the gateway verifies the JWT and sets the
       # trusted X-User-Id / X-Session-Id / X-Scopes / X-Internal-Token headers the API relies on.
