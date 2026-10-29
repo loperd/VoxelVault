@@ -71,7 +71,6 @@ type Runtime struct {
 	Workshop   iv1.WorkshopClient
 	Wallet     wv1.ReadClient
 	Ledger     wv1.ReadClient
-	Admin      *wpg.Store
 	Transfer  wv1.TransferClient
 	Currency   cv1.Provider
 	Limits     TransferLimits
@@ -180,7 +179,7 @@ func New(ctx context.Context, source *sql.DB, inventoryDSN, walletDSN string, as
 		return nil, fmt.Errorf("WALLET_ASSETS must explicitly allow player wallet reads and workshop settlement")
 	}
 	is, ws := ipg.New(idb), wpg.New(wdb)
-	r.ledgerDB, r.securityDB, r.Admin = wdb, options[0].SecurityDB, ws
+	r.ledgerDB, r.securityDB = wdb, options[0].SecurityDB
 	r.assets = append([]string(nil), assets...)
 	invAuth, err := InventoryAuthorizer(options[0].SecurityDB, nil)
 	if err != nil {

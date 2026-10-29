@@ -16,7 +16,6 @@ import (
 	"github.com/voxel-vault/api/internal/economyruntime"
 	"github.com/voxel-vault/api/internal/httpapi"
 	"github.com/voxel-vault/api/internal/identityruntime"
-	"github.com/voxel-vault/api/internal/ledgeradmin"
 	"github.com/voxel-vault/api/internal/store"
 	"github.com/voxel-vault/api/platform/gatewayhttp"
 )
@@ -99,7 +98,6 @@ func run() error {
 	downstream := handler
 	mux.Handle("/internal/sessions/", internal)
 	mux.Handle("/internal/auth/", internal)
-	mux.Handle("/internal/ledger-admin/", ledgeradmin.New(runtime.Admin))
 	mux.Handle("/", downstream)
 	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
 		if err := identity.Ready(r.Context()); err != nil {

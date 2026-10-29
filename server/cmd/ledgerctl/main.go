@@ -1,5 +1,6 @@
-// ledgerctl drives Ledger admin requests over the internal endpoint. A request runs only after
-// three parties sign it; the secret key never leaves the machine, only signatures do.
+// ledgerctl drives Ledger admin requests from inside the cluster (kubectl exec into an API pod)
+// straight against the Ledger database. A request runs only after three parties sign it; the
+// secret key stays with its holder, only signatures reach the database.
 //
 //	ledgerctl keygen
 //	ledgerctl allocate FROM TO ASSET UNITS   create a request (does not sign it)
@@ -7,57 +8,31 @@
 //	ledgerctl sign ID                        shows the payload, signs after you confirm
 //	ledgerctl execute ID
 //
-// Environment: LEDGER_ADMIN_URL, and for allocate/sign LEDGER_ADMIN_KEY_ID and
+// Environment: WALLET_DATABASE_URL, and for allocate/sign LEDGER_ADMIN_KEY_ID and
 // LEDGER_ADMIN_SECRET_KEY (hex, from keygen).
 package main
 
 import (
 	"bufio"
-	"bytes"
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/voxel-vault/api/ledger/adapters/postgres"
 )
 
 func fail(args ...any) {
 	fmt.Fprintln(os.Stderr, args...)
 	os.Exit(1)
-}
-
-func call(method, path string, in any) map[string]any {
-	base := os.Getenv("LEDGER_ADMIN_URL")
-	if base == "" {
-		fail("LEDGER_ADMIN_URL is required")
-	}
-	raw, _ := json.Marshal(in)
-	req, err := http.NewRequest(method, strings.TrimRight(base, "/")+"/internal/ledger-admin/requests"+path, bytes.NewReader(raw))
-	if err != nil {
-		fail(err)
-	}
-	res, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
-	if err != nil {
-		fail(err)
-	}
-	defer res.Body.Close()
-	data, _ := io.ReadAll(io.LimitReader(res.Body, 1<<20))
-	if res.StatusCode != 200 {
-		fail(res.Status, strings.TrimSpace(string(data)))
-	}
-	out := map[string]any{}
-	if err = json.Unmarshal(data, &out); err != nil {
-		fail("unreadable response")
-	}
-	return out
 }
 
 func key() (string, ed25519.PrivateKey) {
@@ -69,8 +44,20 @@ func key() (string, ed25519.PrivateKey) {
 	return id, ed25519.PrivateKey(raw)
 }
 
-func sign(priv ed25519.PrivateKey, action, payload string) string {
-	return hex.EncodeToString(ed25519.Sign(priv, postgres.AdminMessage(action, payload)))
+func sign(priv ed25519.PrivateKey, action, payload string) []byte {
+	return ed25519.Sign(priv, postgres.AdminMessage(action, payload))
+}
+
+func store() (*postgres.Store, func()) {
+	dsn := os.Getenv("WALLET_DATABASE_URL")
+	if dsn == "" {
+		fail("WALLET_DATABASE_URL is required")
+	}
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		fail("invalid WALLET_DATABASE_URL")
+	}
+	return postgres.New(db), func() { db.Close() }
 }
 
 func main() {
@@ -78,14 +65,19 @@ func main() {
 	if len(args) == 0 {
 		fail("usage: ledgerctl keygen | allocate FROM TO ASSET UNITS | show ID | sign ID | execute ID")
 	}
-	switch {
-	case args[0] == "keygen":
+	ctx := context.Background()
+	if args[0] == "keygen" {
 		pub, priv, err := ed25519.GenerateKey(rand.Reader)
 		if err != nil {
 			fail(err)
 		}
 		fmt.Println("public: ", hex.EncodeToString(pub))
 		fmt.Println("secret: ", hex.EncodeToString(priv))
+		return
+	}
+	s, closeDB := store()
+	defer closeDB()
+	switch {
 	case args[0] == "allocate" && len(args) == 5:
 		units, err := strconv.ParseInt(args[4], 10, 64)
 		if err != nil {
@@ -95,23 +87,35 @@ func main() {
 		rand.Read(nonce)
 		payload, _ := json.Marshal(postgres.Allocation{From: args[1], To: args[2], Asset: args[3], Units: units, Nonce: hex.EncodeToString(nonce)})
 		id, priv := key()
-		out := call("POST", "", map[string]string{"key_id": id, "action": "allocate", "payload": string(payload), "signature": sign(priv, "allocate", string(payload))})
-		fmt.Println(out["id"])
+		request, err := s.AdminCreate(ctx, id, "allocate", string(payload), sign(priv, "allocate", string(payload)))
+		if err != nil {
+			fail(err)
+		}
+		fmt.Println(request)
 	case args[0] == "show" && len(args) == 2:
-		out := call("GET", "/"+args[1], nil)
-		fmt.Printf("action:  %v\npayload: %v\nsigned:  %v\nran:     %v\n", out["action"], out["payload"], out["signers"], out["executed"])
+		action, payload, signers, executed, err := s.AdminRequest(ctx, args[1])
+		if err != nil {
+			fail(err)
+		}
+		fmt.Printf("action:  %s\npayload: %s\nsigned:  %v\nran:     %v\n", action, payload, signers, executed)
 	case args[0] == "sign" && len(args) == 2:
-		out := call("GET", "/"+args[1], nil)
-		action, payload := fmt.Sprint(out["action"]), fmt.Sprint(out["payload"])
+		action, payload, _, _, err := s.AdminRequest(ctx, args[1])
+		if err != nil {
+			fail(err)
+		}
 		fmt.Printf("action:  %s\npayload: %s\nSign this request? [y/N] ", action, payload)
 		if answer, _ := bufio.NewReader(os.Stdin).ReadString('\n'); strings.TrimSpace(answer) != "y" {
 			fail("not signed")
 		}
 		id, priv := key()
-		call("POST", "/"+args[1]+"/signatures", map[string]string{"key_id": id, "signature": sign(priv, action, payload)})
+		if err = s.AdminSign(ctx, args[1], id, sign(priv, action, payload)); err != nil {
+			fail(err)
+		}
 		fmt.Println("signed")
 	case args[0] == "execute" && len(args) == 2:
-		call("POST", "/"+args[1]+"/execute", struct{}{})
+		if err := s.AdminExecute(ctx, args[1], time.Now().UTC()); err != nil {
+			fail(err)
+		}
 		fmt.Println("executed")
 	default:
 		fail("unknown command")

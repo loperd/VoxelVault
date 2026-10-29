@@ -29,7 +29,7 @@ gateway:
   enabled: true
   image:
     repository: registry.gitlab.com/overseerio/gateway
-    tag: v0.1.21
+    tag: v0.1.22
     pullPolicy: IfNotPresent
   replicas: 1
   port: 8080
