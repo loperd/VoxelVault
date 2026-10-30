@@ -191,7 +191,7 @@ export function ChestMerge({
         </p>
       )}
       <footer className="chest-merge__footer">
-        <Button variant="transparent" disabled={busy} onClick={onClose}>
+        <Button variant="secondary" disabled={busy} onClick={onClose}>
           Отмена
         </Button>
         <Button disabled={busy || !shown?.odds} onClick={() => void merge()}>

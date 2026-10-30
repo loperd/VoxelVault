@@ -28,6 +28,26 @@ export const PHASE_LIMITS: Partial<Record<Phase, number>> = {
   revealing: 15,
   resetting: 20,
 };
+const DEFAULT_COPY = {
+  title: 'Сундук завис',
+  text: 'Мы уже знаем об ошибке. Ваши сундуки и награды на месте — можно вернуться на главную или перезагрузить страницу.',
+};
+/** Dialog wording by the area an error names; no area keeps the chest-scene copy of the markup. */
+const AREA_COPY: Record<string, { title: string; text: string }> = {
+  wallet: {
+    title: 'Кошелёк не отвечает',
+    text: 'Не удалось связаться с кошельком. После перезагрузки проверьте баланс и историю операций.',
+  },
+  inventory: {
+    title: 'Не загрузился инвентарь',
+    text: 'Не удалось получить ваши сундуки. Перезагрузите страницу, чтобы повторить.',
+  },
+  items: {
+    title: 'Не загрузились предметы',
+    text: 'Не удалось получить ваши предметы. Перезагрузите страницу, чтобы повторить.',
+  },
+};
+
 /** More rebuilds of the same case runtime than this within the window is a render loop. */
 const REBUILD_LIMIT = 6,
   REBUILD_WINDOW = 3000;
@@ -158,7 +178,7 @@ export class Failsafe {
     this.options.reporter.capture(error ?? new Error(code), { ...context, code });
     if (this.open) return;
     this.open = true;
-    this.show(code);
+    this.show(code, (error as { area?: unknown } | null)?.area);
   }
 
   get visible(): boolean {
@@ -172,7 +192,7 @@ export class Failsafe {
     this.open = false;
   }
 
-  private show(code: string) {
+  private show(code: string, area?: unknown) {
     const document = this.options.document;
     if (!this.dialog) {
       ensureStyles(document);
@@ -210,6 +230,10 @@ export class Failsafe {
       document.body.append(dialog);
       this.dialog = dialog;
     }
+    const copy = typeof area === 'string' ? AREA_COPY[area] : undefined;
+    // Reused dialog: every show sets its words, or an earlier area's copy would stick.
+    this.dialog.querySelector('#failsafe-title')!.textContent = copy?.title ?? DEFAULT_COPY.title;
+    this.dialog.querySelector('#failsafe-text')!.textContent = copy?.text ?? DEFAULT_COPY.text;
     const home = this.dialog.querySelector('[data-action="home"]') as HTMLButtonElement;
     home.hidden = this.options.isHome?.() === true;
     this.dialog.querySelector('.failsafe__code')!.textContent = `Код: ${code}`;
@@ -253,8 +277,8 @@ function ensureStyles(document: Document) {
     .failsafe .error-notice__title { margin: 0; color: #f4e9e6; font-size: 24px; }
     .failsafe p { margin: 0; }
     .failsafe .error-notice__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 14px; }
-    .failsafe .error-notice__actions .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 11px 18px; border: 1px solid #ff9a8f33; border-radius: 5px;
-      background: linear-gradient(180deg, #c5483d, #a82f28); color: #fff5f2; font: 700 14px/1.2 Manrope, system-ui, sans-serif; text-transform: uppercase; cursor: pointer; box-shadow: 0 10px 24px -10px #2a0a07; }
+    .failsafe .error-notice__actions .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 11px 18px; border: 1px solid transparent; border-radius: 2px;
+      background: linear-gradient(180deg, #e6e8e6, #bcc0bd); color: #111412; font: 600 12px/1.2 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
     .failsafe .error-notice__actions .btn[hidden] { display: none; }
     .failsafe .error-notice__close { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
       color: #ff9a8f; background: #e3665a14; border: 1px solid #e3665a33; border-radius: 6px; cursor: pointer; }

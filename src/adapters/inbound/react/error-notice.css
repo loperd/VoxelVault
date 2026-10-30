@@ -21,11 +21,11 @@
   padding: 34px 28px 28px;
   text-align: center;
   overflow: hidden;
-  border: 1px solid #e3665a33;
+  border: 1px solid #e0685c33;
   border-radius: 6px;
   isolation: isolate;
   background:
-    radial-gradient(ellipse at 50% 0%, #e3665a1f, transparent 62%),
+    radial-gradient(ellipse at 50% 0%, #e0685c1f, transparent 62%),
     linear-gradient(145deg, #241817f2, #120d0df2 72%);
   box-shadow: 0 18px 48px #0008;
   backdrop-filter: blur(10px);
@@ -36,7 +36,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #e3665a, transparent);
+  background: linear-gradient(90deg, transparent, #e0685c, transparent);
   opacity: 0.7;
 }
 .error-notice__mark {
@@ -57,22 +57,22 @@
   position: absolute;
   inset: 5px;
   z-index: -1;
-  border: 1px solid #e3665a66;
-  background: #e3665a14;
-  box-shadow: 0 0 22px #e3665a26;
+  border: 1px solid #e0685c66;
+  background: #e0685c14;
+  box-shadow: 0 0 22px #e0685c26;
   transform: rotate(45deg);
 }
 .error-notice__eyebrow {
   margin: 0;
-  color: #e3665a;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  color: #e0685c;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 .error-notice__title {
   margin: 0;
-  color: #f4e9e6;
+  color: #e0685c;
   font-size: clamp(20px, 2.4vw, 26px);
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -95,15 +95,9 @@
   gap: 10px;
   margin-top: 14px;
 }
-/* Error actions share one palette, independent of the selected chest. */
+/* Actions keep the neutral button fill; the error colour lives in the panel's text and lines. */
 .error-notice__actions .btn {
-  --btn: #c5483d;
-  --btn-deep: #a82f28;
   min-width: 160px;
-  color: #fff5f2;
-  border-color: #ff9a8f33;
-  background: linear-gradient(180deg, var(--btn), var(--btn-deep));
-  box-shadow: 0 10px 24px -10px #2a0a07;
 }
 .error-notice__close {
   position: absolute;
@@ -114,9 +108,9 @@
   width: 44px;
   height: 44px;
   padding: 0;
-  color: #ff9a8f;
-  background: #e3665a14;
-  border: 1px solid #e3665a33;
+  color: #e0685c;
+  background: #e0685c14;
+  border: 1px solid #e0685c33;
   border-radius: 6px;
   cursor: pointer;
   transition:
@@ -125,18 +119,18 @@
     border-color 140ms ease-out;
 }
 .error-notice__close:active {
-  background: #e3665a33;
+  background: #e0685c33;
 }
 .error-notice__close:focus-visible,
 .error-notice__actions .btn:focus-visible {
-  outline: 2px solid #ff9a8f;
+  outline: 2px solid #e0685c;
   outline-offset: 3px;
 }
 @media (hover: hover) and (pointer: fine) {
   .error-notice__close:hover {
-    color: #fff5f2;
-    background: #e3665a26;
-    border-color: #e3665a66;
+    color: #e0685c;
+    background: #e0685c26;
+    border-color: #e0685c66;
   }
 }
 .error-notice--compact .error-notice__panel {
@@ -168,5 +162,51 @@
   }
   .error-notice__actions .btn {
     flex: 1 1 100%;
+  }
+}
+/* No connection: a full-screen, friendly stop above everything, shown the moment the browser goes offline. */
+.offline-notice {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: #0b0d0cd9;
+  backdrop-filter: blur(6px);
+}
+.offline-notice__panel {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: min(420px, 100%);
+  padding: 32px 28px 28px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: linear-gradient(160deg, var(--surface-2), var(--surface));
+  box-shadow: 0 18px 48px #0008;
+  animation: error-notice-in 320ms var(--ease-out, ease-out) both;
+}
+.offline-notice__art {
+  margin-bottom: 4px;
+  image-rendering: pixelated;
+}
+.offline-notice__title {
+  margin: 0;
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.offline-notice__text {
+  margin: 0 0 8px;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .offline-notice__panel {
+    animation: none;
   }
 }

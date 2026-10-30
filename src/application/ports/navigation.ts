@@ -1,3 +1,6 @@
+/** The list a case was entered from; back and the highlighted tab lead there. */
+export type ReturnTo = 'archive' | 'catalog';
+
 export type ScreenRoute =
   | { readonly screen: 'catalog' }
   | { readonly screen: 'inventory' }
@@ -8,21 +11,21 @@ export type ScreenRoute =
       readonly screen: 'case';
       readonly caseId: string;
       readonly instanceId?: string;
-      readonly returnTo?: 'archive';
+      readonly returnTo?: ReturnTo;
     }
   | {
       readonly screen: 'item';
       readonly caseId: string;
       readonly instanceId?: string;
       readonly itemId: string;
-      readonly returnTo?: 'archive';
+      readonly returnTo?: ReturnTo;
     }
   | {
       readonly screen: 'opening' | 'reward';
       readonly caseId: string;
       readonly instanceId?: string;
       readonly sessionId: string;
-      readonly returnTo?: 'archive';
+      readonly returnTo?: ReturnTo;
     }
   | { readonly screen: 'not-found' };
 

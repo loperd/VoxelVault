@@ -1,14 +1,14 @@
 import type { ButtonHTMLAttributes, Ref } from 'react';
 
-/** Shared button using the original project's btn / btn-green / btn-transparent styles. */
+/** Shared button using the original project's btn / btn-primary / btn-secondary styles. */
 export function Button({
-  variant = 'green',
+  variant = 'primary',
   className = '',
   ref,
   type = 'button',
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
-  readonly variant?: 'green' | 'transparent';
+  readonly variant?: 'primary' | 'secondary';
   readonly ref?: Ref<HTMLButtonElement>;
 }) {
   return (

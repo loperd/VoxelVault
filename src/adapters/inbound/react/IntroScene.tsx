@@ -22,7 +22,6 @@ export function IntroScene({
   openLabel = 'Открыть сундук',
   availableCaseCount,
   archiveCount,
-  archiveView = false,
   inspectedCase,
   soundPreference,
 }: {
@@ -30,7 +29,6 @@ export function IntroScene({
   readonly openLabel?: string;
   readonly availableCaseCount?: number;
   readonly archiveCount?: number;
-  readonly archiveView?: boolean;
   readonly inspectedCase?: CaseInstance;
   readonly recentFind?: RecentFind;
   readonly items: readonly Item[];
@@ -38,7 +36,9 @@ export function IntroScene({
   readonly actionRef: Ref<HTMLButtonElement>;
   readonly onOpen: () => void;
 }) {
-  const { navigation } = useScreenNavigation();
+  const { navigation, route } = useScreenNavigation();
+  // The tab that led here stays lit: archive and catalog pass it along as returnTo.
+  const origin = 'returnTo' in route ? route.returnTo : undefined;
   const casePresentation = useCasePresentation();
   const featured = items.find((item) => item.rarity === 'legendary');
   const inspectedProfile = CASES.find((value) => value.id === inspectedCase?.caseId)?.model
@@ -60,7 +60,7 @@ export function IntroScene({
         </div>
         <ScreenHeader
           navigation={navigation}
-          active={archiveView ? 'archive' : 'inventory'}
+          active={origin ?? 'inventory'}
           archiveCount={archiveCount}
           soundPreference={soundPreference}
         />
@@ -78,13 +78,10 @@ export function IntroScene({
         ) : (
           featured && <CaseHighlight item={featured} disabled={phase !== 'ready'} />
         )}
-        <div className="case-caption" aria-hidden="true">
-          <span /> ENDER CHEST <span />
-        </div>
       </div>
       <div className="intro-scene__bottom" inert={phase !== 'ready'}>
         <div className="case-open-bar">
-          {!archiveView && (
+          {
             <div className="case-open-bar__copy">
               <span className="eyebrow">
                 {availableCaseCount === undefined ? 'Что скрывается внутри?' : 'Твоя коллекция'}
@@ -93,10 +90,8 @@ export function IntroScene({
                 <p>Один сундук. Твоя следующая находка.</p>
               ) : (
                 <p className="case-owned-count">
+                  <span>Доступно к открытию:</span>
                   <strong>{availableCaseCount}</strong>
-                  <span>
-                    {availableCaseCount > 0 ? 'можно открыть сейчас' : 'нет доступных для открытия'}
-                  </span>
                 </p>
               )}
               {inspectedCase && inspectedProfile && (
@@ -109,7 +104,7 @@ export function IntroScene({
                 />
               )}
             </div>
-          )}
+          }
           <div className="actions">
             <Button ref={actionRef} disabled={phase !== 'ready'} onClick={onOpen}>
               {openLabel}

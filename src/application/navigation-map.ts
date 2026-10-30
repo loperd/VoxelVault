@@ -27,7 +27,7 @@ export function parentRoute(route: ScreenRoute): ScreenRoute | undefined {
     case 'not-found':
       return { screen: MAIN_SCREEN };
     case 'case':
-      return route.returnTo === 'archive' ? { screen: 'archive' } : { screen: MAIN_SCREEN };
+      return { screen: route.returnTo ?? MAIN_SCREEN };
     case 'item':
     case 'opening':
     case 'reward':

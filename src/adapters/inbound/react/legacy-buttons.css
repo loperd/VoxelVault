@@ -1,73 +1,102 @@
-/* Shared button language: vivid emerald, restrained lighting, and the same type scale as the UI. */
+/* Shared button language: sharp 2px corners, tracked caps, layered: gradient body, a sheen sweep on hover; no frames, no shadows. Filled (.btn-primary) and outlined (.btn-secondary) are one pair;
+   the accent is the only saturated colour on a screen. */
 .btn {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 11px 18px;
+  min-height: 48px;
+  padding: 12px 22px;
   border: 1px solid transparent;
-  border-radius: 5px;
-  color: #f1fff8;
+  background-origin: border-box; /* the gradient must not repeat into the 1px border */
+  border-radius: 2px;
+  color: var(--accent-ink);
   cursor: pointer;
-  background: transparent;
   font: inherit;
-  font-size: 14px;
-  font-weight: 750;
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1.2;
-  letter-spacing: 0.045em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   text-align: center;
   transition:
-    transform 140ms ease,
-    color 140ms ease,
-    background-color 140ms ease,
-    border-color 140ms ease,
-    box-shadow 160ms ease,
+    transform 140ms var(--ease-out),
     filter 140ms ease;
 }
-/* One button everywhere: solid, bright, in the hue of the case on screen (the brand teal outside a
-   case). The case colour can be nearly grey (common), so its chroma is raised to a clear minimum
-   and its lightness capped for white text. No ghost variant, no outline, no slab, no halo —
-   .btn-transparent is kept only as a name and looks the same. */
-.btn-green,
-.btn-transparent {
-  --btn: #2fb87a;
-  --btn-deep: #19805a;
-  color: #fff;
-  border-color: transparent;
-  background: linear-gradient(180deg, var(--btn) 0%, var(--btn-deep) 100%);
-  box-shadow: 0 10px 24px -10px #04140d;
-  text-shadow: 0 1px 2px #0007;
+/* Layers shared by .btn and the screens' own action buttons: highlight and shadow, sheen (::before). */
+.btn,
+.item-card__actions button,
+.item-details__browse button,
+.inventory__notice button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background-origin: border-box;
 }
-@supports (color: oklch(from red l c h)) {
-  .btn-green,
-  .btn-transparent {
-    --btn: oklch(from var(--case-accent, #86ead0) clamp(0.55, l, 0.65) max(c, 0.16) h);
-    --btn-deep: oklch(
-      from var(--case-accent, #86ead0) clamp(0.42, calc(l - 0.17), 0.5) max(c, 0.15) h
-    );
-    box-shadow: 0 10px 24px -10px oklch(from var(--btn-deep) 0.18 c h);
-  }
+.btn::before,
+.item-card__actions button::before,
+.item-details__browse button::before,
+.inventory__notice button::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, #ffffff40, transparent);
+  transform: skewX(-18deg);
+  transition: transform 600ms ease-out;
+  pointer-events: none;
+  z-index: -1;
 }
-.btn-green:active:not(:disabled),
-.btn-transparent:active:not(:disabled) {
-  transform: translateY(1px);
-  filter: brightness(0.96);
+/* The filled button is white on every screen: a case colour turned muddy on the dark scenes. */
+.btn-primary {
+  color: #111412;
+  background: linear-gradient(180deg, #e6e8e6 0%, #d6d9d6 45%, #bcc0bd 100%);
+  background-origin: border-box; /* the shorthand resets it; without it the 1px border repeats the light top edge */
+}
+.btn-secondary,
+.wallet-transfer__secondary,
+.item-card__actions button,
+.item-details__browse button,
+.inventory__notice button {
+  background: linear-gradient(180deg, #ffffff1f, #ffffff0f);
+  background-origin: border-box;
+  color: var(--text);
 }
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
 }
+.btn:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
 @media (hover: hover) and (pointer: fine) {
-  .btn-green:hover:not(:disabled),
-  .btn-transparent:hover:not(:disabled) {
+  .btn:hover:not(:disabled)::before,
+  .item-card__actions button:hover:not(:disabled)::before,
+  .item-details__browse button:hover:not(:disabled)::before,
+  .inventory__notice button:hover:not(:disabled)::before {
+    transform: translateX(520%) skewX(-18deg);
+  }
+  .btn-secondary:hover:not(:disabled),
+  .item-card__actions button:hover:not(:disabled),
+  .item-details__browse button:hover:not(:disabled),
+  .inventory__notice button:hover:not(:disabled) {
+    filter: brightness(1.25);
+  }
+  .btn-primary:hover:not(:disabled) {
     transform: translateY(-1px);
-    filter: brightness(1.08);
+    filter: brightness(1.06);
   }
 }
+/* After the hover rules: the primary's hover lift must not win over the press. */
+.btn:active:not(:disabled),
+.item-card__actions button:active:not(:disabled),
+.item-details__browse button:active:not(:disabled),
+.inventory__notice button:active:not(:disabled) {
+  transform: scale(0.97);
+}
 @media (prefers-reduced-motion: reduce) {
-  .btn {
+  .btn,
+  .btn::before {
     transition: none;
   }
 }

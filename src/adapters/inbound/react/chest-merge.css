@@ -1,21 +1,25 @@
 /* Chest merge: pick two chests of one type, read the server's chances, merge. */
 .inventory-card__merge {
+  /* Above the card-wide ::after of .inventory-card__inspect, or real clicks never reach it. */
+  position: relative;
+  z-index: 4;
   width: 100%;
   min-height: 34px;
   margin-top: 10px;
   padding: 7px 10px;
-  border: 1px solid #8ce8bb1c;
-  border-radius: 3px;
-  background: #8ce8bb08;
-  color: #c3dfd0;
+  border: 1px solid #e8ebe866;
+  border-radius: var(--radius-s);
+  background: #e8ebe81f;
+  color: var(--accent);
   font: inherit;
   font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
 }
 @media (hover: hover) and (pointer: fine) {
   .inventory-card__merge:hover {
-    border-color: #8ce8bb44;
-    background: #8ce8bb12;
+    border-color: var(--accent);
+    background: #e8ebe833;
   }
 }
 .inventory__notice {
@@ -23,18 +27,20 @@
   align-items: center;
   gap: 12px;
   margin: -8px 0 16px;
-  color: #a9d8bf;
-  font-size: 13px;
+  color: var(--active);
+  font-size: 14px;
 }
 .inventory__notice button {
   min-height: 32px;
   padding: 6px 12px;
-  border: 1px solid #8ce8bb33;
-  border-radius: 3px;
-  background: #8ce8bb10;
-  color: #c3dfd0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--text);
   font: inherit;
   font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
@@ -42,10 +48,10 @@
   width: min(640px, calc(100vw - 32px));
   max-height: calc(100svh - 32px);
   padding: 0;
-  color: #eef4f1;
-  border: 1px solid #86ead02a;
+  color: var(--text);
+  border: 1px solid #a7aea92a;
   border-radius: 6px;
-  background: #111d22;
+  background: var(--surface);
   box-shadow: 0 30px 100px #0009;
   overflow: auto;
 }
@@ -60,19 +66,19 @@
   border-bottom: 1px solid #ffffff0c;
 }
 .chest-merge__header .eyebrow {
-  color: #93ada7;
+  color: var(--text-3);
   font-size: 12px;
 }
 .chest-merge__header h2 {
   margin: 6px 0 8px;
   font-size: 24px;
-  font-weight: 550;
+  font-weight: 500;
   letter-spacing: -0.02em;
 }
 .chest-merge__header p:last-child {
   margin: 0;
-  color: #9fb6ad;
-  font-size: 13px;
+  color: var(--text-2);
+  font-size: 14px;
   line-height: 1.5;
 }
 .chest-merge__pick {
@@ -83,14 +89,14 @@
 }
 .chest-merge__pick legend {
   display: contents;
-  color: #93ada7;
+  color: var(--text-3);
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
 }
 .chest-merge__pick legend span {
   margin-left: 8px;
-  color: var(--case-accent, #86ead0);
+  color: var(--case-accent, var(--accent));
 }
 .chest-merge__pick ul {
   display: grid;
@@ -110,18 +116,18 @@
   width: 100%;
   min-height: 44px;
   padding: 8px 12px;
-  border: 1px solid #8ce8bb18;
+  border: 1px solid #a7aea918;
   border-radius: 3px;
-  background: #17231e88;
-  color: #c3dfd0;
+  background: #12151388;
+  color: var(--text-2);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   text-align: left;
   cursor: pointer;
 }
 .chest-merge__pick button[aria-pressed='true'] {
-  border-color: var(--case-accent, #86ead0);
-  background: color-mix(in srgb, var(--case-accent, #86ead0) 10%, #17231e);
+  border-color: var(--case-accent, var(--accent));
+  background: color-mix(in srgb, var(--case-accent, var(--accent)) 10%, var(--surface));
 }
 .chest-merge__pick button:disabled {
   opacity: 0.6;
@@ -138,18 +144,18 @@
   grid-area: name;
 }
 .chest-merge__name small {
-  color: #7f9d8d;
+  color: var(--text-3);
 }
 .chest-merge__integrity {
   grid-area: integrity;
-  color: #a9d8bf;
+  color: var(--active);
   font-variant-numeric: tabular-nums;
 }
 .chest-merge__features {
   grid-area: features;
   overflow: hidden;
-  color: #7f9d8d;
-  font-size: 11px;
+  color: var(--text-3);
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -159,11 +165,11 @@
 }
 .chest-merge__odds h3 {
   margin: 0 0 8px;
-  color: #93ada7;
+  color: var(--text-3);
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
 }
 .chest-merge__odds h3:not(:first-child) {
   margin-top: 16px;
@@ -174,7 +180,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 13px;
+  font-size: 14px;
 }
 .chest-merge__traits li {
   display: flex;
@@ -184,34 +190,34 @@
   border-bottom: 1px solid #ffffff08;
 }
 .chest-merge__traits strong {
-  color: #a9d8bf;
+  color: var(--active);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 .chest-merge__traits li[data-kept='false'] strong {
-  color: #7f9d8d;
+  color: var(--text-3);
 }
 .chest-merge__contents {
   margin: 0;
-  color: #c3dfd0;
-  font-size: 13px;
+  color: var(--text-2);
+  font-size: 14px;
   line-height: 1.5;
 }
 .chest-merge__contents strong {
-  color: #eef4f1;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 .chest-merge__hint {
   margin: 8px 0 0;
-  color: #7f9d8d;
+  color: var(--text-3);
   font-size: 12px;
 }
 .chest-merge__error {
   margin: 0;
   padding: 0 24px;
-  color: #f0a58f;
-  font-size: 13px;
+  color: #e0685c;
+  font-size: 14px;
 }
 .chest-merge__odds .chest-merge__error {
   padding: 0;

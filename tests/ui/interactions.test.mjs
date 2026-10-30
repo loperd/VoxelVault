@@ -858,7 +858,7 @@ test('case screen shows owned quantity and opens directly with one action', asyn
     root.render(createElement(IntroScene, props));
   });
   assert.equal(document.querySelector('.case-owned-count strong').textContent, '3');
-  assert.match(document.querySelector('.case-owned-count').textContent, /можно открыть сейчас/);
+  assert.match(document.querySelector('.case-owned-count').textContent, /Доступно к открытию/);
   await act(async () => {
     document.querySelector('.case-open-bar button').click();
   });
@@ -870,10 +870,6 @@ test('case screen shows owned quantity and opens directly with one action', asyn
   });
   assert.equal(document.querySelector('.case-owned-count strong').textContent, '0');
   assert.equal(document.querySelector('.case-open-bar button').textContent, 'К инвентарю');
-  assert.match(
-    document.querySelector('.case-owned-count').textContent,
-    /нет доступных для открытия/,
-  );
 });
 
 test('a server-issued stock renders stacks with quantity, wear and palette; an opening leaves its stack', async () => {

@@ -50,7 +50,7 @@ export function ChestPreviewPanel({
       {state.phase === 'ready' && (
         <div className="chest-preview__actions">
           <Button
-            variant="transparent"
+            variant="secondary"
             onClick={() => {
               void preview.replay();
             }}

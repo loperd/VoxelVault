@@ -37,7 +37,6 @@ export function App({
   openLabel,
   availableCaseCount,
   archiveCount,
-  archiveView,
   casePalette,
   inspectedCase,
 }: {
@@ -49,7 +48,6 @@ export function App({
   readonly caseId?: string;
   readonly availableCaseCount?: number;
   readonly archiveCount?: number;
-  readonly archiveView?: boolean;
   readonly inspectedCase?: CaseInstance;
   readonly recentFind?: RecentFind;
   readonly soundPreference?: SoundPreference;
@@ -152,7 +150,6 @@ export function App({
               inspectedCase={inspectedCase}
               availableCaseCount={availableCaseCount}
               archiveCount={archiveCount}
-              archiveView={archiveView}
               onOpenRequest={onOpenRequest}
               onPrizeClose={onPrizeClose}
               openLabel={openLabel}

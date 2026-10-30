@@ -15,7 +15,7 @@ import { readWorldPack } from '../../packages/blockworld/src/pack/read.ts';
 import { loadPackAssets, packDiagnostics } from '../../packages/blockworld/src/pack/assets.ts';
 import { packStage } from '../../packages/blockworld/src/pack/stage.ts';
 import { BlockView, preloadStage } from '../../packages/blockworld/src/view.ts';
-import { fakePage, memoryFiles, packFolder, never } from './pack-fixture.mjs';
+import { fakePage, memoryFiles, packFolder, never, png } from './pack-fixture.mjs';
 
 const sample = await packFolder();
 const files = (options = {}) => memoryFiles(sample, options);
@@ -669,4 +669,38 @@ test('Living: two stages of one builder, each updated exactly once per step of i
   } finally {
     page.restore();
   }
+});
+
+test('PBR companions: <tile>_n and <tile>_s ride in textures, take no block tile, and free with the pack', async () => {
+  const tile = (r, g, b) => png(16, 16, () => [r, g, b, 255]);
+  const own = await readWorldPack(
+    memoryFiles(sample, {
+      edit: (json) => {
+        json.textures.ruin_bricks_n = 'textures/ruin_bricks_n.png';
+        json.textures.ruin_bricks_s = 'textures/ruin_bricks_s.png';
+      },
+      swap: {
+        'textures/ruin_bricks_n.png': tile(128, 128, 255),
+        'textures/ruin_bricks_s.png': tile(200, 0, 50),
+      },
+    }),
+    { signal: never },
+  );
+  const assets = await loadPackAssets(own, { signal: never });
+  assert.throws(() => assets.atlas.uv('ruin_bricks_n'), /no tile/, 'a map is not a block tile');
+  const { normal, material } = assets.atlas.pbr;
+  assert.equal(normal.image.width, assets.atlas.texture.image.width, 'laid out like the atlas');
+  assert.equal(material.image.height, assets.atlas.texture.image.height);
+  const [u0, v0] = assets.atlas.uv('ruin_bricks'),
+    x = Math.floor(u0 * material.image.width) + 2,
+    y = Math.floor(v0 * material.image.height) + 2;
+  assert.deepEqual(
+    [...material.image.data.subarray((y * material.image.width + x) * 4)].slice(0, 3),
+    [200, 0, 50],
+  );
+  assets.release();
+  settled();
+  const plain = await loadPackAssets(pack, { signal: never });
+  assert.equal(plain.atlas.pbr, undefined, 'no maps, no PBR');
+  plain.release();
 });

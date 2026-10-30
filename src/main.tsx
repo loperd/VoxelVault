@@ -1,5 +1,6 @@
 import { caseOpenAction } from './application/case-open-action.ts';
 import { parentRoute } from './application/navigation-map.ts';
+import type { ReturnTo } from './application/ports/navigation.ts';
 import { gameAudio } from './adapters/outbound/browser/game-audio.ts';
 import { ConsoleErrorReporter } from './adapters/outbound/browser/console-error-reporter.ts';
 import { Failsafe } from './adapters/inbound/browser/failsafe.ts';
@@ -9,6 +10,12 @@ import { createRoot } from 'react-dom/client';
 import { App } from './adapters/inbound/react/App.tsx';
 import { LoginScreen } from './adapters/inbound/react/LoginScreen.tsx';
 import { ErrorNotice } from './adapters/inbound/react/ErrorNotice.tsx';
+import { ConnectionNotice } from './adapters/inbound/react/ConnectionNotice.tsx';
+import {
+  checkConnection,
+  createConnectionMonitor,
+  watchedFetch,
+} from './adapters/outbound/data/connection-monitor.ts';
 import { Button } from './adapters/inbound/react/Button.tsx';
 import { ApiAuthGateway } from './adapters/outbound/data/api-auth-gateway.ts';
 import type { Player } from './application/ports/auth-gateway.ts';
@@ -51,6 +58,7 @@ import './adapters/inbound/react/styles.css';
 const container = document.getElementById('root');
 if (!container) throw new Error('Application root was not found.');
 const root = createRoot(container);
+
 const design = new URL(window.location.href).searchParams.get('design');
 const theme = design === 'gallery' || design === 'minimal' ? design : 'ender';
 document.documentElement.dataset.homeDesign = theme;
@@ -70,8 +78,18 @@ failsafe.install();
 // The player's chests live on the server only: it issues them and owns their state.
 // A 401 from the player's own data: refresh the session first; if the gateway refuses, the browser's
 // saved state goes, and only then the player goes out to the sign-in, nothing kept.
+// A failed request or a 5xx asks the monitor to check whether the internet or our server is the problem.
+const connection = createConnectionMonitor(() =>
+  checkConnection(resolvePublicAsset('api/v1/cases', baseUrl), browserFetch),
+);
+window.addEventListener('offline', connection.offline);
+window.addEventListener('online', connection.suspect);
+// Its own root: the connection stop must sit above every screen, including login and the opening scene.
+createRoot(document.body.appendChild(document.createElement('div'))).render(
+  <ConnectionNotice monitor={connection} />,
+);
 const authenticatedFetch = sessionFetch(
-  browserFetch,
+  watchedFetch(browserFetch, connection.suspect),
   resolvePublicAsset('api/v1/auth/refresh', baseUrl),
   () => {
     clearSavedState();
@@ -143,7 +161,7 @@ document.addEventListener(
 function createCaseRuntime(
   definition: CaseDefinition,
   instance?: CaseInstance,
-  returnTo?: 'archive',
+  returnTo?: ReturnTo,
 ) {
   const identity = `${definition.id}:${instance?.id ?? 'browse'}:${returnTo ?? 'normal'}`;
   failsafe.noteRebuild(identity);
@@ -524,6 +542,7 @@ function renderRoute() {
               <WalletScreen
                 wallet={wallet}
                 navigation={navigation}
+                archiveCount={inventory.getState().filter(isConsumed).length}
                 soundPreference={soundPreference}
               />
             ) : route.screen === 'catalog' ? (
@@ -539,11 +558,11 @@ function renderRoute() {
               <>
                 <SoundControl preference={soundPreference} />
                 <main className="page-shell case-directory">
-                  <div className="feedback">
+                  <div className="feedback feedback--page">
                     <h1>Сундук не найден</h1>
                     <p>Возможно, ссылка устарела.</p>
                     <button
-                      className="btn btn-transparent"
+                      className="btn btn-secondary"
                       onClick={() => navigation.go({ screen: 'inventory' }, true)}
                     >
                       К сундукам
@@ -565,10 +584,15 @@ function renderRoute() {
     return;
   }
   const current = runtime!;
-  const archiveView = 'returnTo' in route && route.returnTo === 'archive';
-  const action = archiveView
-    ? { action: 'leave' as const, target: undefined, label: 'Вернуться в архив', availableCount: 0 }
-    : caseOpenAction(inventory.getState(), definition.id, current.instanceId);
+  const from = 'returnTo' in route ? route.returnTo : undefined;
+  const opening = caseOpenAction(inventory.getState(), definition.id, current.instanceId);
+  // Back leads to the list the case was entered from, so the button says so.
+  const action =
+    from === 'archive'
+      ? { ...opening, action: 'leave' as const, target: undefined, label: 'Вернуться в архив' }
+      : from === 'catalog' && opening.action === 'leave'
+        ? { ...opening, label: 'Вернуться ко всем кейсам' }
+        : opening;
   const state = current.application.session!.getState();
   if (!fresh && route.screen === 'case' && state.phase === 'prize-visible')
     void current.application.session!.closePrize();
@@ -594,7 +618,6 @@ function renderRoute() {
                 casePalette={definition.presentation.theme}
                 availableCaseCount={action.availableCount}
                 archiveCount={inventory.getState().filter(isConsumed).length}
-                archiveView={archiveView}
                 openLabel={action.label}
                 onOpenRequest={() => {
                   const { target, action: offer } = caseOpenAction(
@@ -654,6 +677,10 @@ const unsubscribeRoute = navigation.subscribe(() => {
 });
 const unsubscribeInventory = inventory.subscribe(renderRoute);
 void checkSession();
+// Connection came back while the session check had failed: try again without a manual reload.
+window.addEventListener('online', () => {
+  if (session.state === 'unavailable') void checkSession();
+});
 if (import.meta.hot)
   import.meta.hot.dispose(() => {
     unsubscribeRoute();

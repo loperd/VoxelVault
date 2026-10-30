@@ -74,7 +74,7 @@ export function PrizeScene({
         <p className="prize__source">Из сундука «{casePresentation.title}»</p>
       </div>
       <footer className="prize__actions">
-        <Button ref={actionRef} variant="transparent" onClick={onClose}>
+        <Button ref={actionRef} variant="secondary" onClick={onClose}>
           Закрыть
         </Button>
         <p>{returnLabel}</p>

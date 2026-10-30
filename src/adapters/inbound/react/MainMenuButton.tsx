@@ -14,7 +14,7 @@ export function MainMenuButton({ navigation: supplied }: { readonly navigation?:
   const route = useObservableState(navigation ?? noNavigation);
   if (!navigation || route.screen === 'inventory') return null;
   return (
-    <Button variant="transparent" onClick={() => navigation.go(HOME)}>
+    <Button variant="secondary" onClick={() => navigation.go(HOME)}>
       В главное меню
     </Button>
   );

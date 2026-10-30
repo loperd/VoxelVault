@@ -165,8 +165,8 @@ test('production mine frames the actual floating GLB above the intro controls on
       assert.ok(top > 0.08, 'model stays below the header');
       assert.ok(bottom < 0.48, 'model stays above the controls/catalog, with room for preview bob');
       assert.ok(
-        bottom - top > 0.3 && bottom - top < 0.4,
-        'hero chest occupies 30–40% of viewport height',
+        bottom - top > 0.15 && bottom - top < 0.3,
+        'hero chest occupies 15–30% of viewport height',
       );
       assert.ok(bounds.min.x > -1 && bounds.max.x < 1, 'portrait viewport does not crop the chest');
     }

@@ -42,10 +42,14 @@ test('Dragon scene: the chest lands in the portal, beams follow the dragon, and 
     flash() {},
     blast() {},
   });
-  // Long enough for the first sweep (it starts at 20 s and lasts 6 s).
-  for (let time = 0; time < 30; time += 1 / 30)
+  // Long enough for the first dive (first at 20 s, lining up behind the chest, then a run of fireballs).
+  for (let time = 0; time < 45; time += 1 / 30)
     for (const actor of stage.living) actor.update(context(time), 1 / 30);
-  assert.deepEqual(pulled, ['tremor', 'light'], 'one sweep, one strike');
+  assert.ok(pulled.length >= 2, 'the dive lands fireballs');
+  assert.ok(
+    pulled.every((call, i) => call === (i % 2 ? 'light' : 'tremor')),
+    'each fireball: one tremor, one light',
+  );
   stage.root.traverse((object) => {
     for (const value of object.position) assert.ok(Number.isFinite(value));
     if (object.isLine)

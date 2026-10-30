@@ -1,8 +1,8 @@
 .inventory {
   height: 100svh;
   overflow: auto;
-  background: radial-gradient(ellipse at 50% 0, #25463940, transparent 65%), #0c1519;
-  color: #e1ece5;
+  background: radial-gradient(ellipse at 50% 0, #181c1940, transparent 65%), var(--bg);
+  color: var(--text);
   padding: 24px 28px 60px;
 }
 .inventory__content {
@@ -21,12 +21,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 650;
+  font-weight: 600;
   font-size: 16px;
 }
 .inventory__brand > span {
-  font-size: 28px;
-  color: #85d9b9;
+  font-size: 24px;
+  color: var(--active);
 }
 .inventory__header nav {
   display: flex;
@@ -35,12 +35,12 @@
   font-size: 12px;
 }
 .inventory__header nav > span {
-  color: #aee9cf;
+  color: var(--active);
 }
 .inventory__header button {
   border: 0;
   background: transparent;
-  color: #7f9990;
+  color: #79817b;
   cursor: pointer;
   font: inherit;
   padding: 10px 0;
@@ -54,7 +54,7 @@
 }
 .inventory__intro .eyebrow {
   font-size: 12px;
-  color: #719f8b;
+  color: var(--text-3);
 }
 .inventory__intro h1 {
   display: flex;
@@ -62,14 +62,14 @@
   gap: 14px;
   margin: 10px 0;
   font-size: 34px;
-  font-weight: 550;
+  font-weight: 500;
 }
 .inventory__intro h1 span {
   font-size: 14px;
   font-weight: 400;
-  color: #789a88;
-  background: #8ce8bb0c;
-  border: 1px solid #8ce8bb22;
+  color: var(--text-3);
+  background: #a7aea90c;
+  border: 1px solid #a7aea922;
   padding: 5px 9px;
   border-radius: 3px;
   letter-spacing: 0;
@@ -102,16 +102,16 @@
   cursor: pointer;
 }
 .inventory__toolbar button[aria-pressed='true'] {
-  color: #b5dfc7;
-  background: #7dc59e10;
-  border-color: #7dc59e20;
+  color: var(--active);
+  background: #a7aea910;
+  border-color: #a7aea920;
 }
 .inventory__toolbar input {
   width: 210px;
   min-height: 38px;
-  background: #17231e88;
-  border: 1px solid #8ce8bb14;
-  color: #bfd5c8;
+  background: #12151388;
+  border: 1px solid #a7aea914;
+  color: var(--text-2);
   font: inherit;
   font-size: 12px;
   padding: 10px 12px;
@@ -125,9 +125,9 @@
 .inventory-card {
   position: relative;
   min-width: 0;
-  border: 1px solid #718c792d;
+  border: 1px solid #79817b2d;
   border-radius: 4px;
-  background: linear-gradient(155deg, #1c3028, #14211e 64%, #101c19);
+  background: linear-gradient(155deg, var(--surface), var(--surface) 64%, var(--bg));
   box-shadow: 0 8px 22px #0002;
   overflow: hidden;
 }
@@ -136,15 +136,15 @@
   position: absolute;
   inset: 5px;
   pointer-events: none;
-  border: 1px solid #a4cfb308;
+  border: 1px solid #a7aea908;
 }
 .inventory-card__top {
   display: flex;
   justify-content: space-between;
   padding: 18px 20px 0;
   font-size: 12px;
-  color: #8ba895;
-  letter-spacing: 0.02em;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
 }
 .inventory-card__number {
   font-family: monospace;
@@ -163,7 +163,7 @@
   place-items: center;
   height: 230px;
   position: relative;
-  background: radial-gradient(ellipse at 50% 70%, #6fa77c16, transparent 65%);
+  background: radial-gradient(ellipse at 50% 70%, #79817b16, transparent 65%);
 }
 .inventory-card__preview::after {
   content: '';
@@ -177,9 +177,12 @@
 .inventory-card__preview canvas {
   display: block;
   width: 100%;
-  height: 100%;
+  /* Pinned inside the preview (a grid item's % height is unresolved, so the canvas fell back to its
+     640x520 ratio and ran into the title); the 28px gap below keeps the chest off the title. */
+  position: absolute;
+  inset: 0 0 28px;
+  height: calc(100% - 28px);
   object-fit: contain;
-  position: relative;
   z-index: 1;
 }
 .inventory-card__preview-error {
@@ -202,9 +205,9 @@
   box-shadow: 0 0 0 1px #ffffff19;
 }
 .inventory-card h2 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
   margin: 9px 0 18px;
 }
 .inventory-card__reward {
@@ -213,7 +216,7 @@
   font-size: 12px;
 }
 .inventory-card--opened {
-  background: linear-gradient(155deg, #242925, #18201c);
+  background: linear-gradient(155deg, #242925, var(--surface));
 }
 .inventory__empty {
   text-align: center;
@@ -221,20 +224,20 @@
 }
 .inventory__empty > span {
   font-size: 44px;
-  color: #5c7a64;
+  color: var(--line);
 }
 .inventory__empty h2 {
   margin: 18px 0 10px;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 500;
 }
 .inventory__empty p {
   font-size: 12px;
-  color: #7d9487;
+  color: #79817b;
 }
 @media (hover: hover) and (pointer: fine) {
   .inventory-card__inspect:hover .inventory-card__preview {
-    background-color: #8ce8bb03;
+    background-color: #a7aea903;
   }
 }
 @media (max-width: 850px) {
@@ -261,7 +264,7 @@
     align-items: start;
   }
   .inventory__intro h1 {
-    font-size: 28px;
+    font-size: 24px;
   }
   .inventory__intro p:last-child {
     max-width: 210px;
@@ -280,7 +283,7 @@
   }
   .inventory-card__top {
     padding: 12px 10px 0;
-    font-size: 10px;
+    font-size: 12px;
   }
   .inventory-card__number {
     display: none;
@@ -296,7 +299,7 @@
     margin: 8px 0 14px;
   }
   .inventory-card__condition {
-    font-size: 10px;
+    font-size: 12px;
   }
 }
 .inventory__tools {
@@ -307,7 +310,7 @@
 .inventory__density {
   border: 0;
   background: transparent;
-  color: #7e9d8a;
+  color: var(--text-3);
   font-size: 12px;
   min-height: 38px;
   cursor: pointer;
@@ -323,7 +326,7 @@
 }
 .case-directory__back {
   background: transparent;
-  color: #8cbaaa;
+  color: var(--text-3);
   border: 0;
   font: inherit;
   font-size: 12px;
@@ -362,7 +365,7 @@
       color-mix(in srgb, var(--chest-color) 55%, transparent),
       transparent 70%
     ),
-    linear-gradient(160deg, #24342f, #101b1a 85%);
+    linear-gradient(160deg, var(--surface-2), var(--bg) 85%);
   box-shadow:
     inset 0 2px #ffffff09,
     inset 0 -4px #0004,
@@ -371,10 +374,10 @@
 .inventory-card::before {
   border: 0;
   background:
-    linear-gradient(#b9d8c540, #b9d8c540) left top / 14px 2px no-repeat,
-    linear-gradient(#b9d8c540, #b9d8c540) left top / 2px 14px no-repeat,
-    linear-gradient(#b9d8c525, #b9d8c525) right bottom / 14px 2px no-repeat,
-    linear-gradient(#b9d8c525, #b9d8c525) right bottom / 2px 14px no-repeat;
+    linear-gradient(#a7aea940, #a7aea940) left top / 14px 2px no-repeat,
+    linear-gradient(#a7aea940, #a7aea940) left top / 2px 14px no-repeat,
+    linear-gradient(#a7aea925, #a7aea925) right bottom / 14px 2px no-repeat,
+    linear-gradient(#a7aea925, #a7aea925) right bottom / 2px 14px no-repeat;
 }
 .inventory-card__inspect::after {
   content: '';
@@ -391,24 +394,24 @@
 }
 .inventory-card__info {
   padding-top: 12px;
-  background: linear-gradient(180deg, #08121000, #08121070);
+  background: linear-gradient(180deg, #0b0d0c00, #0b0d0c70);
 }
 .inventory-card h2 {
   margin-bottom: 16px;
-  font-size: 22px;
+  font-size: 24px;
   color: #edf4e9;
 }
 .inventory-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid #a9ccba18;
+  border-top: 1px solid #a7aea918;
   padding-top: 12px;
-  color: #9cb9a7;
+  color: var(--text-2);
   font-size: 12px;
 }
 .inventory-card__footer > span:last-child {
-  color: #afdfc4;
+  color: var(--active);
   font-size: 20px;
   line-height: 1;
 }
@@ -417,15 +420,15 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .inventory-card:hover {
-    border-color: #91c5aa65;
+    border-color: #a7aea965;
     box-shadow:
       inset 0 2px #ffffff14,
       inset 0 -4px #0004,
       0 12px 32px #0005,
-      0 0 26px #82c59a0c;
+      0 0 26px #a7aea90c;
   }
   .inventory-card:hover .inventory-card__footer {
-    color: #c3ecd2;
+    color: var(--active);
   }
 }
 .case-owned-count {
@@ -439,17 +442,17 @@
   min-width: 36px;
   height: 36px;
   padding-inline: 8px;
-  background: #78cfaf12;
-  color: #a9e9cf;
-  font-size: 22px;
+  background: #a7aea912;
+  color: var(--active);
+  font-size: 24px;
   font-variant-numeric: tabular-nums;
   box-shadow:
-    inset 0 1px #abefcf24,
+    inset 0 1px #a7aea924,
     inset 0 -2px #0003;
 }
 .case-owned-count span {
   font-size: 12px;
-  color: #99b6ac;
+  color: #d3d9d5;
 }
 @media (max-width: 560px) {
   .inventory-card h2 {
@@ -467,14 +470,14 @@
   display: flex;
   align-items: baseline;
   gap: 4px;
-  color: #ddf3e7;
+  color: var(--active);
   font-size: 20px;
-  font-weight: 650;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .inventory-card__quantity small {
   font-size: 12px;
-  color: #93b4a2;
+  color: var(--text-2);
   font-weight: 400;
 }
 .inventory-card__top {
@@ -492,10 +495,10 @@
   box-shadow: inset 0 -1px #0005;
 }
 .inventory-card__damage-meter i[data-active='true'] {
-  background: #bc9762;
+  background: #c9a24a;
   box-shadow:
     inset 0 1px #efcb8e55,
-    0 0 6px #bc976218;
+    0 0 6px #c9a24a18;
 }
 @media (max-width: 560px) {
   .inventory-card__damage-meter i {
@@ -509,35 +512,37 @@
   color: #adb8a0;
 }
 .inventory__header nav [aria-current='page'] {
-  color: #aee9cf;
+  color: var(--active);
 }
 .inventory__rarities {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px;
   margin: 4px 0 18px;
 }
+/* Same tab language as the case directory: borderless, a hairline only on the active one. */
 .inventory__rarities > button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 32px;
-  border: 1px solid #ffffff12;
-  background: #101d19;
-  color: #8ba697;
-  padding: 6px 10px;
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-3);
+  padding: 8px 14px;
   font: inherit;
   font-size: 12px;
   cursor: pointer;
 }
 .inventory__rarities > button[aria-pressed='true'] {
-  border-color: #9fd9b54d;
-  background: #85caa20e;
-  color: #d5ebdd;
+  border-color: #a7aea92a;
+  background: #a7aea909;
+  color: var(--active);
 }
 .inventory__rarities > button > span {
-  color: #6d8979;
+  margin-left: 9px;
   font-variant-numeric: tabular-nums;
+  opacity: 0.5;
 }
 .case-rarity-mark {
   display: inline-block;
@@ -545,27 +550,27 @@
   height: 6px;
   margin-right: 7px;
   vertical-align: 1px;
-  background: #96b4a4;
+  background: var(--text-2);
 }
 .case-rarity-mark--common {
   background: #a5b5ad;
 }
 .case-rarity-mark--uncommon {
-  background: #70c99b;
+  background: var(--active);
 }
 .case-rarity-mark--rare {
-  background: #59a9ef;
+  background: #7aa7d9;
 }
 .case-rarity-mark--epic {
   background: #b887ed;
 }
 .case-rarity-mark--legendary {
-  background: #e4b761;
-  box-shadow: 0 0 8px #e4b76150;
+  background: #c9a24a;
+  box-shadow: 0 0 8px #c9a24a50;
 }
 .case-rarity-label {
-  color: #a9c0b3;
-  font-size: 10px;
+  color: var(--text-2);
+  font-size: 12px;
   letter-spacing: 0.04em;
 }
 .case-rarity-label--rare {

@@ -28,10 +28,12 @@ const transactionStatus = {
 export function WalletScreen({
   wallet,
   navigation,
+  archiveCount,
   soundPreference,
 }: {
   readonly wallet: PlayerWallet;
   readonly navigation: Navigation;
+  readonly archiveCount?: number;
   readonly soundPreference?: SoundPreference;
 }) {
   const state = useObservableState(wallet);
@@ -48,7 +50,6 @@ export function WalletScreen({
   const [failed, setFailed] = useState(false);
   const [balancesFailed, setBalancesFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [search, setSearch] = useState('');
   const selected = state.currencies.find((currency) => currency.asset === asset);
   const selectedBalance = state.balances.find((balance) => balance.asset === asset);
   const historyCurrent =
@@ -137,19 +138,23 @@ export function WalletScreen({
   return (
     <main className="page-shell inventory wallet-screen">
       <div className="inventory__content page-container">
-        <ScreenHeader navigation={navigation} active="wallet" soundPreference={soundPreference} />
+        <ScreenHeader
+          navigation={navigation}
+          active="wallet"
+          archiveCount={archiveCount}
+          soundPreference={soundPreference}
+        />
         <div className="inventory__intro">
           <div>
-            <p className="eyebrow">Баланс и переводы</p>
             <h1>Кошелёк</h1>
-            <p>Ваши валюты и история операций.</p>
           </div>
         </div>
         {balancesFailed && (
-          <p role="alert">
+          <p role="alert" className="wallet-screen__alert">
             Не удалось обновить баланс.{' '}
             <button
               type="button"
+              className="btn btn-primary"
               onClick={() => {
                 setBalancesFailed(false);
                 void wallet.load().catch(() => setBalancesFailed(true));
@@ -162,96 +167,67 @@ export function WalletScreen({
         {!state.loaded && !balancesFailed && <p role="status">Загружаем кошелёк…</p>}
         <div className="wallet-screen__workspace">
           <section className="wallet-screen__collection" aria-label="Валюты">
-            <label className="wallet-screen__search">
-              <span className="sr-only">Поиск валюты</span>
-              <input
-                type="search"
-                placeholder="Поиск валюты…"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </label>
             <div className="wallet-screen__balances">
-              {state.currencies
-                .filter((currency) =>
-                  `${currency.name} ${currency.code}`
-                    .toLocaleLowerCase()
-                    .includes(search.toLocaleLowerCase()),
-                )
-                .map((currency) => {
-                  const b = state.balances.find((balance) => balance.asset === currency.asset);
-                  if (!b) return null;
-                  return (
-                    <button
-                      key={b.asset}
-                      type="button"
-                      className="wallet-screen__balance"
-                      aria-pressed={asset === b.asset}
-                      onClick={() => setAsset(b.asset)}
-                    >
-                      <span>
-                        <span className="wallet-screen__coin" aria-hidden="true">
-                          ◎
-                        </span>{' '}
-                        {currency.name}
-                      </span>
-                      <strong>{formatWalletAmount(b.available, currency.precision)}</strong>
+              {state.currencies.map((currency) => {
+                const b = state.balances.find((balance) => balance.asset === currency.asset);
+                if (!b) return null;
+                // One currency is just the balance; the card only becomes a choice with several.
+                const Card = state.currencies.length > 1 ? 'button' : 'div';
+                return (
+                  <Card
+                    key={b.asset}
+                    {...(Card === 'button'
+                      ? { type: 'button', 'aria-pressed': asset === b.asset }
+                      : {})}
+                    className="wallet-screen__balance"
+                    onClick={() => setAsset(b.asset)}
+                  >
+                    <span>
+                      <span className="wallet-screen__coin" aria-hidden="true">
+                        ◎
+                      </span>{' '}
+                      {currency.name}
+                    </span>
+                    <strong>{formatWalletAmount(b.available, currency.precision)}</strong>
+                    <small>
+                      {currency.code}
+                      {!currency.canOperate && ' · Только просмотр'}
+                    </small>
+                    {b.held !== '0' && (
                       <small>
-                        {currency.code}
-                        {!currency.canOperate && ' · Только просмотр'}
+                        Зарезервировано: {formatWalletAmount(b.held, currency.precision)}
                       </small>
-                      {b.held !== '0' && (
-                        <small>
-                          Зарезервировано: {formatWalletAmount(b.held, currency.precision)}
-                        </small>
-                      )}
-                    </button>
-                  );
-                })}
+                    )}
+                  </Card>
+                );
+              })}
             </div>
             {state.loaded && state.currencies.length === 0 && <p>Доступных валют пока нет.</p>}
-            {state.loaded &&
-              state.currencies.length > 0 &&
-              !state.currencies.some((currency) =>
-                `${currency.name} ${currency.code}`
-                  .toLocaleLowerCase()
-                  .includes(search.toLocaleLowerCase()),
-              ) && <p>Валюты не найдены. Измените поиск.</p>}
+            {selected && selectedBalance && (
+              /* https://react.dev/learn/preserving-and-resetting-state#resetting-a-form-with-a-key */
+              <WalletTransfer
+                key={`${state.accountRevision}:${asset}:${selected.precision}`}
+                wallet={wallet}
+                currency={selected}
+                onCommitted={() => {
+                  setAttempt((value) => value + 1);
+                  void wallet.load().catch(() => setBalancesFailed(true));
+                }}
+              />
+            )}
           </section>
           <section
             className="wallet-screen__history"
             aria-labelledby="wallet-history-title"
             aria-busy={loading}
           >
-            {selected && selectedBalance && (
-              <>
-                <div className="wallet-screen__selected">
-                  <div>
-                    <h2>{selected.name}</h2>
-                    <span>{selected.code}</span>
-                  </div>
-                  <strong>
-                    {formatWalletAmount(selectedBalance.available, selected.precision)}
-                  </strong>
-                </div>
-                {/* https://react.dev/learn/preserving-and-resetting-state#resetting-a-form-with-a-key */}
-                <WalletTransfer
-                  key={`${state.accountRevision}:${asset}:${selected.precision}`}
-                  wallet={wallet}
-                  currency={selected}
-                  onCommitted={() => {
-                    setAttempt((value) => value + 1);
-                    void wallet.load().catch(() => setBalancesFailed(true));
-                  }}
-                />
-              </>
-            )}
             <h2 id="wallet-history-title">История операций</h2>
             {historyCurrent && failed && (
-              <p role="alert">
+              <p role="alert" className="wallet-screen__alert">
                 Не удалось загрузить историю.{' '}
                 <button
                   type="button"
+                  className="btn btn-primary"
                   onClick={() => {
                     if (next) void more();
                     else setAttempt((n) => n + 1);
@@ -291,7 +267,7 @@ export function WalletScreen({
             {historyCurrent && next && (
               <button
                 type="button"
-                className="btn btn-transparent"
+                className="btn btn-secondary"
                 disabled={loading}
                 onClick={() => {
                   void more();

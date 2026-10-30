@@ -148,6 +148,7 @@ export function packStage<H>(
                 ...(rig ? { rig } : {}),
               }),
               assets.atlas.texture,
+              assets.atlas.pbr,
             );
             for (const part of parts) {
               made.add(part.geometry);

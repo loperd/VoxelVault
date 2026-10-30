@@ -64,9 +64,9 @@ export const RELIC_VAULT: StageBuilder<ChestHandles> = {
       sky: { top: '#050d19', horizon: '#102b37', bottom: '#0a1420' },
       fog: { color: '#102332', near: 16, far: 48 },
       camera: {
-        position: [0, 2.6, 6.4],
-        target: [0, 1, 0],
-        fov: 48,
+        position: [0, 2.73, 9],
+        target: [0, 1.03, 0],
+        fov: 50,
         drift: 0.025,
         focus: [0.5, 0.44],
       },

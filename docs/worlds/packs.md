@@ -79,6 +79,10 @@ Complexity counts scene node instances, not only unique mesh definitions. A mesh
 
 Blocks retain their existing baked color pipeline. Standard GLB material factors remain linear, color textures remain sRGB as assigned by GLTFLoader, and objects render in a separate sRGB-output pass with shared depth. Do not compensate for a color-space bug by altering asset factors or manually applying gamma.
 
+### PBR maps for blocks
+
+A pack may add `<tile>_n` (normal map, OpenGL: green up) and `<tile>_s` (MER: R metalness, G emissive, B roughness) to `textures`, 16×16 like every tile. They are not block tiles: they fill parallel atlases laid out like the main one, and the solid-block shader reads them at the tile's own UV. A tile without a companion gets a flat normal and a dull, unlit material. Relief shades against the stage's sun, metal and smooth tiles take a sun highlight where the baked light reaches, emissive tiles glow on their own. Plants and liquids ignore the maps. A pack with no `_n`/`_s` tiles renders as before.
+
 `environment.light` supplies common key/sky/ground colors; object and guest strengths are distinct because guests use their own look. Objects receive hemisphere/key lights, while baked block light is not affected by those Three.js lights. Unlit/emissive material behavior follows glTF. Cell-light sampling, object shadows and local object lights are not established format-1 features.
 
 The calibration pack compares the same orange tile (`#c86432`) on a block and unlit factor/textured GLB plates. The recorded corrected sample matched `(200,100,50)` for all three. Lit PBR values differ legitimately under lighting; this is not a color-identity assertion for lit surfaces.

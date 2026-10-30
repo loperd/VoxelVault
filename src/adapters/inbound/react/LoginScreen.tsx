@@ -156,7 +156,7 @@ export function LoginScreen({
             <div className="login__divider" role="presentation">
               <span>или</span>
             </div>
-            <a className="btn btn-transparent login__telegram" href={auth.telegramUrl}>
+            <a className="btn btn-secondary login__telegram" href={auth.telegramUrl}>
               <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
                 <path
                   fill="currentColor"

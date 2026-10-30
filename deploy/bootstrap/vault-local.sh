@@ -49,11 +49,12 @@ helm upgrade --install vault-secrets-operator hashicorp/vault-secrets-operator -
 k -n vault wait --for=condition=Ready pod/vault-0 --timeout=120s
 
 echo "→ Kubernetes auth"
-vault auth list -format=json | grep -q '"kubernetes/"' || vault auth enable kubernetes
+# `grep -q` would close the pipe early and, under pipefail, fail the check; read all input instead.
+vault auth list -format=json | grep '"kubernetes/"' >/dev/null || vault auth enable kubernetes
 vault write auth/kubernetes/config kubernetes_host="https://kubernetes.default.svc" >/dev/null
 
 echo "→ KV-v2 mount $MOUNT/"
-vault secrets list -format=json | grep -q "\"$MOUNT/\"" || vault secrets enable -path="$MOUNT" -version=2 kv   # dev mode has it already
+vault secrets list -format=json | grep "\"$MOUNT/\"" >/dev/null || vault secrets enable -path="$MOUNT" -version=2 kv   # dev mode has it already
 
 echo "→ Read policy and role $ROLE (SA $APP_NS/$SERVICE_ACCOUNT)"
 vault policy write "$ROLE" - <<POLICY
@@ -74,13 +75,15 @@ POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-$(openssl rand -hex 24)}
 # Non-secret parts come from values.yaml `env:`; keep them in sync if you change them there.
 DB_USER=${POSTGRES_USER:-voxel} DB_NAME=${POSTGRES_DB:-voxel_vault}
 DATABASE_URL="postgres://$DB_USER:$POSTGRES_PASSWORD@$FULLNAME-postgres:5432/$DB_NAME?sslmode=disable"
-# Locally Identity and Security share the one database; the peer token is the gateway's INTERNAL_TOKEN.
+# Locally Identity, Security, Inventory and Wallet share the one database; the peer token is the gateway's INTERNAL_TOKEN.
 IDENTITY_DATABASE_URL=$DATABASE_URL SECURITY_DATABASE_URL=$DATABASE_URL
+INVENTORY_DATABASE_URL=$DATABASE_URL WALLET_DATABASE_URL=$DATABASE_URL
 GATEWAY_INTERNAL_TOKEN=$(k -n "$APP_NS" get secret voxel-vault-gateway-secrets -o jsonpath='{.data.INTERNAL_TOKEN}' | base64 -d)
 # JSON through stdin: no secret ever appears in a process list or shell history.
 TELEGRAM_CLIENT_SECRET=$TELEGRAM_CLIENT_SECRET POSTGRES_PASSWORD=$POSTGRES_PASSWORD DATABASE_URL=$DATABASE_URL \
   IDENTITY_DATABASE_URL=$IDENTITY_DATABASE_URL SECURITY_DATABASE_URL=$SECURITY_DATABASE_URL GATEWAY_INTERNAL_TOKEN=$GATEWAY_INTERNAL_TOKEN \
-  python3 -c 'import json, os; print(json.dumps({k: os.environ[k] for k in ("POSTGRES_PASSWORD", "DATABASE_URL", "IDENTITY_DATABASE_URL", "SECURITY_DATABASE_URL", "GATEWAY_INTERNAL_TOKEN")}))' \
+  INVENTORY_DATABASE_URL=$INVENTORY_DATABASE_URL WALLET_DATABASE_URL=$WALLET_DATABASE_URL \
+  python3 -c 'import json, os; print(json.dumps({k: os.environ[k] for k in ("POSTGRES_PASSWORD", "DATABASE_URL", "IDENTITY_DATABASE_URL", "SECURITY_DATABASE_URL", "INVENTORY_DATABASE_URL", "WALLET_DATABASE_URL", "GATEWAY_INTERNAL_TOKEN")}))' \
   | vault kv put -mount="$MOUNT" "$KV_PATH" - >/dev/null
 
 echo "✓ Vault ready. Now:"

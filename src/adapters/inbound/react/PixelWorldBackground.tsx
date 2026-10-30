@@ -22,7 +22,7 @@ const HOST: CSSProperties = {
 export const VEIL = { color: '#050c0d', top: 0.38, middle: 0.18, bottom: 0.62 };
 // A pack may be lit bright (a golden hour's sky behind the header and the case's text): a deeper
 // veil over its upper half and the middle (the chest's caption) keeps the interface readable; the pack's light itself is left as it is.
-const PACK_VEIL = { ...VEIL, top: 0.72, middle: 0.52 };
+const PACK_VEIL = { ...VEIL, top: 0.72, middle: 0.52, side: 0.55 };
 
 /** What became of the world asked for (`pack`, none for the case's own): a pack loads first, and may fail. */
 export type WorldStatus = { readonly pack?: string } & (

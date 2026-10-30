@@ -34,3 +34,10 @@ test('back walks one step up the single map and stops at the main screen; it nev
     { screen: 'case', caseId: 'ender', instanceId: 'a' },
   );
 });
+
+test('a case entered from a list leads back to that list', () => {
+  for (const returnTo of ['archive', 'catalog'])
+    assert.deepEqual(parentRoute({ screen: 'case', caseId: 'ender', returnTo }), {
+      screen: returnTo,
+    });
+});

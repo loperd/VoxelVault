@@ -1,0 +1,126 @@
+/* Design tokens: the one place colours, type, radius, density and the world background are decided.
+   Golos Text is the text face; digits are Geologica (both OFL, see licenses/). */
+@font-face {
+  font-family: 'Golos Text';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/golos-text-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Golos Text';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/golos-text-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Digits only: Geologica's figures are drawn for numbers (balances, prices, chances), so every 0-9 on screen uses them. */
+@font-face {
+  font-family: 'Geologica Digits';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/geologica-latin.woff2') format('woff2');
+  unicode-range: U+0030-0039;
+}
+
+:root {
+  --font: 'Geologica Digits', 'Golos Text', system-ui, sans-serif;
+
+  /* Ground and surfaces: deep forest green, lifted in three steps. */
+  --bg: #0b0d0c;
+  --surface: #121513;
+  --surface-2: #181c19;
+  --line: #2a302b;
+
+  /* Text: white, then two green-tinted greys (4.5:1+ on --surface). */
+  --text: #eaeeea;
+  --text-2: #a7aea9;
+  --text-3: #79817b;
+
+  /* Actions and currency. */
+  --accent: #e8ebe8;
+  --active: var(--accent);
+  --accent-ink: #0b0d0c;
+  --coin: #ffc83d;
+  --danger: #e0685c;
+
+  /* Rarity: the same hue means the same class on every screen (as players already know them). */
+  --rarity-common: #b9c2dc;
+  --rarity-uncommon: #7aa7d9;
+  --rarity-rare: #a99bd6;
+  --rarity-epic: #e45cff;
+  --rarity-legendary: #ffb02e;
+
+  /* Shape and density. */
+  --radius-s: 8px;
+  --radius: 14px;
+  --radius-pill: 999px;
+  --gap: 16px;
+  --gap-s: 8px;
+  --gap-l: 28px;
+
+  /* Depth: a soft drop plus a top highlight, never a hard offset. */
+  --shadow: 0 8px 24px #00000099, inset 0 1px 0 #ffffff1a;
+
+  /* World background, tinted green so the photo sits in the palette. */
+  --world-image: url('/images/voxel-world-background.png');
+  --world-overlay: linear-gradient(180deg, #0b0d0cb3, #0b0d0c80 45%, #0b0d0ce6);
+}
+
+/* Controls are not text: a double-click or a quick tap must not paint them with the browser's blue. */
+button,
+nav,
+.btn {
+  user-select: none;
+  -webkit-user-select: none;
+}
+::selection {
+  background: #e8ebe840;
+  color: var(--text);
+}
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+a,
+[role='button'] {
+  touch-action: manipulation;
+}
+/* One press language for every pressable card and control: instant, small, ease-out. */
+.case-card,
+.item-card__actions button,
+.item-details__browse button {
+  transition:
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+.case-card:active,
+.item-card__actions button:active,
+.item-details__browse button:active {
+  transform: scale(0.98);
+}
+.case-card:focus-visible,
+.item-card__actions button:focus-visible,
+.item-details__browse button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .case-card,
+  .item-card__actions button,
+  .item-details__browse button {
+    transition: none;
+  }
+  .case-card:active,
+  .item-card__actions button:active,
+  .item-details__browse button:active {
+    transform: none;
+  }
+}

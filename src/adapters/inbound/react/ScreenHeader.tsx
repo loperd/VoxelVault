@@ -26,7 +26,7 @@ const LINKS: readonly {
   readonly route: ScreenRoute;
 }[] = [
   { id: 'inventory', label: 'Инвентарь', route: { screen: 'inventory' } },
-  { id: 'catalog', label: 'Все кейсы', route: { screen: 'catalog' } },
+  { id: 'catalog', label: 'Кейсы', route: { screen: 'catalog' } },
   { id: 'archive', label: 'Архив', route: { screen: 'archive' } },
   { id: 'wallet', label: 'Кошелёк', route: { screen: 'wallet' } },
 ];

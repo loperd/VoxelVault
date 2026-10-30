@@ -102,7 +102,7 @@ export function ItemDetails({
               </button>
             </nav>
           )}
-          <Button variant="transparent" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Закрыть просмотр
           </Button>
         </footer>

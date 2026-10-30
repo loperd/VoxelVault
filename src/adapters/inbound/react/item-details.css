@@ -1,26 +1,26 @@
 .item-details {
-  --item-accent: #80b9ff;
+  --item-accent: #7aa7d9;
   width: min(860px, calc(100vw - 40px));
   max-height: calc(100svh - 40px);
   padding: 0;
-  color: #eef4f1;
-  border: 1px solid #86ead02a;
+  color: var(--text);
+  border: 1px solid #a7aea92a;
   border-radius: 6px;
-  background: #111d22;
+  background: var(--surface);
   box-shadow: 0 30px 100px #0009;
   overflow: auto;
 }
 .item-details--common {
-  --item-accent: #b4c2ba;
+  --item-accent: #a7aea9;
 }
 .item-details--rare {
-  --item-accent: #c69aef;
+  --item-accent: #a99bd6;
 }
 .item-details--epic {
-  --item-accent: #ea93e4;
+  --item-accent: #c58fc0;
 }
 .item-details--legendary {
-  --item-accent: #edce8e;
+  --item-accent: #c9a24a;
 }
 .item-details::backdrop {
   background: #03090de8;
@@ -30,7 +30,7 @@
   grid-template-columns: 0.95fr 1.05fr;
 }
 .item-details .eyebrow {
-  color: #93ada7;
+  color: var(--text-3);
   font-size: 12px;
 }
 .item-details__portrait {
@@ -46,7 +46,7 @@
   border-right: 1px solid #ffffff0a;
   background: radial-gradient(
     ellipse at 50% 50%,
-    color-mix(in srgb, var(--item-accent) 15%, #142026),
+    color-mix(in srgb, var(--item-accent) 15%, var(--surface)),
     #0a151b
   );
 }
@@ -106,7 +106,7 @@
 .item-details__sigil {
   position: absolute;
   font-size: 300px;
-  font-weight: 200;
+  font-weight: 400;
   line-height: 1;
   color: var(--item-accent);
   opacity: 0.12;
@@ -132,13 +132,13 @@
   color: var(--item-accent);
 }
 .item-details__rarity > span {
-  font-size: 10px;
+  font-size: 12px;
 }
 .item-details__symbol {
   color: #8da0a5;
   font-size: 12px;
   margin-top: 12px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 .item-details__narrative {
   padding: 36px 34px 28px;
@@ -146,10 +146,10 @@
 }
 .item-details h2 {
   margin: 10px 0 5px;
-  color: #f0f4ef;
+  color: #a7aea9;
   font-size: clamp(32px, 4vw, 46px);
-  letter-spacing: -0.045em;
-  font-weight: 550;
+  letter-spacing: -0.02em;
+  font-weight: 500;
 }
 .item-details__epithet {
   font-size: 14px;
@@ -167,19 +167,19 @@
 .item-details__origin span {
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #68838b;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
 }
 .item-details__origin strong {
   font-size: 12px;
   font-weight: 500;
-  color: #c1d0d2;
+  color: var(--text-2);
 }
 .item-details__story {
   padding-top: 20px;
   font-size: 14px;
   line-height: 1.85;
-  color: #aebfc3;
+  color: var(--text-2);
   text-wrap: pretty;
 }
 .item-details__quote {
@@ -190,18 +190,18 @@
 .item-details__quote p {
   font-size: 14px;
   line-height: 1.7;
-  color: #d5e0dc;
+  color: var(--text);
   font-style: italic;
 }
 .item-details__quote cite {
   display: block;
   margin-top: 8px;
-  color: #758e95;
+  color: var(--text-3);
   font-size: 12px;
   font-style: normal;
 }
 .item-details__source {
-  color: #68838b;
+  color: var(--text-3);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -213,7 +213,7 @@
   gap: 16px;
   border-top: 1px solid #ffffff0c;
   padding: 16px 24px;
-  background: #0c161b88;
+  background: #0b0d0c88;
 }
 .item-details__footer .btn {
   min-height: 44px;
@@ -222,42 +222,41 @@
 .item-details__browse {
   display: flex;
   align-items: center;
-  gap: 14px;
-  font-size: 12px;
+  gap: 12px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
-  color: #c6d8d4;
+  color: var(--text);
+}
+.item-details__browse > span {
+  min-width: 64px;
+  text-align: center;
 }
 .item-details__browse > span > span {
-  color: #657c83;
+  color: var(--text-3);
 }
 .item-details__browse button {
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 1px solid #ffffff14;
-  border-radius: 3px;
-  background: #ffffff03;
-  color: #b9d1ca;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--text);
   cursor: pointer;
   transition:
     background-color 140ms ease,
     border-color 140ms ease;
 }
 @media (hover: hover) and (pointer: fine) {
-  .item-details__browse button:hover {
-    background: #86ead014;
-    border-color: #86ead04d;
-  }
 }
 [data-home-design='gallery'] .item-details {
-  background: #25221d;
-  border-color: #d6bb8333;
+  background: #181c19;
+  border-color: #c9a24a33;
 }
 [data-home-design='gallery'] .item-details__portrait {
-  background: radial-gradient(ellipse, #d6bb831a, #191711);
+  background: radial-gradient(ellipse, #c9a24a1a, #121513);
 }
 [data-home-design='minimal'] .item-details {
-  background: #182126;
+  background: #181c19;
   border-color: #ffffff20;
 }
 [data-home-design='minimal'] .item-details__sigil,

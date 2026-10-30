@@ -27,6 +27,7 @@ import {
 } from '../../../../packages/blockworld/src/index.ts';
 import type { ChestHandles } from '../../../application/ports/chest-handles.ts';
 import { dragonFlight, dragonModel } from './dragon-actor.ts';
+import { pixelSkin } from './skin.ts';
 
 type EndActor = Living<ChestHandles>;
 
@@ -171,13 +172,13 @@ function build(seed: number): Stage<ChestHandles> {
     ...worldMeshes(
       meshWorld(grid, BLOCKS, {
         uv,
-        sky: [0.58, 0.55, 0.7],
+        sky: [0.36, 0.32, 0.52],
         glow: [0.72, 0.5, 1],
         minimum: 0.08,
         sun: {
           direction: [-0.45, 0.72, 0.52],
-          color: [0.72, 0.65, 0.85],
-          strength: 0.25,
+          color: [0.6, 0.5, 0.95],
+          strength: 0.5,
           reach: 24,
         },
       }),
@@ -192,14 +193,14 @@ function build(seed: number): Stage<ChestHandles> {
     visitors(root),
     crystalBlasts(root, pillars),
     // The dragon is low and often here: the first sweep comes within seconds, then every 15–25.
-    dragonFlight(dragon, { floor: FLOOR, first: 9, every: [15, 10], swoop: [0, 5.5, -11] }),
+    dragonFlight(dragon, { floor: FLOOR, first: 9, every: [15, 10] }),
   ];
   return {
     root,
     living,
     calm: 0.025,
     sky: { top: '#080b18', horizon: '#28213b', bottom: '#111322' },
-    fog: { color: '#211d35', near: 45, far: 190 },
+    fog: { color: '#2a1f4a', near: 28, far: 150 },
     camera: {
       position: EYE,
       target: [CHEST[0], CHEST[1] + 0.75, CHEST[2]],
@@ -208,7 +209,7 @@ function build(seed: number): Stage<ChestHandles> {
       focus: [0.5, 0.44],
     },
     anchor: CHEST,
-    light: { sky: '#d8cdf0', ground: '#3a3350', key: '#efe6ff', from: [-0.4, 0.7, 1] },
+    light: { sky: '#a79bd0', ground: '#2a2440', key: '#efe6ff', from: [-0.4, 0.7, 1] },
     ground: { blocks: { world: grid, registry: BLOCKS, around: [CHEST[0], CHEST[2]], radius: 6 } },
   };
 }
@@ -285,25 +286,23 @@ function crystalBeams(
 }
 
 const ENDERMAN = {
-  body: new MeshBasicMaterial({ color: '#171522' }),
+  body: new MeshBasicMaterial({ map: pixelSkin('#1c1829', '#4a3270', 11) }),
   eye: new MeshBasicMaterial({ color: '#dc70ff' }),
 };
 function endermanModel(): Group {
   const group = new Group(),
     { body: mat, eye } = ENDERMAN;
-  const body = new Mesh(new BoxGeometry(0.65, 1.7, 0.42), mat);
-  body.position.y = 1.5;
-  group.add(body);
-  for (const x of [-0.15, 0.15]) {
-    const e = new Mesh(new BoxGeometry(0.1, 0.07, 0.035), eye);
-    e.position.set(x, 1.82, 0.22);
-    group.add(e);
-  }
-  for (const x of [-0.2, 0.2]) {
-    const leg = new Mesh(new BoxGeometry(0.16, 1.05, 0.16), mat);
-    leg.position.set(x, 0.52, 0);
-    group.add(leg);
-  }
+  // Tall and thin like the original: long stilt legs, a narrow torso, a boxy head, arms to the knees.
+  const part = (w: number, h: number, d: number, x: number, y: number, z = 0, m = mat) => {
+    const mesh = new Mesh(new BoxGeometry(w, h, d), m);
+    mesh.position.set(x, y, z);
+    group.add(mesh);
+  };
+  part(0.5, 0.75, 0.26, 0, 1.73);
+  part(0.5, 0.5, 0.5, 0, 2.36);
+  for (const x of [-0.14, 0.14]) part(0.1, 0.06, 0.03, x, 2.38, 0.26, eye);
+  for (const x of [-0.12, 0.12]) part(0.14, 1.35, 0.14, x, 0.68);
+  for (const x of [-0.33, 0.33]) part(0.12, 1.45, 0.12, x, 1.4);
   return group;
 }
 

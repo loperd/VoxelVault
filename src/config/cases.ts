@@ -188,7 +188,8 @@ const UNCOMMON_CASE = makeCase(
   'Кладовая Шахтёра',
   'Снаряжение и редкие минералы из забытых подземных залов.',
   { shell: '#343c3b', panel: '#405c58', metal: '#7b8984', accent: '#5fc78e' },
-  rarityTheme('uncommon'),
+  // The mine's own accent is the ember orange of its lanterns, not its rarity's green.
+  { accent: '#e8833a', highlight: '#ffc08a', deep: '#7a3a14', glow: '#e8833a66' },
   'deep-mine',
   'images/cases/deep-mine-fortress.webp',
 );

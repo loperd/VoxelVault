@@ -11,11 +11,14 @@ import {
   PointLight,
   Points,
   PointsMaterial,
+  Quaternion,
   ShaderMaterial,
+  Vector3,
 } from 'three';
 import type { Living } from '../../../../../packages/blockworld/src/index.ts';
 import type { ChestHandles } from '../../../../application/ports/chest-handles.ts';
 import { MineParts } from './parts.ts';
+import { PLINTH_TOP } from './architecture.ts';
 
 export function atmosphere(p: MineParts): Living<ChestHandles>[] {
   const lava = p.group('08-molten-lava-cascade');
@@ -99,6 +102,39 @@ export function atmosphere(p: MineParts): Living<ChestHandles>[] {
     cloud.position.set((p.rand() - 0.5) * 44, -0.4 + p.rand(), -22 + p.rand() * 35);
     mist.add(cloud);
   }
+  // Warm shafts fall from above and in front onto the chest, so it reads against the dark gate.
+  const shafts = p.group('13-chest-light-shafts');
+  const shaftMaterial = new ShaderMaterial({
+    uniforms: { time: { value: 0 } },
+    transparent: true,
+    depthWrite: false,
+    side: DoubleSide,
+    blending: AdditiveBlending,
+    vertexShader:
+      'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:
+      'varying vec2 v;uniform float time;void main(){float edge=exp(-pow((v.x*2.-1.)*1.9,2.));float fall=pow(v.y,.45);float shimmer=.85+.15*sin(time*.6+v.y*5.);gl_FragColor=vec4(vec3(1.,.72,.42)*edge*fall*shimmer*.9,1.);}',
+  });
+  const aim = new Vector3(0, PLINTH_TOP + 0.6, 0);
+  for (const [x, w] of [
+    [-3.6, 3.2],
+    [-1.6, 2.4],
+    [0.6, 3],
+    [2.4, 2.4],
+    [4, 3.2],
+  ] as const) {
+    const from = new Vector3(x, PLINTH_TOP + 5, 1.5),
+      dir = aim.clone().sub(from),
+      shaft = new Mesh(new PlaneGeometry(w, dir.length()), shaftMaterial);
+    shaft.position.copy(from).addScaledVector(dir, 0.5);
+    shaft.quaternion.copy(
+      new Quaternion().setFromUnitVectors(new Vector3(0, -1, 0), dir.normalize()),
+    );
+    shafts.add(shaft);
+  }
+  const key = new PointLight('#ffb37a', 60, 14, 1.6);
+  key.position.set(0, PLINTH_TOP + 3, 4);
+  shafts.add(key);
   const particles = p.group('12-rising-embers');
   const positions = new Float32Array(180 * 3),
     phases = Array.from({ length: 180 }, () => p.rand());
@@ -125,6 +161,7 @@ export function atmosphere(p: MineParts): Living<ChestHandles>[] {
         glow.intensity = 220 + Math.sin(t * 2.3) * 16;
         waterMaterial.uniforms.time!.value = t;
         mistMaterial.uniforms.time!.value = t;
+        shaftMaterial.uniforms.time!.value = t;
         for (let i = 0; i < phases.length; i++) {
           const phase = phases[i]!;
           positions[i * 3] = -19 + phase * 12 + Math.sin(t * 0.7 + i) * 0.6;

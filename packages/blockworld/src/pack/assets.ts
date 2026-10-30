@@ -2,6 +2,7 @@ import { Mesh, Texture, type Material, type Object3D } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { packAtlas, TILE } from '../atlas.ts';
 import { decodePng } from './png.ts';
+import type { Pbr } from '../view.ts';
 import type { WorldPack } from './read.ts';
 
 /**
@@ -13,7 +14,12 @@ import type { WorldPack } from './read.ts';
  */
 export interface PackAssets {
   readonly pack: WorldPack;
-  readonly atlas: { readonly texture: Texture; uv(name: string): [number, number, number, number] };
+  readonly atlas: {
+    readonly texture: Texture;
+    uv(name: string): [number, number, number, number];
+    /** Normal and MER maps laid out like `texture`, when the pack has `<tile>_n` / `<tile>_s` tiles. */
+    readonly pbr?: Pbr;
+  };
   /** A model's template, as loaded; an unknown name throws. Never to be changed or added to a scene. */
   template(name: string): Object3D;
   /** Stages built on these resources and not yet disposed. */
@@ -111,8 +117,27 @@ export async function loadPackAssets(
       }),
     );
     if (signal.aborted) throw aborted(signal);
-    const atlas = packAtlas(tiles);
+    // PBR companions ride in `textures` like any tile: `<name>_n` (normal) and `<name>_s` (MER:
+    // metalness, emissive, roughness). They go to parallel atlases with the same layout, so the
+    // shader reads them at the block tile's own UV.
+    const isMap = ({ name }: { name: string }) => /_[ns]$/.test(name);
+    const base = tiles.filter((tile) => !isMap(tile));
+    const atlas = packAtlas(base);
     owned.add(atlas);
+    const flat = { n: [128, 128, 255, 255], s: [0, 0, 255, 255] } as const; // up; dull, unlit
+    const companion = (kind: 'n' | 's') => {
+      const given = new Map(tiles.map((tile) => [tile.name, tile.rgba]));
+      const tilesOf = base.map(({ name }) => ({
+        name,
+        rgba:
+          given.get(`${name}_${kind}`) ??
+          Uint8Array.from({ length: TILE * TILE * 4 }, (_, i) => flat[kind][i % 4]!),
+      }));
+      return owned.add(packAtlas(tilesOf));
+    };
+    const pbr = tiles.some(isMap)
+      ? { normal: companion('n').texture, material: companion('s').texture }
+      : undefined;
 
     // Every model parses even if one fails, so that all that was made is owned and freed.
     const loader = new GLTFLoader();
@@ -151,7 +176,7 @@ export async function loadPackAssets(
     packDiagnostics.assets++;
     return {
       pack,
-      atlas: { texture: atlas.texture, uv: atlas.uv },
+      atlas: { texture: atlas.texture, uv: atlas.uv, ...(pbr ? { pbr } : {}) },
       template(name) {
         const template = templates.get(name);
         if (!template) throw new Error(`The pack "${pack.id}" has no model "${name}".`);

@@ -117,7 +117,7 @@ export function WalletTransfer({
     return (
       <button
         type="button"
-        className="btn btn-green wallet-transfer__start"
+        className="btn btn-primary wallet-transfer__start"
         onClick={() => setOpen(true)}
       >
         Перевести
@@ -147,7 +147,7 @@ export function WalletTransfer({
         <div role="status" className="wallet-transfer__success">
           <strong>Перевод выполнен</strong>
           <p>Получателю зачислено {format(receipt.receiptUnits)}.</p>
-          <button type="button" className="btn btn-green" onClick={edit}>
+          <button type="button" className="btn btn-primary" onClick={edit}>
             Новый перевод
           </button>
         </div>
@@ -188,7 +188,7 @@ export function WalletTransfer({
               />
             </label>
             {!quote && (
-              <button type="submit" className="btn btn-green" disabled={busy}>
+              <button type="submit" className="btn btn-primary" disabled={busy}>
                 {busy ? 'Рассчитываем…' : 'Рассчитать перевод'}
               </button>
             )}
@@ -232,7 +232,7 @@ export function WalletTransfer({
               </p>
               <button
                 type="button"
-                className="btn btn-green"
+                className="btn btn-primary"
                 disabled={busy}
                 onClick={() => void confirm()}
               >

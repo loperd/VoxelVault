@@ -139,3 +139,22 @@ test('the main menu action is hidden at home and re-evaluated for each new error
   assert.equal(document.activeElement, document.querySelector('[data-action="home"]'));
   failsafe.dispose();
 });
+
+test('an error that names its area gets that area’s dialog, not the chest one', () => {
+  const { window, document, failsafe } = setup();
+  failsafe.install();
+  const error = Object.assign(new Error('wallet down'), { area: 'wallet' });
+  window.dispatchEvent(new window.ErrorEvent('error', { error, message: 'wallet down' }));
+  assert.equal(document.getElementById('failsafe-title').textContent, 'Кошелёк не отвечает');
+  assert.equal(failsafe.visible, true);
+  failsafe.dispose();
+  const plain = setup();
+  plain.failsafe.install();
+  plain.window.dispatchEvent(
+    new plain.window.ErrorEvent('error', { error: new Error('kaput'), message: 'kaput' }),
+  );
+  assert.equal(plain.document.getElementById('failsafe-title').textContent, 'Сундук завис');
+  plain.failsafe.dispose();
+  window.close();
+  plain.window.close();
+});

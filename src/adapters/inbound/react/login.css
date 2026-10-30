@@ -11,12 +11,12 @@
   width: min(420px, 100%);
   padding: 32px 28px 26px;
   overflow: hidden;
-  border: 1px solid var(--world-border, #a6c8b326);
+  border: 1px solid var(--world-border, #a7aea926);
   border-radius: 6px;
-  background: var(--world-surface, #101a1af2);
+  background: var(--world-surface, #0b0d0cf2);
   box-shadow: 0 18px 48px #0008;
   backdrop-filter: blur(10px);
-  color: #dce8e1;
+  color: var(--text);
   animation: login-in 360ms var(--ease-out, ease-out) both;
 }
 .login__panel::before {
@@ -24,7 +24,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #86ead0, transparent);
+  background: linear-gradient(90deg, transparent, var(--active), transparent);
   opacity: 0.55;
 }
 .login__brand {
@@ -46,16 +46,16 @@
 }
 .login__eyebrow {
   margin: 0;
-  color: #99e382;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  color: var(--active);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   text-align: center;
 }
 .login__title {
   margin: 0;
-  color: #f0f4ef;
+  color: var(--text);
   font-size: clamp(22px, 3vw, 28px);
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -63,7 +63,7 @@
 }
 .login__lead {
   margin: 0 0 8px;
-  color: #93a6aa;
+  color: var(--text-2);
   font-size: 14px;
   line-height: 1.45;
   text-align: center;
@@ -76,13 +76,13 @@
 .login__field {
   display: grid;
   gap: 6px;
-  color: #b9c9c4;
-  font-size: 13px;
+  color: var(--text-2);
+  font-size: 14px;
   font-weight: 600;
 }
 .login__field small {
   margin-left: 6px;
-  color: #6f8784;
+  color: var(--text-3);
   font-weight: 400;
 }
 .login__field input {
@@ -90,10 +90,10 @@
   width: 100%;
   min-height: 46px;
   padding: 10px 14px;
-  border: 1px solid #a6c8b333;
+  border: 1px solid #a7aea933;
   border-radius: 4px;
-  background: #0a1314cc;
-  color: #eef5f2;
+  background: #0b0d0ccc;
+  color: var(--text);
   font: inherit;
   font-size: 16px;
   font-weight: 500;
@@ -102,7 +102,7 @@
     box-shadow 160ms ease;
 }
 .login__field input::placeholder {
-  color: #50645f;
+  color: var(--text-3);
 }
 .login__field input:disabled {
   opacity: 0.6;
@@ -110,12 +110,12 @@
 .login__error {
   margin: 0;
   padding: 10px 12px;
-  border: 1px solid #e3665a44;
+  border: 1px solid #e0685c44;
   border-left-width: 3px;
   border-radius: 4px;
-  background: #e3665a12;
+  background: #e0685c12;
   color: #f1b3aa;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
 }
 .login__submit {
@@ -126,9 +126,9 @@
   align-items: center;
   gap: 12px;
   margin: 8px 0 2px;
-  color: #5f7773;
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  color: var(--text-3);
+  font-size: 12px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 .login__divider::before,
@@ -149,15 +149,15 @@
 }
 .login__switch {
   margin: 10px 0 0;
-  color: #7f969c;
-  font-size: 13px;
+  color: var(--text-3);
+  font-size: 14px;
   text-align: center;
 }
 .login__switch button {
   padding: 4px 2px;
   border: 0;
   background: none;
-  color: #86ead0;
+  color: var(--active);
   font: inherit;
   font-weight: 600;
   cursor: pointer;

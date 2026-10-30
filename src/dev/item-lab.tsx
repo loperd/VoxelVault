@@ -170,7 +170,7 @@ function Lab() {
           </label>
           <button
             type="button"
-            className="btn btn-transparent"
+            className="btn btn-secondary"
             disabled={spinning}
             onClick={() => {
               void spin();
@@ -178,7 +178,7 @@ function Lab() {
           >
             Крутить
           </button>
-          <button type="button" className="btn btn-transparent" onClick={() => setRevealed(true)}>
+          <button type="button" className="btn btn-secondary" onClick={() => setRevealed(true)}>
             Сразу награда
           </button>
         </div>

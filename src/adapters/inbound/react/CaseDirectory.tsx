@@ -108,7 +108,9 @@ export function CaseDirectory({
                   '--case-accent-glow': item.presentation.theme.glow,
                 } as CSSProperties
               }
-              onClick={() => navigation.go({ screen: 'case', caseId: item.id })}
+              onClick={() =>
+                navigation.go({ screen: 'case', caseId: item.id, returnTo: 'catalog' })
+              }
             >
               <div className="case-card__art">
                 <span aria-hidden="true">◇</span>

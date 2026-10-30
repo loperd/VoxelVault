@@ -4,10 +4,13 @@ import { claimCase, copyCaseInstance, type CaseInstance } from '../../../domain/
 import type { MergeOdds, PlayerInventory } from '../../../application/ports/player-inventory.ts';
 import type { ChestOutcome } from '../../../application/ports/outcome-gateway.ts';
 import { normalizeBaseUrl, resolvePublicAsset } from './asset-url.ts';
-import { DataError } from './data-error.ts';
+import { DataError, type DataErrorCode } from './data-error.ts';
 import { decodeItem } from './item-dto.ts';
 import { browserFetch, type FetchJson } from './request-json.ts';
 import { MutationKeys } from './mutation-key.ts';
+
+const fail = (code: DataErrorCode, message: string, options?: ErrorOptions) =>
+  new DataError(code, message, { ...options, area: 'inventory' });
 
 /**
  * The player's chests, as the server has them. The server alone issues chests and decides what
@@ -67,13 +70,10 @@ export class ApiInventory implements PlayerInventory {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok)
-      throw new DataError(
-        'HTTP_ERROR',
-        `The inventory request failed with HTTP ${response.status}.`,
-      );
+      throw fail('HTTP_ERROR', `The inventory request failed with HTTP ${response.status}.`);
     const value: unknown = await response.json();
     if (!Array.isArray(value) || value.length > 10_000)
-      throw new DataError('INVALID_DTO', 'The inventory must be a list.');
+      throw fail('INVALID_DTO', 'The inventory must be a list.');
     this.state = Object.freeze(
       value.flatMap((entry) => {
         const chest = this.decode(entry);
@@ -97,17 +97,13 @@ export class ApiInventory implements PlayerInventory {
         answer && typeof answer === 'object'
           ? this.decode((answer as Record<string, unknown>).chest)
           : undefined;
-      if (!chest)
-        throw new DataError('INVALID_DTO', 'The opening answer has no chest of a known type.');
+      if (!chest) throw fail('INVALID_DTO', 'The opening answer has no chest of a known type.');
       if (chest.status === 'destroyed') {
         this.held.set(instanceId, chest);
         return { destroyed: chest.destroyedAt ?? 'opening' };
       }
       if (chest.status !== 'opened' || !chest.reward)
-        throw new DataError(
-          'INVALID_DTO',
-          'The opening answer is neither a prize nor a destruction.',
-        );
+        throw fail('INVALID_DTO', 'The opening answer is neither a prize nor a destruction.');
       this.held.set(instanceId, chest);
       return {
         prize: chest.reward,
@@ -139,10 +135,7 @@ export class ApiInventory implements PlayerInventory {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok)
-      throw new DataError(
-        'HTTP_ERROR',
-        `The merge odds request failed with HTTP ${response.status}.`,
-      );
+      throw fail('HTTP_ERROR', `The merge odds request failed with HTTP ${response.status}.`);
     return decodeOdds(await response.json());
   }
 
@@ -164,13 +157,9 @@ export class ApiInventory implements PlayerInventory {
         },
       );
       if (!response.ok)
-        throw new DataError(
-          'HTTP_ERROR',
-          `The chest merge request failed with HTTP ${response.status}.`,
-        );
+        throw fail('HTTP_ERROR', `The chest merge request failed with HTTP ${response.status}.`);
       const chest = this.decode(await response.json());
-      if (!chest)
-        throw new DataError('INVALID_DTO', 'The merge answer has no chest of a known type.');
+      if (!chest) throw fail('INVALID_DTO', 'The merge answer has no chest of a known type.');
       this.mutations.done(intent);
       return chest;
     } catch (error) {
@@ -200,10 +189,7 @@ export class ApiInventory implements PlayerInventory {
       },
     );
     if (!response.ok)
-      throw new DataError(
-        'HTTP_ERROR',
-        `The chest ${action} request failed with HTTP ${response.status}.`,
-      );
+      throw fail('HTTP_ERROR', `The chest ${action} request failed with HTTP ${response.status}.`);
     return response.json();
   }
 
@@ -215,7 +201,7 @@ export class ApiInventory implements PlayerInventory {
   /** A chest from the server; its look is the traits the server froze. */
   private decode(value: unknown): CaseInstance | undefined {
     if (!value || typeof value !== 'object')
-      throw new DataError('INVALID_DTO', 'A chest must be an object.');
+      throw fail('INVALID_DTO', 'A chest must be an object.');
     const dto = value as Record<string, unknown>;
     const definition = this.cases.find((item) => item.id === dto.caseId);
     // A type this client does not know yet is skipped, not fatal.
@@ -227,9 +213,9 @@ export class ApiInventory implements PlayerInventory {
         ? Number(BigInt(dto.seed) & 0xffffffffn)
         : dto.seed;
     if (typeof seed !== 'number' || !Number.isSafeInteger(seed))
-      throw new DataError('INVALID_DTO', 'A chest seed must be an integer.');
+      throw fail('INVALID_DTO', 'A chest seed must be an integer.');
     if (!Array.isArray(dto.contents) || !Array.isArray(dto.traits))
-      throw new DataError('INVALID_DTO', 'A chest needs its contents and traits.');
+      throw fail('INVALID_DTO', 'A chest needs its contents and traits.');
     const traits = dto.traits as CaseInstance['traits'];
     const drop =
       dto.drop && typeof dto.drop === 'object' ? (dto.drop as Record<string, unknown>) : undefined;
@@ -261,12 +247,12 @@ export class ApiInventory implements PlayerInventory {
 
 const percent = (value: unknown) => {
   if (typeof value !== 'number' || !(value >= 0 && value <= 100))
-    throw new DataError('INVALID_DTO', 'A merge chance is a percent.');
+    throw fail('INVALID_DTO', 'A merge chance is a percent.');
   return value;
 };
 const count = (value: unknown) => {
   if (!Number.isSafeInteger(value) || (value as number) < 0)
-    throw new DataError('INVALID_DTO', 'A merge count is a whole number.');
+    throw fail('INVALID_DTO', 'A merge count is a whole number.');
   return value as number;
 };
 
@@ -277,13 +263,13 @@ function decodeOdds(value: unknown): MergeOdds {
       ? (dto.contents as Record<string, unknown>)
       : undefined;
   if (!Array.isArray(dto.traits) || dto.traits.length > 64 || !contents)
-    throw new DataError('INVALID_DTO', 'The merge odds need traits and contents.');
+    throw fail('INVALID_DTO', 'The merge odds need traits and contents.');
   return Object.freeze({
     traits: Object.freeze(
       dto.traits.map((entry) => {
         const trait = entry && typeof entry === 'object' ? (entry as Record<string, unknown>) : {};
         if (typeof trait.id !== 'string' || !trait.id)
-          throw new DataError('INVALID_DTO', 'A merge trait needs an id.');
+          throw fail('INVALID_DTO', 'A merge trait needs an id.');
         return Object.freeze({
           id: trait.id,
           keep: percent(trait.keep),

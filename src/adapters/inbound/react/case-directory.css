@@ -2,8 +2,8 @@
   height: 100svh;
   overflow: auto;
   padding: 24px 24px 60px;
-  color: #edf5f1;
-  background: radial-gradient(ellipse at 65% 35%, #183b352e, transparent 60%), #0b1419;
+  color: var(--text);
+  background: radial-gradient(ellipse at 65% 35%, #181c1966, transparent 60%), var(--bg);
 }
 .case-directory__content {
   width: min(var(--content-max-width, 1180px), 100%);
@@ -14,29 +14,29 @@
   align-items: center;
   gap: 12px;
   font-size: 16px;
-  font-weight: 650;
+  font-weight: 600;
 }
 .case-directory__brand > span {
-  color: #86ead0;
-  font-size: 28px;
+  color: var(--active);
+  font-size: 24px;
 }
 .case-directory__intro {
   padding-block: clamp(40px, 8svh, 90px) 38px;
 }
 .case-directory__intro .eyebrow {
-  color: #86ead0;
+  color: var(--active);
   font-size: 12px;
 }
 .case-directory__intro h1 {
   margin: 16px 0;
   font-size: clamp(30px, 4.5vw, 54px);
-  font-weight: 550;
-  letter-spacing: -0.045em;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   line-height: 1.1;
 }
 .case-directory__intro > p:last-child {
   max-width: 430px;
-  color: #8da9ac;
+  color: var(--text-3);
   font-size: 14px;
   line-height: 1.8;
 }
@@ -60,14 +60,14 @@
   border: 1px solid transparent;
   border-radius: 3px;
   background: transparent;
-  color: #899fa5;
+  color: var(--text-3);
   cursor: pointer;
   font-size: 12px;
 }
 .case-directory__filters button[aria-pressed='true'] {
-  color: #b0ead8;
-  border-color: #86ead02a;
-  background: #86ead009;
+  color: var(--active);
+  border-color: #a7aea92a;
+  background: #a7aea909;
 }
 .case-directory__filters button span {
   margin-left: 9px;
@@ -78,24 +78,24 @@
   min-height: 40px;
   border: 1px solid #ffffff12;
   border-radius: 3px;
-  background: #111f25;
-  color: #c9dcd7;
+  background: var(--surface);
+  color: var(--text);
   padding: 10px 12px;
   font: inherit;
   font-size: 12px;
 }
 .case-directory__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 24px;
 }
 .case-card {
   display: block;
   padding: 0;
-  border: 1px solid #86ead01c;
-  border-radius: 5px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   text-align: left;
-  background: #101e24;
+  background: var(--surface);
   color: inherit;
   overflow: hidden;
   cursor: pointer;
@@ -107,22 +107,24 @@
   position: relative;
   display: grid;
   place-items: center;
-  height: 250px;
+  height: 340px;
   isolation: isolate;
-  background: radial-gradient(ellipse at 50% 60%, #3db18a25, transparent 65%);
+  background:
+    radial-gradient(ellipse at 50% 60%, #e8ebe822, transparent 65%),
+    linear-gradient(180deg, var(--surface-2), var(--surface));
 }
 .case-card__art > span {
   position: absolute;
   font-size: 260px;
   line-height: 1;
-  color: #86ead00b;
+  color: #a7aea90b;
   z-index: -1;
 }
 .case-card__art img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 12px;
+  padding: 6px;
 }
 .case-card__info {
   padding: 20px 22px 22px;
@@ -130,17 +132,17 @@
 }
 .case-card .eyebrow {
   font-size: 12px;
-  color: #78aa9b;
+  color: var(--text-3);
 }
 .case-card h2 {
   margin: 10px 0;
-  font-size: 20px;
-  font-weight: 500;
-  letter-spacing: -0.025em;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 .case-card__info > p:not(.eyebrow) {
   font-size: 12px;
-  color: #819ba1;
+  color: var(--text-3);
   line-height: 1.7;
 }
 .case-card__action {
@@ -148,22 +150,12 @@
   justify-content: space-between;
   margin-top: 24px;
   font-size: 12px;
-  color: #9cd9c6;
+  color: var(--active);
 }
 .case-directory__empty {
-  color: #8da9ac;
+  color: var(--text-3);
   padding: 40px 0;
   font-size: 14px;
-}
-.case-brand__back {
-  pointer-events: auto;
-  background: transparent;
-  border-top: 0;
-  border-right: 0;
-  border-bottom: 0;
-  font: inherit;
-  cursor: pointer;
-  min-height: 36px;
 }
 .visually-hidden {
   position: absolute;
@@ -175,11 +167,8 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .case-card:hover {
-    border-color: #86ead04d;
-    background-color: #14272c;
-  }
-  .case-brand__back:hover {
-    color: #b4f2df;
+    border-color: #e8ebe84d;
+    background-color: var(--surface);
   }
 }
 @media (max-width: 800px) {

@@ -14,12 +14,13 @@ export function routePath(route: ScreenRoute): string {
   if (route.screen === 'item') base += `/items/${encodeURIComponent(route.itemId)}`;
   else if (route.screen === 'opening' || route.screen === 'reward')
     base += `/${route.screen}/${encodeURIComponent(route.sessionId)}`;
-  return 'returnTo' in route && route.returnTo === 'archive' ? `${base}?from=archive` : base;
+  return 'returnTo' in route && route.returnTo ? `${base}?from=${route.returnTo}` : base;
 }
 export function parseRoute(path: string): ScreenRoute {
   try {
     const [pathname, query = ''] = path.replace(/^#/, '').split('?');
-    const fromArchive = new URLSearchParams(query).get('from') === 'archive';
+    const from = new URLSearchParams(query).get('from');
+    const returnTo = (['archive', 'catalog'] as const).find((value) => value === from);
     const parts = pathname!.split('/').filter(Boolean).map(decodeURIComponent);
     if (parts.length === 0 || (parts.length === 1 && parts[0] === 'inventory'))
       return { screen: 'inventory' };
@@ -33,7 +34,7 @@ export function parseRoute(path: string): ScreenRoute {
     const base = {
         caseId: parts[1],
         ...(owned ? { instanceId: parts[3]! } : {}),
-        ...(fromArchive ? { returnTo: 'archive' as const } : {}),
+        ...(returnTo ? { returnTo } : {}),
       },
       offset = owned ? 4 : 2;
     if (parts.length === offset) return { screen: 'case', ...base };

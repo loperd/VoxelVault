@@ -84,7 +84,7 @@ export function Catalog({ items }: { readonly items: readonly Item[] }) {
           <p>Предмет не найден в этом сундуке.</p>
           <button
             type="button"
-            className="btn btn-transparent"
+            className="btn btn-secondary"
             onClick={() => setSelected(null, true)}
           >
             К содержимому

@@ -40,7 +40,6 @@ export function SessionPanel({
   openLabel,
   availableCaseCount,
   archiveCount,
-  archiveView,
   inspectedCase,
   captureWreck,
   soundPreference,
@@ -52,7 +51,6 @@ export function SessionPanel({
   readonly openLabel?: string;
   readonly availableCaseCount?: number;
   readonly archiveCount?: number;
-  readonly archiveView?: boolean;
   readonly inspectedCase?: CaseInstance;
   readonly recentFind?: RecentFind;
   readonly session: RouletteSession;
@@ -82,7 +80,6 @@ export function SessionPanel({
         inspectedCase={inspectedCase}
         availableCaseCount={availableCaseCount}
         archiveCount={archiveCount}
-        archiveView={archiveView}
         openLabel={openLabel}
         recentFind={recentFind}
         items={items}

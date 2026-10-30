@@ -312,32 +312,87 @@ gl_FragColor.a = min(1., gl_FragColor.a + fresnel * .3 + glint);`;
 /** Fog that catches the sun: towards it, the haze glows in the sun's colour. */
 const FOG = `#ifdef USE_FOG
 float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
-vec3 haze = mix(fogColor, sunColor, pow(toSun, 6.) * scatter);
+// Shafts: the haze towards the sun is striped by angle around the sun's axis, as light through gaps in the clouds.
+vec3 rayAxis = abs(sunDirection.y) > .9 ? vec3(1., 0., 0.) : vec3(0., 1., 0.);
+vec3 rayX = normalize(cross(sunDirection, rayAxis));
+float rayAng = atan(dot(look, cross(sunDirection, rayX)), dot(look, rayX));
+float shaft = .25 + .75 * (.5 + .5 * sin(rayAng * 13. + sin(rayAng * 5. + time * .12) * 1.6));
+vec3 haze = mix(fogColor, sunColor, min(pow(toSun, 6.) * scatter * (.35 + shaft), 1.));
 gl_FragColor.rgb = mix(gl_FragColor.rgb, haze, fogFactor);
 #endif`;
+
+/** A pack's relief and material maps, laid out like its atlas: normals (OpenGL, green up) and MER (R metalness, G emissive, B roughness). */
+export interface Pbr {
+  readonly normal: Texture;
+  readonly material: Texture;
+}
+
+const PBR_HEAD = `uniform sampler2D pbrNormal;
+uniform sampler2D pbrMer;`;
+
+/**
+ * Relief and sheen over the baked light: the normal map bends the tile's shading against the sun, metal
+ * and smooth tiles take a highlight (only where the baked light says the sun reaches), emissive tiles
+ * glow on their own. Faces are axis-aligned, so the tangent frame comes from screen derivatives.
+ */
+const PBR = `{
+vec3 dp1 = dFdx(vWorld), dp2 = dFdy(vWorld);
+vec2 du1 = dFdx(vMapUv), du2 = dFdy(vMapUv);
+vec3 gN = normalize(cross(dp1, dp2));
+vec3 eye = normalize(vWorld - cameraPosition);
+if (dot(gN, eye) > 0.) gN = -gN;
+vec3 perp2 = cross(dp2, gN), perp1 = cross(gN, dp1);
+vec3 tan = perp2 * du1.x + perp1 * du2.x;
+vec3 bit = perp2 * du1.y + perp1 * du2.y;
+float scale = inversesqrt(max(max(dot(tan, tan), dot(bit, bit)), 1e-12));
+vec3 n = normalize(mat3(tan * scale, bit * scale, gN) * (texture2D(pbrNormal, vMapUv).xyz * 2. - 1.));
+vec3 mer = texture2D(pbrMer, vMapUv).rgb;
+vec3 albedo = texture2D(map, vMapUv).rgb;
+vec3 sunWay = dot(sunColor, vec3(1.)) > 0. ? normalize(sunDirection) : normalize(vec3(.3, .8, .5));
+float relief = clamp((dot(n, sunWay) + .6) / (max(dot(gN, sunWay), 0.) + .6), .45, 1.6);
+gl_FragColor.rgb *= mix(1., relief, .75);
+float rough = max(mer.b, .04);
+float sunReach = clamp(dot(vColor.rgb, vec3(.333)) * 1.6, 0., 1.);
+float shine = pow(max(dot(normalize(mix(gN, n, .35)), normalize(sunWay - eye)), 0.), mix(3., 28., (1. - rough) * (1. - rough)));
+gl_FragColor.rgb *= 1. - mer.r * .3;
+gl_FragColor.rgb += (sunColor + .08) * mix(vec3(.04), albedo, mer.r) * shine * (1. - rough) * sunReach * 1.1;
+gl_FragColor.rgb += albedo * mer.g * 1.2;
+// The sky in smooth surfaces: the horizon's colour, dimmer toward the ground, strongest at grazing angles and on metal; dark where the baked light says it is closed in.
+vec3 mirror = reflect(eye, n);
+float fresnel = pow(1. - max(dot(n, -eye), 0.), 4.);
+gl_FragColor.rgb += mix(horizon * .3, horizon, clamp(mirror.y * .5 + .5, 0., 1.)) * (mer.r * .16 + (1. - rough) * fresnel * .22) * sunReach;
+}`;
 
 export function moving<T extends MeshBasicMaterial | MeshLambertMaterial>(
   material: T,
   kind: 'sway' | 'wave',
+  pbr?: Pbr,
 ): T {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, atmosphere);
+    if (pbr) {
+      shader.uniforms.pbrNormal = { value: pbr.normal };
+      shader.uniforms.pbrMer = { value: pbr.material };
+    }
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', VERTEX_HEAD)
       .replace('#include <begin_vertex>', [kind === 'sway' ? SWAY : WAVE, VARYINGS].join('\n'));
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', FRAGMENT_HEAD)
-      .replace('#include <fog_fragment>', [LIGHT, kind === 'wave' ? WATER : '', FOG].join('\n'));
+      .replace('#include <common>', pbr ? `${FRAGMENT_HEAD}\n${PBR_HEAD}` : FRAGMENT_HEAD)
+      .replace(
+        '#include <fog_fragment>',
+        [pbr ? PBR : '', LIGHT, kind === 'wave' ? WATER : '', FOG].join('\n'),
+      );
   };
-  material.customProgramCacheKey = () => `blockworld-${kind}`;
+  material.customProgramCacheKey = () => `blockworld-${kind}${pbr ? '-pbr' : ''}`;
   return material;
 }
 
-/** The three materials of a meshed world, sharing one atlas. */
-export function worldMeshes(mesh: WorldMesh, atlas: Texture): Mesh[] {
+/** The three materials of a meshed world, sharing one atlas (the solid blocks also take its PBR maps). */
+export function worldMeshes(mesh: WorldMesh, atlas: Texture, pbr?: Pbr): Mesh[] {
   const opaque = new Mesh(
     geometry(mesh.opaque),
-    moving(new MeshBasicMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5 }), 'sway'),
+    moving(new MeshBasicMaterial({ map: atlas, vertexColors: true, alphaTest: 0.5 }), 'sway', pbr),
   );
   const plants = new Mesh(
     geometry(mesh.plants),
@@ -544,7 +599,7 @@ export class BlockView<H> {
     builder: StageBuilder<H>,
     options: {
       seed?: number;
-      veil?: { color: string; top: number; middle: number; bottom: number };
+      veil?: { color: string; top: number; middle: number; bottom: number; side?: number };
       graphicsMode?: GraphicsMode;
     } = {},
   ) {
@@ -626,7 +681,7 @@ export class BlockView<H> {
       this.target.set(...this.stage.camera.target);
       this.syncLocals();
       if (options.veil) {
-        const { color, top, middle, bottom } = options.veil;
+        const { color, top, middle, bottom, side = 0 } = options.veil;
         const material = new ShaderMaterial({
           transparent: true,
           depthTest: false,
@@ -636,11 +691,14 @@ export class BlockView<H> {
             top: { value: top },
             middle: { value: middle },
             bottom: { value: bottom },
+            side: { value: side },
           },
           vertexShader:
-            'varying float vY; void main() { vY = uv.y; gl_Position = vec4(position.xy, 0., 1.); }',
-          fragmentShader: `uniform vec3 color; uniform float top; uniform float middle; uniform float bottom; varying float vY;
-  void main() { float down = 1. - vY; float a = down < .42 ? mix(top, middle, down / .42) : mix(middle, bottom, (down - .42) / .58); gl_FragColor = vec4(color, a); }`,
+            'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }',
+          // `side` darkens the left and right edges (where the heading and the featured find sit), fading out by 30% in.
+          fragmentShader: `uniform vec3 color; uniform float top; uniform float middle; uniform float bottom; uniform float side; varying vec2 vUv;
+  void main() { float down = 1. - vUv.y; float a = down < .42 ? mix(top, middle, down / .42) : mix(middle, bottom, (down - .42) / .58);
+  float edge = smoothstep(.3, 0., min(vUv.x, 1. - vUv.x)); a = 1. - (1. - a) * (1. - side * edge); gl_FragColor = vec4(color, a); }`,
         });
         const scene = new Scene();
         scene.add(new Mesh(new PlaneGeometry(2, 2), material));
