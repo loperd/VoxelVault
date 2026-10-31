@@ -1120,7 +1120,7 @@ h1 {
   bottom: calc(100% + 8px);
   width: min(560px, calc(100vw - 56px));
   padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--case-accent) 30%, #ffffff12);
+  border: 1px solid var(--line);
   background: #0b0d0cf2;
   box-shadow: 0 12px 32px #0009;
   backdrop-filter: blur(12px);
@@ -1304,7 +1304,7 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid color-mix(in srgb, var(--prize-color) 25%, transparent);
+  border: 1px solid var(--line);
   padding: 6px 10px;
   border-radius: 3px;
   background: color-mix(in srgb, var(--prize-color) 6%, transparent);
@@ -1741,7 +1741,7 @@ h1 {
   color: var(--case-accent-highlight);
 }
 .case-open-bar {
-  border-bottom-color: color-mix(in srgb, var(--case-accent) 17%, transparent);
+  border-bottom-color: var(--line);
 }
 .case-open-bar__copy .eyebrow {
   color: color-mix(in srgb, var(--case-accent-highlight) 66%, var(--text-3));
@@ -1755,7 +1755,7 @@ h1 {
 }
 .screen-header__mark {
   color: var(--case-accent-highlight);
-  border-color: color-mix(in srgb, var(--case-accent) 25%, transparent);
+  border-color: var(--line);
   background: color-mix(in srgb, var(--case-accent) 5%, transparent);
 }
 .screen-header__nav button[aria-current='page'] {
@@ -1766,11 +1766,11 @@ h1 {
   box-shadow: 0 0 10px color-mix(in srgb, var(--case-accent) 28%, transparent);
 }
 .case-card {
-  border-color: color-mix(in srgb, var(--case-accent) 19%, transparent);
+  border-color: var(--line);
 }
 @media (hover: hover) and (pointer: fine) {
   .case-card:hover {
-    border-color: color-mix(in srgb, var(--case-accent) 48%, transparent);
+    border-color: var(--text-3);
   }
 }
 .case-card__action,
@@ -1778,7 +1778,7 @@ h1 {
   color: var(--case-accent-highlight);
 }
 .inventory-card {
-  border-color: color-mix(in srgb, var(--case-accent) 20%, transparent);
+  border-color: var(--line);
 }
 .inventory-card__quantity,
 .inventory-card__footer > span:last-child {
