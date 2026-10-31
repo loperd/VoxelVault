@@ -6,13 +6,9 @@ Individual chest instances, rather than chest types, are the units of ownership 
 
 The application has a Go API for authentication, chest ownership, authoritative opening outcomes and owned items. The frontend presents per-instance contents and appearance, a physical chest-opening sequence, a roulette strip and the resulting item. World/model definitions are shared by the opening scene and previews.
 
-The existing item screen also displays balances. The existing backend stores mutable wallet balances and coordinates workshop actions in a shared transaction. These are migration starting points, not the accepted target architecture.
+Inventory shows owned items with server-priced repair, merge, salvage and sale actions (`server/inventory/adapters/rulebook`). Currency and collection materials live in a separate Wallet section backed by the double-entry ledger (`server/ledger`). Inventory settles through the `inventoryledger` integration using durable sagas, outbox/inbox, idempotency and compensation, as the [context contract](architecture/contexts.md) requires. The ledger and Inventory database tests, including race runs, pass against a real PostgreSQL.
 
 ## Accepted next work
-
-Inventory must show recognizable objects with compact item presentation and server-priced repair, merge, salvage and sale actions. Currency and collection materials belong in a separate Wallet section with balances and transaction history, not among owned items.
-
-Wallet becomes an autonomous bounded context with a double-entry ledger. Inventory and future Shop integrate only through ports and adapters, using durable sagas, outbox/inbox, idempotency and compensation. The [context contract](architecture/contexts.md) defines the boundaries and failure rules; the ledger and saga migration are not complete.
 
 Identity/Profile needs a settings page for adding passkeys, linking or rebinding Telegram, language and interface preferences. Provider linking must preserve the current player account and be extensible to future Google authentication. Existing login support does not mean these settings are implemented.
 
