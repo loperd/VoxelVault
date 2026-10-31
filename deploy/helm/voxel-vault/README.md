@@ -59,7 +59,7 @@ VSO overwrites the Secret with the KV: fill the KV, the read policy and the Kube
 
 ## Economy context activation
 
-The image contains `/api`, `/wallet-migrate`, `/inventory-migrate`, `/security-migrate`, `/economy-seed`, `/economy-cutover` and
+The image contains `/api`, `/wallet-migrate`, `/inventory-migrate`, `/security-migrate`, `/economy-seed` and
 `/workshop-worker`, `/runtime-grants` for explicit runtime permission setup and `/treasury-open`
 for a separately authorized opening allocation, and `/account-restrict` (operator `WALLET_DATABASE_URL`:
 `add|lift|list` send/receive restrictions).
@@ -67,50 +67,32 @@ for a separately authorized opening allocation, and `/account-restrict` (operato
 `/restriction-expire` (run by the `restrictionExpiry` CronJob every 5 minutes with the runtime `WALLET_DATABASE_URL`) publishes `restriction.expired`.
 Its default entrypoint remains `/api`; Kubernetes `command` or Docker
 `--entrypoint` selects an operator tool. No tool requires a shell in the distroless image.
-Helm and the release workflow never run migrations, freeze the source or import balances.
+Helm and the release workflow never run migrations or import balances.
 
-The API runs only the Inventory and Wallet contexts and requires a completed cutover. Startup
-checks migrated context databases, a frozen legacy source and both opening baselines matching
-its snapshot; if any is missing the process exits (the pod crash-loops and `helm --atomic` rolls
-back). Economy endpoints and readiness return 503 only if that check regresses while running.
-There is no maintenance mode: the API is down from freeze until import completes, so plan the
-window and scale the API to 0 before export.
-Rehearse on a controlled copy before the first rollout. With the relevant connections
-in the operator environment, run these binaries in order:
+The API runs only the Inventory and Wallet contexts. Startup checks the migrated context
+databases and that both opening baselines are complete and carry the same source and digest;
+if any is missing the process exits (the pod crash-loops and `helm --atomic` rolls back).
+Economy endpoints and readiness return 503 only if that check regresses while running.
+
+With the relevant connections in the operator environment, prepare a fresh deployment in
+this order:
 
 ```sh
 /wallet-migrate
 /inventory-migrate
 /security-migrate
 /economy-seed
-/economy-cutover -action source-migrate
-/economy-cutover -action export -source <stable-deployment-id> -manifest /snapshots/economy.json
-/economy-cutover -action import -manifest /snapshots/economy.json
-/economy-cutover -action import-chests -manifest /snapshots/economy.json
 /runtime-grants -context accounts -role <accounts-runtime-role>
 /runtime-grants -context inventory -role <inventory-runtime-role>
 /runtime-grants -context wallet -role <wallet-runtime-role>
-/economy-cutover -action check
 ```
 
-The operator uses `LEGACY_DATABASE_URL`, `INVENTORY_DATABASE_URL` and `WALLET_DATABASE_URL`.
-`CUTOVER_WALLET_ASSETS` explicitly authorizes opening imports. `WALLET_ASSETS` is the API/check
-asset allowlist and must contain currency, all rulebook materials and any historical assets
-players need to access. The rulebook is read from the active revision in the Inventory database;
-`/economy-seed [config-dir]` (needs `INVENTORY_DATABASE_URL`, `WALLET_DATABASE_URL`, `SECURITY_DATABASE_URL`) stores the image's bundled `/config` files (economy, transfers, security) in their databases once and never replaces an active revision. Mount a
-private writable snapshot volume for export and preserve it for resumable imports.
-
-`CUTOVER_INVENTORY_SOURCES` is a separate trusted comma-separated source allowlist for
-item/chest imports. It must contain the frozen deployment's source ID. Missing or mismatched
-scope denies the import; the combined import checks Inventory authority before changing
-Wallet. Offline migration authority is not assigned to API or worker identities.
-
-Export permanently fences legacy economy writes; it is not a dry run. Repeating an export
-with the same source identity recovers the stored artifact. Repeating imports uses durable
-baseline receipts. `check` only reads schemas and matching baseline receipts, exits nonzero
-when activation is incomplete, and prints `{"apiCutoverReady":true}` on success. It shares
-the API's startup validations, supports read-only database credentials and never starts workers.
-This checks readiness at that instant; it does not replace restore/rollout verification.
+The operator uses `INVENTORY_DATABASE_URL` and `WALLET_DATABASE_URL`. `WALLET_ASSETS` is the
+API asset allowlist and must contain currency, all rulebook materials and any historical
+assets players need to access. The rulebook is read from the active revision in the
+Inventory database; `/economy-seed [config-dir]` (needs `INVENTORY_DATABASE_URL`,
+`WALLET_DATABASE_URL`, `SECURITY_DATABASE_URL`) stores the image's bundled `/config` files
+(economy, transfers, security) in their databases once and never replaces an active revision.
 
 Run `runtime-grants` with the corresponding operator connection (`DATABASE_URL` for
 transitional Accounts; the context URLs for Inventory and Wallet). Provision dedicated
@@ -174,10 +156,8 @@ imports before funding; funding is ledger activity and later baseline re-imports
 
 All domain checks, ledger validation and lifecycle recording execute in Go. Migrations
 create storage structures and ordinary integrity constraints without custom PostgreSQL
-functions, procedures or triggers. Legacy write fencing is a Go transaction lease taken
-by the cutover tooling; no application writer of the legacy economy remains. Drain old API/worker versions and revoke
-legacy economy write access before the cutover; unrestricted operator SQL bypasses
-application checks. The schema owner remains an offline operator identity.
+functions, procedures or triggers. Unrestricted operator SQL bypasses application checks;
+the schema owner remains an offline operator identity.
 
 Inventory application entrypoints independently enforce RBAC and resource scopes through
 the Security decision port. User identity comes from the authenticated session; role

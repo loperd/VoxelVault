@@ -17,9 +17,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	identityv1 "github.com/voxel-vault/api/identity/contracts/v1"
 	"github.com/voxel-vault/api/internal/config"
-	cutover "github.com/voxel-vault/api/internal/economycutover"
-	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
-	lmigrate "github.com/voxel-vault/api/internal/economycutover/adapters/legacy/migrations"
 	"github.com/voxel-vault/api/internal/economyruntime"
 	bridge "github.com/voxel-vault/api/internal/integrations/inventoryledger"
 	"github.com/voxel-vault/api/internal/store"
@@ -85,7 +82,6 @@ type httpContexts struct {
 	securityDB       *sql.DB
 	sessions         map[string]string
 	rb               *rulebook.Rulebook
-	snapshot         cutover.Snapshot
 	runtime          *economyruntime.Runtime
 	server           *Server
 }
@@ -129,41 +125,18 @@ func httpStack(t *testing.T, activate bool) *httpContexts {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { gdb.Close() })
-	at := time.Now().UTC()
-	for _, id := range []string{"alice", "bob"} {
-		u := store.EconomyOwner{ID: id, StarterGrantedAt: &at}
-		if err = g.Create(&u).Error; err != nil {
-			t.Fatal(err)
-		}
-
-	}
-	for _, row := range []store.InventoryItem{{ID: "alice-item", UserID: "alice", ItemID: "item-a", State: "heavy", Origin: ""}, {ID: "bob-item", UserID: "bob", ItemID: "item-b", State: "heavy", Origin: ""}} {
-		if err = g.Create(&row).Error; err != nil {
-			t.Fatal(err)
-		}
-	}
-	for _, b := range []store.WalletBalance{{UserID: "alice", Resource: "currency", Value: 9007199254740993}, {UserID: "alice", Resource: "end-shards", Value: 20}, {UserID: "bob", Resource: "currency", Value: 3}, {UserID: "bob", Resource: "end-shards", Value: 0}} {
-		if err = g.Create(&b).Error; err != nil {
-			t.Fatal(err)
-		}
-	}
-	c := store.ChestInstance{ID: "existing-chest", UserID: "alice", CaseID: "ender", Status: "available", Seed: 9007199254740993, Revision: "test.1", Contents: []byte(`[{"Item":"item-a","Weight":1}]`), Traits: []byte(`[]`), OriginParents: []byte(`[]`), Rarity: "common", Condition: 1, OriginSource: "admin"}
-	if err = g.Create(&c).Error; err != nil {
-		t.Fatal(err)
-	}
 	f.securityDB = f.source
 	f.setupIdentity(t, sourceDSN)
 	f.rb = rulebooktest.Build(t, rulebooktest.Set(map[string]float64{"chest.destroy.impact.perWear": 0, "chest.destroy.opening.perWear": 0}))
 	for _, m := range []struct {
 		db *sql.DB
 		up func(context.Context, *sql.DB) error
-	}{{f.source, lmigrate.Up}, {f.idb, imigrate.Up}, {f.wdb, wmigrate.Up}} {
+	}{{f.idb, imigrate.Up}, {f.wdb, wmigrate.Up}} {
 		if err = m.up(context.Background(), m.db); err != nil {
 			t.Fatal(err)
 		}
 	}
 	if activate {
-		f.freeze(t)
 		f.importItems(t)
 		f.importChests(t)
 		f.activate(t)
@@ -171,43 +144,48 @@ func httpStack(t *testing.T, activate bool) *httpContexts {
 	return f
 }
 
-func (f *httpContexts) freeze(t *testing.T) {
-	t.Helper()
-	var err error
-	f.snapshot, err = (legacy.Source{DB: f.source}).FreezeAndExport(context.Background(), "http-source")
-	if err != nil {
-		t.Fatal(err)
-	}
-}
+// The baseline the contexts start from: alice and bob own one item each, two currencies and
+// alice's chest. Both contexts are stamped with the same source and digest.
+const (
+	httpSource = "http-source"
+	httpDigest = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+)
 
 func (f *httpContexts) importItems(t *testing.T) {
 	t.Helper()
-	p, err := authorization.New([]authorization.Grant{{Producer: "legacy-opening", Actions: []wdomain.Action{wdomain.Credit}, Assets: []string{"currency", "end-shards"}, AllSubjects: true, Purposes: []wdomain.Purpose{wdomain.OpeningBalance}}})
+	p, err := authorization.New([]authorization.Grant{{Producer: "baseline-opening", Actions: []wdomain.Action{wdomain.Credit}, Assets: []string{"currency", "end-shards"}, AllSubjects: true, Purposes: []wdomain.Purpose{wdomain.OpeningBalance}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := wlocal.OpeningClient{Service: wallet.OpeningService{Store: wpg.New(f.wdb), Authorizer: allowIssuance{p}, Producer: "legacy-opening"}}
+	ctx := inv.WithAuthenticatedPrincipal(context.Background(), inv.Principal{Kind: "operator", ID: "test-fixture"})
+	w := wlocal.OpeningClient{Service: wallet.OpeningService{Store: wpg.New(f.wdb), Authorizer: allowIssuance{p}, Producer: "baseline-opening"}}
+	balances := []wv1.OpeningBalance{{Subject: "alice", Asset: "currency", Units: "9007199254740993"}, {Subject: "alice", Asset: "end-shards", Units: "20"}, {Subject: "bob", Asset: "currency", Units: "3"}, {Subject: "bob", Asset: "end-shards", Units: "0"}}
+	if err = w.ImportOpening(ctx, wv1.Opening{Source: httpSource, Digest: httpDigest, At: time.Now().UTC().Format(time.RFC3339Nano), Balances: balances}); err != nil {
+		t.Fatal(err)
+	}
 	i := ilocal.OpeningClient{Service: inv.OpeningService{Authorizer: allowInventory{}, Store: ipg.New(f.idb)}}
-	if _, err = cutover.Apply(inv.WithAuthenticatedPrincipal(context.Background(), inv.Principal{Kind: "operator", ID: "test-fixture"}), f.snapshot, w, i); err != nil {
+	items := []iv1.OpeningItem{{ID: "alice-item", Owner: "alice", Definition: "item-a", Condition: "heavy"}, {ID: "bob-item", Owner: "bob", Definition: "item-b", Condition: "heavy"}}
+	if err = i.ImportItems(ctx, iv1.Opening{Source: httpSource, Digest: httpDigest, Items: items}); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func (f *httpContexts) importChests(t *testing.T) {
 	t.Helper()
-	r, err := legacy.ChestOpening(f.snapshot)
-	if err != nil {
-		t.Fatal(err)
+	at := time.Now().UTC().Format(time.RFC3339Nano)
+	r := iv1.ChestsOpening{Source: httpSource, Digest: httpDigest,
+		Owners: []iv1.OpeningOwner{{ID: "alice", StarterGrantedAt: &at}, {ID: "bob", StarterGrantedAt: &at}},
+		Chests: []iv1.OpeningChest{{ID: "existing-chest", Owner: "alice", Type: "ender", Seed: "9007199254740993", Revision: "test.1", Contents: []iv1.ChestSlot{{Item: "item-a", Weight: 1}}, Traits: []iv1.ChestTrait{}, Rarity: "common", Condition: 1, Source: "admin", Parents: []string{}, Status: "available", CreatedAt: at}},
 	}
 	c := ilocal.ChestsOpeningClient{Service: inv.ChestsOpeningService{Authorizer: allowInventory{}, Store: ipg.New(f.idb)}}
-	if err = c.ImportChests(inv.WithAuthenticatedPrincipal(context.Background(), inv.Principal{Kind: "operator", ID: "test-fixture"}), r); err != nil {
+	if err := c.ImportChests(inv.WithAuthenticatedPrincipal(context.Background(), inv.Principal{Kind: "operator", ID: "test-fixture"}), r); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func (f *httpContexts) activate(t *testing.T) {
 	t.Helper()
-	r, err := economyruntime.New(context.Background(), f.source, f.idsn, f.wdsn, []string{"currency", "end-shards"}, f.rb, economyruntime.Options{StarterChests: "ender:1", SecurityDB: f.securityDB})
+	r, err := economyruntime.New(context.Background(), f.idsn, f.wdsn, []string{"currency", "end-shards"}, f.rb, economyruntime.Options{StarterChests: "ender:1", SecurityDB: f.securityDB})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,10 +304,6 @@ func TestContextAPIRepairsThroughSagaAndReadsSeparateWallet(t *testing.T) {
 	if len(h.Entries) != 2 || h.Entries[0].Purpose != "spending" || h.Entries[0].Units != "4" || h.Entries[0].Direction != "debit" {
 		t.Fatal(h)
 	}
-	var old int64
-	if err := f.source.QueryRow(`SELECT value FROM wallet_balances WHERE user_id='alice' AND resource='end-shards'`).Scan(&old); err != nil || old != 20 {
-		t.Fatal("legacy wallet changed", old, err)
-	}
 }
 
 func TestContextAPIBuybackWithoutBudgetRestoresItemWithoutCredit(t *testing.T) {
@@ -355,17 +329,15 @@ func TestContextAPIBuybackWithoutBudgetRestoresItemWithoutCredit(t *testing.T) {
 	}
 }
 
-func TestReadinessRequiresAllBaselinesAndKeepsLegacyFrozen(t *testing.T) {
+func TestReadinessRequiresAllBaselines(t *testing.T) {
 	f := httpStack(t, false)
 	try := func() {
 		t.Helper()
-		if r, err := economyruntime.New(context.Background(), f.source, f.idsn, f.wdsn, []string{"currency", "end-shards"}, f.rb, economyruntime.Options{StarterChests: "ender:1", SecurityDB: f.securityDB}); err == nil {
+		if r, err := economyruntime.New(context.Background(), f.idsn, f.wdsn, []string{"currency", "end-shards"}, f.rb, economyruntime.Options{StarterChests: "ender:1", SecurityDB: f.securityDB}); err == nil {
 			r.Close()
 			t.Fatal("premature context activation")
 		}
 	}
-	try()
-	f.freeze(t)
 	try()
 	f.importItems(t)
 	try()
@@ -376,7 +348,7 @@ func TestReadinessRequiresAllBaselinesAndKeepsLegacyFrozen(t *testing.T) {
 	decodeResponse(t, f.request("GET", "/readyz", "", "", ""), 503, nil)
 	decodeResponse(t, f.request("POST", "/api/v1/inventory/items/alice-item/repair", "alice", "repair", "{}"), 503, nil)
 	decodeResponse(t, f.request("GET", "/api/v1/wallet", "", "", ""), 401, nil)
-	httpExec(t, f.wdb, `UPDATE ledger.opening_baseline SET digest=$1`, f.snapshot.Digest)
+	httpExec(t, f.wdb, `UPDATE ledger.opening_baseline SET digest=$1`, httpDigest)
 	decodeResponse(t, f.request("GET", "/api/v1/wallet", "alice", "", ""), 200, nil)
 }
 
@@ -575,7 +547,7 @@ func TestContextAPIItemMergeCannotConsumeWorkshopLockedTwin(t *testing.T) {
 
 func TestContextActivationRejectsIncompleteAssetConfiguration(t *testing.T) {
 	f := httpStack(t, false)
-	if r, err := economyruntime.New(context.Background(), f.source, f.idsn, f.wdsn, []string{"currency"}, f.rb); err == nil {
+	if r, err := economyruntime.New(context.Background(), f.idsn, f.wdsn, []string{"currency"}, f.rb); err == nil {
 		r.Close()
 		t.Fatal("missing repair material accepted")
 	}

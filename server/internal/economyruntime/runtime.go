@@ -15,7 +15,6 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	cv1 "github.com/voxel-vault/api/currency/contracts/v1"
-	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
 	bridge "github.com/voxel-vault/api/internal/integrations/inventoryledger"
 	ilocal "github.com/voxel-vault/api/inventory/adapters/inbound/local"
 	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
@@ -32,25 +31,15 @@ import (
 	wdomain "github.com/voxel-vault/api/ledger/domain"
 )
 
-type SourceState interface {
-	State(context.Context) (legacy.State, error)
-}
+// Guard holds the economy back until both contexts carry the same complete baseline.
 type Guard struct {
-	Source    SourceState
 	Inventory iv1.BaselineReader
 	Wallet    wv1.BaselineReader
 }
 
 func (g Guard) Check(ctx context.Context) error {
-	if g.Source == nil || g.Inventory == nil || g.Wallet == nil {
+	if g.Inventory == nil || g.Wallet == nil {
 		return fmt.Errorf("incomplete economy readiness configuration")
-	}
-	s, err := g.Source.State(ctx)
-	if err != nil {
-		return err
-	}
-	if !s.Frozen || s.Source == "" || s.Digest == "" {
-		return fmt.Errorf("legacy economy must be frozen before context activation")
 	}
 	i, err := g.Inventory.Baseline(ctx)
 	if err != nil {
@@ -60,8 +49,8 @@ func (g Guard) Check(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if !i.Complete || !w.Complete || i.Source != s.Source || w.Source != s.Source || i.Digest != s.Digest || w.Digest != s.Digest {
-		return fmt.Errorf("economy context baselines do not match the frozen source")
+	if !i.Complete || !w.Complete || i.Source == "" || i.Source != w.Source || i.Digest == "" || i.Digest != w.Digest {
+		return fmt.Errorf("economy context baselines are incomplete or do not match")
 	}
 	return nil
 }
@@ -71,7 +60,7 @@ type Runtime struct {
 	Workshop   iv1.WorkshopClient
 	Wallet     wv1.ReadClient
 	Ledger     wv1.ReadClient
-	Transfer  wv1.TransferClient
+	Transfer   wv1.TransferClient
 	Currency   cv1.Provider
 	Limits     TransferLimits
 	ledgerDB   *sql.DB
@@ -120,10 +109,10 @@ type Options struct {
 	SecurityDB    *sql.DB
 }
 
-func New(ctx context.Context, source *sql.DB, inventoryDSN, walletDSN string, assets []string, rb *rulebook.Rulebook, options ...Options) (*Runtime, error) {
+func New(ctx context.Context, inventoryDSN, walletDSN string, assets []string, rb *rulebook.Rulebook, options ...Options) (*Runtime, error) {
 	r := &Runtime{}
-	if source == nil || rb == nil {
-		return nil, fmt.Errorf("source and rulebook are required")
+	if rb == nil {
+		return nil, fmt.Errorf("rulebook is required")
 	}
 	allowed := map[string]bool{}
 	unique := []string{}
@@ -181,7 +170,7 @@ func New(ctx context.Context, source *sql.DB, inventoryDSN, walletDSN string, as
 	is, ws := ipg.New(idb), wpg.New(wdb)
 	r.ledgerDB, r.securityDB = wdb, options[0].SecurityDB
 	r.assets = append([]string(nil), assets...)
-	invAuth, err := InventoryAuthorizer(options[0].SecurityDB, nil)
+	invAuth, err := InventoryAuthorizer(options[0].SecurityDB)
 	if err != nil {
 		r.Close()
 		return nil, err
@@ -209,7 +198,7 @@ func New(ctx context.Context, source *sql.DB, inventoryDSN, walletDSN string, as
 	r.Workshop = ilocal.WorkshopClient{Service: workshop, Catalog: inv.Catalog{Reader: is, Policy: pricing, Authorizer: invAuth}}
 	r.Wallet = wlocal.Reader{Service: wallet.Reader{Store: ws, Authorizer: policy, Producer: "player-api"}, Assets: append([]string(nil), assets...)}
 	r.Ledger = r.Wallet
-	r.Guard = Guard{Source: legacy.Source{DB: source}, Inventory: is, Wallet: ws}
+	r.Guard = Guard{Inventory: is, Wallet: ws}
 	participant, err := wallet.New(ws, policy, time.Now)
 	if err != nil {
 		r.Close()

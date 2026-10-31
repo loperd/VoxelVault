@@ -11,7 +11,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/voxel-vault/api/internal/economycutover/adapters/legacy"
 	"github.com/voxel-vault/api/internal/store"
 	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
 	inv "github.com/voxel-vault/api/inventory/application"
@@ -77,7 +76,6 @@ func assertDeniedSQL(t *testing.T, db *sql.DB, query string) {
 
 func TestContextRuntimeWithDedicatedDatabaseRoles(t *testing.T) {
 	f := httpStack(t, false)
-	f.freeze(t)
 	f.importItems(t)
 	f.importChests(t)
 	f.fundBuyback(t, 100)
@@ -150,8 +148,6 @@ func TestContextRuntimeWithDedicatedDatabaseRoles(t *testing.T) {
 		{source, `ALTER TABLE public.economy_owners ADD COLUMN runtime_probe int`},
 		{source, `SELECT * FROM public.wallet_balances`},
 		{source, `SELECT * FROM public.inventory_items`},
-		{source, `SELECT manifest FROM legacy_economy_cutover.snapshot`},
-		{source, `UPDATE legacy_economy_cutover.snapshot SET frozen=false`},
 		{idb, `CREATE TABLE inventory.runtime_probe(id int)`},
 		{idb, `DELETE FROM inventory.items`},
 		{idb, `UPDATE inventory.opening_baseline SET digest='bad'`},
@@ -167,9 +163,6 @@ func TestContextRuntimeWithDedicatedDatabaseRoles(t *testing.T) {
 		{wdb, `UPDATE public.wallet_schema_version SET version_id=99`},
 	} {
 		assertDeniedSQL(t, c.db, c.q)
-	}
-	if err := (legacy.Source{DB: source}).LegacyWritable(context.Background()); err == nil {
-		t.Fatal("restricted readiness lost the source fence")
 	}
 	// Additional grants are rejected, including column-only privileges that a
 	// table-level privilege check would miss. No grant is silently revoked.

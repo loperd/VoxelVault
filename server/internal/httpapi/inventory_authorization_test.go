@@ -62,7 +62,7 @@ func TestInventoryDirectPortsRequireIdentityRoleAndOwnerScope(t *testing.T) {
 
 func TestInventoryServicePermissionsRequireExactOperationDelegation(t *testing.T) {
 	f := httpStack(t, true)
-	auth, err := economyruntime.InventoryAuthorizer(f.source, nil)
+	auth, err := economyruntime.InventoryAuthorizer(f.source)
 	if err != nil {
 		t.Fatal(err)
 	}

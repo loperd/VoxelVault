@@ -58,7 +58,7 @@ Inventory reserves the item and Ledger settles the funds through a durable saga,
 
 ## Rulebook configuration
 
-`server/inventory/domain/rulebook` holds the pure model. `server/internal/rulebookjson` decodes the JSON configuration and rejects unknown fields. The API, the workshop worker and the cutover check read the active revision from `inventory.rulebook_revisions` (pointer `inventory.rulebook_active`) on startup; `economy-seed` imports `config/economy.json` there once. Revisions are never rewritten.
+`server/inventory/domain/rulebook` holds the pure model. `server/internal/rulebookjson` decodes the JSON configuration and rejects unknown fields. The API and the workshop worker read the active revision from `inventory.rulebook_revisions` (pointer `inventory.rulebook_active`) on startup; `economy-seed` imports `config/economy.json` there once. Revisions are never rewritten.
 
 A parameter has a default and conditional rules. Conditions may refer to type, collection, trait, item state, issue source, time and named events. Rules can set, multiply, add, allow or deny. More-specific `set` rules win, with explicit priority as the tie breaker; values are constrained to valid ranges. Collection/type defaults use the same conditional mechanism rather than separate inheritance.
 
@@ -66,7 +66,7 @@ Published configuration has a revision. Issued contents, traits and derived rari
 
 ## Current HTTP contract
 
-Responses contain server decisions. Ownership failures do not reveal another player's objects. Routes are registered in `contextRoutes` (`server/internal/httpapi/contexts.go`); every economy route answers 503 while the cutover readiness guard fails. Mutations marked "key" require an `Idempotency-Key` header (1–160 characters); a repeat with the same key answers the same result.
+Responses contain server decisions. Ownership failures do not reveal another player's objects. Routes are registered in `contextRoutes` (`server/internal/httpapi/contexts.go`); every economy route answers 503 while the baseline readiness guard fails. Mutations marked "key" require an `Idempotency-Key` header (1–160 characters); a repeat with the same key answers the same result.
 
 | Method and path | Request | Response |
 |---|---|---|

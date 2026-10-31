@@ -34,7 +34,7 @@ flowchart LR
 
 [Bounded contexts and sagas](contexts.md) is the accepted target for autonomous Inventory, Wallet, Identity/Profile and future Shop. There must be no shared transactions, tables, repositories or domain models across those boundaries. Application integration is through consumer-owned ports and translation adapters.
 
-The legacy economy engine is removed; the API serves only the Inventory and Wallet contexts. The mutable `wallet_balances` table is not a ledger; it survives only as the frozen cutover source.
+The legacy economy engine is removed; the API serves only the Inventory and Wallet contexts. The mutable `wallet_balances` table is not a ledger; it is an unused leftover until the legacy tables are dropped.
 
 ## Runtime ownership
 

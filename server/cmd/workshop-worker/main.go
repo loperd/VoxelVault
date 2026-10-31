@@ -85,7 +85,7 @@ func run(once bool) error {
 		return err
 	}
 	is, ws := ipg.New(idb), wpg.New(wdb)
-	invAuth, err := economyruntime.InventoryAuthorizer(nil, nil)
+	invAuth, err := economyruntime.InventoryAuthorizer(nil)
 	if err != nil {
 		return err
 	}

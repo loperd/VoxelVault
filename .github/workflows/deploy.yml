@@ -1,8 +1,8 @@
 # Checks on every push to master and every pull request; a RELEASE deploys. A release is a semver
 # tag without a prefix, as the repository's earlier tags (git tag 0.3.0 && git push origin 0.3.0): the Go API to the VPS cluster (Helm,
 # values.prod.yaml), then the frontend to Cloudflare (Worker + static assets). The image is tagged
-# with the release. After economy cutover, recovery requires a compatible context image;
-# redeploying an older legacy tag cannot undo the permanent source fence or ledger imports.
+# with the release. Recovery requires a compatible context image; redeploying an older
+# tag cannot undo ledger imports.
 #
 # Repository secrets (Settings → Secrets and variables → Actions):
 #   KUBECONFIG_B64         deploy/bootstrap/make-kubeconfig.sh output (SA voxel-vault-deployer)

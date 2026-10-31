@@ -16,9 +16,8 @@ import (
 
 const WorkerPrincipal = "inventory-worker"
 const WalletEventsPrincipal = "wallet-events"
-const MigrationPrincipal = "economy-cutover"
 
-func InventoryAuthorizer(db *sql.DB, sources []string) (application.Authorizer, error) {
+func InventoryAuthorizer(db *sql.DB) (application.Authorizer, error) {
 	var rules []security.Rule
 	for _, role := range []string{"player", "admin"} {
 		for permission, kind := range map[application.Permission]string{application.ReadItems: "owner", application.ReadChests: "owner", application.GrantStarter: "owner", application.ClaimChest: "chest", application.OpenChest: "chest", application.MergeChests: "chest", application.ReadMergeOdds: "chest", application.MergeItems: "item", application.RepairItem: "item", application.SellItem: "item", application.SalvageItem: "item", application.ReadOperation: "operation", application.CancelOperation: "operation"} {
@@ -30,16 +29,12 @@ func InventoryAuthorizer(db *sql.DB, sources []string) (application.Authorizer, 
 		rules = append(rules, security.Rule{Role: role, ActorKind: "service", Permission: string(application.ObserveSettlement), ResourceKind: "operation", Scope: security.OperationScope})
 	}
 	rules = append(rules, security.Rule{Role: "inventory-worker", ActorKind: "service", Permission: string(application.ReconcileOperation), ResourceKind: "operation", Scope: security.OperationScope}, security.Rule{Role: "inventory-worker", ActorKind: "service", Permission: string(application.ExecuteDelivery), ResourceKind: "delivery_queue", Scope: security.QueueScope, ResourceIDs: []string{"inventory-settlement"}})
-	for _, permission := range []application.Permission{application.ImportItems, application.ImportChests} {
-		rules = append(rules, security.Rule{Role: "inventory-migration", ActorKind: "operator", Permission: string(permission), ResourceKind: "baseline", Scope: security.SourceScope, Sources: append([]string(nil), sources...)})
-	}
 	for i := range rules {
 		rules[i].Context = "inventory"
 	}
 	client, err := policyconfig.New(policyconfig.Policy{Version: "inventory-rbac-v1", Rules: rules, Bindings: []policyconfig.Binding{
 		{Kind: "service", ID: WorkerPrincipal, Roles: []string{"inventory-worker"}},
 		{Kind: "service", ID: WalletEventsPrincipal, Roles: []string{"wallet-settlement"}},
-		{Kind: "operator", ID: MigrationPrincipal, Roles: []string{"inventory-migration"}},
 	}}, securitypg.Roles{DB: db})
 	if err != nil {
 		return nil, err
@@ -50,10 +45,6 @@ func InventoryAuthorizer(db *sql.DB, sources []string) (application.Authorizer, 
 func ServiceContext(ctx context.Context, id string) context.Context {
 	return application.WithAuthenticatedPrincipal(ctx, application.Principal{Kind: "service", ID: id})
 }
-func OperatorContext(ctx context.Context) context.Context {
-	return application.WithAuthenticatedPrincipal(ctx, application.Principal{Kind: "operator", ID: MigrationPrincipal})
-}
-
 func StarterPolicy(text string) (func([]application.Grant) bool, error) {
 	expected := map[string]int{}
 	total := 0

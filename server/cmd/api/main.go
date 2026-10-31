@@ -65,7 +65,7 @@ func run() error {
 	}
 	identityPorts := &httpapi.IdentityPorts{Peer: peer, Profiles: identity.Profiles, Sessions: identity.Sessions, Security: identity.Security}
 	startup, cancel = context.WithTimeout(ctx, 15*time.Second)
-	runtime, err := economyruntime.New(startup, sqlDB, cfg.InventoryDatabaseURL, cfg.WalletDatabaseURL, cfg.WalletAssets, rb, economyruntime.Options{StarterChests: cfg.StarterChests, SecurityDB: identity.SecurityDB})
+	runtime, err := economyruntime.New(startup, cfg.InventoryDatabaseURL, cfg.WalletDatabaseURL, cfg.WalletAssets, rb, economyruntime.Options{StarterChests: cfg.StarterChests, SecurityDB: identity.SecurityDB})
 	cancel()
 	if err != nil {
 		return err

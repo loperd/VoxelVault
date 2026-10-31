@@ -4,8 +4,8 @@
 # Frontend: https://voxelvault.mono.place      — Cloudflare (static build); /api/* goes to the API,
 #                                                 so the browser sees one origin (session cookie, passkeys).
 # API:      https://api-voxelvault.mono.place  — this chart, on the VPS cluster.
-# CI sets image.tag to the release tag. After economy cutover, use compatible context
-# images for recovery; reverting a release cannot undo the source fence or ledger imports.
+# CI sets image.tag to the release tag. Use compatible context images for recovery;
+# reverting a release cannot undo ledger imports.
 image:
   repository: ghcr.io/loperd/mcroulette-api
   pullPolicy: IfNotPresent
