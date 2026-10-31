@@ -6,7 +6,7 @@ Individual chest instances, rather than chest types, are the units of ownership 
 
 The application has a Go API for authentication, chest ownership, authoritative opening outcomes and owned items. The frontend presents per-instance contents and appearance, a physical chest-opening sequence, a roulette strip and the resulting item. World/model definitions are shared by the opening scene and previews.
 
-Inventory shows owned items with server-priced repair, merge, salvage and sale actions (`server/inventory/adapters/rulebook`). Currency and collection materials live in a separate Wallet section backed by the double-entry ledger (`server/ledger`). Inventory settles through the `inventoryledger` integration using durable sagas, outbox/inbox, idempotency and compensation, as the [context contract](architecture/contexts.md) requires. The ledger and Inventory database tests, including race runs, pass against a real PostgreSQL.
+Inventory shows owned items with server-priced repair, merge, salvage and sale actions (`server/inventory/adapters/rulebook`). Currency and collection materials live in a separate Wallet section backed by the double-entry ledger (`server/ledger`). Inventory settles through the `inventoryledger` integration using durable sagas, outbox/inbox, idempotency and compensation, as the [context contract](architecture/contexts.md) requires. The ledger and Inventory database tests, including race runs, pass against a real PostgreSQL. The one-off economy cutover is not yet retired: the API readiness check still requires the frozen legacy snapshot, and the legacy tables and `economy-cutover` tool remain until a staged removal.
 
 ## Accepted next work
 

@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/voxel-vault/api/internal/config"
-	"github.com/voxel-vault/api/internal/store"
 	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
 	"github.com/voxel-vault/api/inventory/domain/rulebook"
 	"gorm.io/gorm"
@@ -89,11 +88,16 @@ type itemDTO struct {
 	Chance float64 `json:"chance"`
 }
 
+type caseDTO struct {
+	ID         string `json:"id"`
+	Collection string `json:"collection"`
+}
+
 func (s *Server) listCases(w http.ResponseWriter, r *http.Request) {
-	var cases []store.ChestType
-	if err := s.db.WithContext(r.Context()).Order("id").Find(&cases).Error; err != nil {
-		writeError(w, 500, "could not list chest types")
-		return
+	types := s.rulebook().Types()
+	cases := make([]caseDTO, 0, len(types))
+	for _, t := range types {
+		cases = append(cases, caseDTO{ID: t.ID, Collection: t.Collection})
 	}
 	writeJSON(w, http.StatusOK, cases)
 }
@@ -126,11 +130,9 @@ func itemImageURL(id, _ string) string {
 }
 
 func (s *Server) itemImage(w http.ResponseWriter, r *http.Request) {
-	var item store.LootItem
-	// The rulebook is the item catalogue; loot_items only holds the legacy demo seed.
-	if rb, _, ok := s.rulebook().Item(r.PathValue("itemID")); ok {
-		item = store.LootItem{Title: rb.Title, Glyph: rb.Glyph}
-	} else if err := s.db.WithContext(r.Context()).First(&item, "id = ?", r.PathValue("itemID")).Error; err != nil {
+	// The rulebook is the item catalogue.
+	item, _, ok := s.rulebook().Item(r.PathValue("itemID"))
+	if !ok {
 		writeError(w, 404, "item image not found")
 		return
 	}

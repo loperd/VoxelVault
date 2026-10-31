@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"fmt"
-	"github.com/voxel-vault/api/internal/store"
+	"github.com/voxel-vault/api/inventory/domain/rulebook"
 	"html"
 )
 
@@ -23,7 +23,7 @@ var itemShapes = map[string]string{
 	"scale":   `<path d="m64 16 40 24-8 44-32 32-32-32-8-44z" fill="#5d917c"/><path d="m24 40 40 24 40-24M32 64l32 24 32-24" fill="none" stroke="#a3c4a0" stroke-width="6"/>`,
 }
 
-func itemSVG(item store.LootItem) string {
+func itemSVG(item rulebook.Item) string {
 	shape, ok := itemShapes[item.Glyph]
 	if !ok {
 		shape = itemShapes["crystal"]
