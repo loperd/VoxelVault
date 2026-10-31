@@ -55,7 +55,7 @@ go test ./...
 go vet ./...
 ```
 
-Set `TEST_DATABASE_URL` for database integration tests; a skipped database test is not evidence of PostgreSQL behavior. Build and unit tests do not establish browser layout or mobile GPU performance.
+Set `TEST_WALLET_DATABASE_URL` (a connection that may create disposable databases) for database integration tests; a skipped database test is not evidence of PostgreSQL behavior. Build and unit tests do not establish browser layout or mobile GPU performance.
 
 ## Focused previews
 

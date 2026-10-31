@@ -19,7 +19,7 @@ access/refresh tokens and cookies belong to the gateway. Internal backend hooks 
 publicly routed. The API verifies the gateway credential, the live Identity session,
 current Security permissions and the token's grant ceiling on every protected request.
 
-The API requires explicit `DATABASE_URL`, `IDENTITY_DATABASE_URL`, `SECURITY_DATABASE_URL`,
+The API requires explicit `IDENTITY_DATABASE_URL`, `SECURITY_DATABASE_URL`,
 and `GATEWAY_INTERNAL_TOKEN`, alongside the Inventory/Ledger
 runtime connections. `GATEWAY_INTERNAL_TOKEN` matches the gateway's `INTERNAL_TOKEN`, used for
 forwarded user requests and `/internal/auth/*` and `/internal/sessions/*` calls. It must be at
@@ -50,7 +50,7 @@ Values files layer on `values.yaml`:
 - `values.local.yaml` — OrbStack on this Mac, local Vault (dev mode), `https://vault.loper.me`.
 - `values.prod.yaml` — VPS cluster, `https://voxelvault.mono.place` / `api-voxelvault.mono.place`.
 
-Secret keys (all env): `TELEGRAM_CLIENT_SECRET`, `DATABASE_URL`, `POSTGRES_PASSWORD` (bundled Postgres only).
+Secret keys (all env): `TELEGRAM_CLIENT_SECRET`, `POSTGRES_PASSWORD` (bundled Postgres only).
 The API also requires `INVENTORY_DATABASE_URL` and `WALLET_DATABASE_URL` with separate
 context runtime credentials. Migration and opening-import credentials belong to the
 offline operator process; do not add them to the API Secret.
@@ -82,7 +82,6 @@ this order:
 /inventory-migrate
 /security-migrate
 /economy-seed
-/runtime-grants -context accounts -role <accounts-runtime-role>
 /runtime-grants -context inventory -role <inventory-runtime-role>
 /runtime-grants -context wallet -role <wallet-runtime-role>
 ```
@@ -94,8 +93,8 @@ Inventory database; `/economy-seed [config-dir]` (needs `INVENTORY_DATABASE_URL`
 `WALLET_DATABASE_URL`, `SECURITY_DATABASE_URL`) stores the image's bundled `/config` files
 (economy, transfers, security) in their databases once and never replaces an active revision.
 
-Run `runtime-grants` with the corresponding operator connection (`DATABASE_URL` for
-transitional Accounts; the context URLs for Inventory and Wallet). Provision dedicated
+Run `runtime-grants` with the corresponding operator connection (the context URLs for Identity,
+Security, Inventory and Wallet). Provision dedicated
 runtime roles separately: no ownership, role memberships, elevated cluster permissions,
 persistent schema/database creation rights or accessible non-system security-definer functions.
 The tool applies adapter-owned table/column grants in one local transaction and rejects
@@ -106,8 +105,22 @@ runtime role; holds now transition through status updates. Other unexpected righ
 including rights inherited through PUBLIC, still reject the entire transaction.
 Re-run after schema/policy changes. It does not audit other databases or replace
 application RBAC and resource authorization. Switch to runtime connections before checking
-API startup. The API does not run legacy or Casbin AutoMigrate. RBAC policy data may still be
+API startup. The API runs no AutoMigrate. RBAC policy data may still be
 seeded.
+
+### Dropping the retired accounts storage
+
+The API no longer connects to the old accounts database (`DATABASE_URL` is not read). Its leftover
+`public.chest_types`, `loot_items`, `chest_instances`, `inventory_items`, `wallet_balances`,
+`economy_owners` tables and the `legacy_economy_cutover` schema are removed once, after a
+backup of that database, by the operator:
+
+```sh
+DATABASE_URL=<operator connection> /legacy-drop -backup-taken
+```
+
+It runs in one transaction, prints each dropped table with its row count and can be repeated. Runtime
+roles lose their grants with the tables. Delete the tool in the release after the drop.
 
 Inventory runtime now requires Goose version 4. Its lifecycle migration records verified
 checkpoints for existing instances using Go under local write locks. Runtime Go adapters
@@ -167,7 +180,7 @@ Startup binds the exact configured starter plan; callers cannot choose a differe
 HTTP route checks remain an additional compatibility layer. No database procedure or
 trigger implements authorization.
 
-Roll out the API only after a successful check and runtime-grant verification, with its context
+Roll out the API only after runtime-grant verification, with its context
 connections already in the Secret. There is no legacy engine to return to: recovery must move
 forward with compatible context code; Helm `--atomic` cannot reverse an imported ledger.
 The standalone worker is optional because the context-backed API already runs delivery.

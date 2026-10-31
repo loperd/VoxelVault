@@ -14,7 +14,6 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	identitypg "github.com/voxel-vault/api/identity/adapters/postgres"
-	"github.com/voxel-vault/api/internal/store"
 	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
 	wpg "github.com/voxel-vault/api/ledger/adapters/postgres"
 	"github.com/voxel-vault/api/platform/postgrespermissions"
@@ -25,8 +24,6 @@ func run(ctx context.Context, target, role string) error {
 	var policy postgrespermissions.Policy
 	var env string
 	switch target {
-	case "accounts":
-		policy, env = store.RuntimePrivileges(), "DATABASE_URL"
 	case "inventory":
 		policy, env = ipg.RuntimePrivileges(), "INVENTORY_DATABASE_URL"
 	case "wallet":
@@ -36,7 +33,7 @@ func run(ctx context.Context, target, role string) error {
 	case "security":
 		policy, env = securitypg.RuntimePrivileges(), "SECURITY_DATABASE_URL"
 	default:
-		return fmt.Errorf("-context must be accounts, identity, security, inventory or wallet")
+		return fmt.Errorf("-context must be identity, security, inventory or wallet")
 	}
 	if os.Getenv(env) == "" {
 		return fmt.Errorf("%s operator connection is required", env)
@@ -50,7 +47,7 @@ func run(ctx context.Context, target, role string) error {
 }
 
 func main() {
-	target := flag.String("context", "", "accounts, identity, security, inventory or wallet")
+	target := flag.String("context", "", "identity, security, inventory or wallet")
 	role := flag.String("role", "", "existing dedicated runtime role")
 	flag.Parse()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

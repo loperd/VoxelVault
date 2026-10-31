@@ -7,7 +7,6 @@ import (
 
 type Config struct {
 	Address        string
-	DatabaseURL    string
 	FrontendURL    string
 	AllowedOrigins []string
 	DefaultRole    string
@@ -26,7 +25,6 @@ type Config struct {
 func Load() Config {
 	return Config{
 		Address:              env("HTTP_ADDRESS", ":8080"),
-		DatabaseURL:          os.Getenv("DATABASE_URL"),
 		FrontendURL:          env("FRONTEND_URL", "http://localhost:5173/"),
 		AllowedOrigins:       split(env("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:4173")),
 		DefaultRole:          env("DEFAULT_ROLE", "player"),

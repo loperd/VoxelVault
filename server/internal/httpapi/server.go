@@ -10,7 +10,6 @@ import (
 	"github.com/voxel-vault/api/internal/config"
 	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
 	"github.com/voxel-vault/api/inventory/domain/rulebook"
-	"gorm.io/gorm"
 )
 
 type contextKey string
@@ -18,7 +17,6 @@ type contextKey string
 const userContextKey contextKey = "user"
 
 type Server struct {
-	db           *gorm.DB
 	config       config.Config
 	identity     *IdentityPorts
 	mux          *http.ServeMux
@@ -32,7 +30,7 @@ type Server struct {
 // New serves the API; rb is the chest economy's rulebook in force. It receives only published
 // context ports. The composition root owns all database wiring and supplies a guard that fails
 // closed during migration/outages.
-func New(db *gorm.DB, cfg config.Config, identity *IdentityPorts, rb *rulebook.Rulebook, ports *ContextPorts, guard func(context.Context) error) (*Server, error) {
+func New(cfg config.Config, identity *IdentityPorts, rb *rulebook.Rulebook, ports *ContextPorts, guard func(context.Context) error) (*Server, error) {
 	if ports == nil || ports.Collection == nil || ports.Workshop == nil || ports.Wallet == nil || ports.Transfer == nil || ports.Currency == nil || ports.Subjects == nil || ports.UserContext == nil || guard == nil ||
 		ports.RecipientPerMinute < 1 || ports.QuotePerMinute < 1 || ports.TransferPerMinute < 1 {
 		return nil, fmt.Errorf("complete context ports and readiness guard are required")
@@ -45,7 +43,7 @@ func New(db *gorm.DB, cfg config.Config, identity *IdentityPorts, rb *rulebook.R
 		return nil, fmt.Errorf("configure starter chests: %w", err)
 	}
 	current := func() *rulebook.Rulebook { return rb }
-	s := &Server{db: db, config: cfg, identity: identity, mux: http.NewServeMux(), rulebook: current, starter: starter, contexts: ports, economyGuard: guard}
+	s := &Server{config: cfg, identity: identity, mux: http.NewServeMux(), rulebook: current, starter: starter, contexts: ports, economyGuard: guard}
 	s.routes()
 	return s, nil
 }
@@ -59,14 +57,7 @@ func (s *Server) routes() {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 	s.mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
-		sqlDB, err := s.db.DB()
-		if err == nil {
-			err = sqlDB.PingContext(r.Context())
-		}
-		if err == nil {
-			err = s.economyGuard(r.Context())
-		}
-		if err != nil {
+		if err := s.economyGuard(r.Context()); err != nil {
 			writeError(w, http.StatusServiceUnavailable, "database unavailable")
 			return
 		}

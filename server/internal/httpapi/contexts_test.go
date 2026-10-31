@@ -19,7 +19,6 @@ import (
 	"github.com/voxel-vault/api/internal/config"
 	"github.com/voxel-vault/api/internal/economyruntime"
 	bridge "github.com/voxel-vault/api/internal/integrations/inventoryledger"
-	"github.com/voxel-vault/api/internal/store"
 	ilocal "github.com/voxel-vault/api/inventory/adapters/inbound/local"
 	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
 	imigrate "github.com/voxel-vault/api/inventory/adapters/postgres/migrations"
@@ -34,7 +33,6 @@ import (
 	wallet "github.com/voxel-vault/api/ledger/application"
 	wv1 "github.com/voxel-vault/api/ledger/contracts/v1"
 	wdomain "github.com/voxel-vault/api/ledger/domain"
-	"gorm.io/gorm"
 )
 
 var httpDBSeq atomic.Uint64
@@ -76,7 +74,6 @@ func httpDatabase(t *testing.T) (*sql.DB, string) {
 type httpContexts struct {
 	source, idb, wdb *sql.DB
 	idsn, wdsn       string
-	gorm             *gorm.DB
 	identity         *IdentityPorts
 	acl              *fixtureACL
 	securityDB       *sql.DB
@@ -115,16 +112,7 @@ func httpStack(t *testing.T, activate bool) *httpContexts {
 	f.source, sourceDSN = httpDatabase(t)
 	f.idb, f.idsn = httpDatabase(t)
 	f.wdb, f.wdsn = httpDatabase(t)
-	g, err := store.Open(sourceDSN)
-	if err != nil {
-		t.Fatal(err)
-	}
-	f.gorm = g
-	gdb, err := g.DB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { gdb.Close() })
+	var err error
 	f.securityDB = f.source
 	f.setupIdentity(t, sourceDSN)
 	f.rb = rulebooktest.Build(t, rulebooktest.Set(map[string]float64{"chest.destroy.impact.perWear": 0, "chest.destroy.opening.perWear": 0}))
@@ -202,7 +190,7 @@ func (f *httpContexts) activate(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := config.Config{AllowedOrigins: []string{"http://localhost"}, StarterChests: "ender:1"}
-	f.server, err = New(f.gorm, cfg, f.identity, f.rb, &ContextPorts{Collection: r.Collection, Workshop: r.Workshop, Wallet: r.Wallet, Transfer: r.Transfer, Currency: r.Currency, Subjects: f.identity.Profiles, UserContext: r.UserContext, RecipientPerMinute: 10, QuotePerMinute: 30, TransferPerMinute: 30}, r.Guard.Check)
+	f.server, err = New(cfg, f.identity, f.rb, &ContextPorts{Collection: r.Collection, Workshop: r.Workshop, Wallet: r.Wallet, Transfer: r.Transfer, Currency: r.Currency, Subjects: f.identity.Profiles, UserContext: r.UserContext, RecipientPerMinute: 10, QuotePerMinute: 30, TransferPerMinute: 30}, r.Guard.Check)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -551,7 +539,7 @@ func TestContextActivationRejectsIncompleteAssetConfiguration(t *testing.T) {
 		r.Close()
 		t.Fatal("missing repair material accepted")
 	}
-	if _, err := New(nil, config.Config{}, nil, f.rb, &ContextPorts{}, nil); err == nil {
+	if _, err := New(config.Config{}, nil, f.rb, &ContextPorts{}, nil); err == nil {
 		t.Fatal("partial dependency injection accepted")
 	}
 }

@@ -102,14 +102,13 @@ env:
   # Telegram Login (OIDC): the client id is the bot id, public (it is in the authorization URL).
   TELEGRAM_CLIENT_ID: '8751479936'
   TELEGRAM_REDIRECT_URL: ''
-  # Bundled Postgres (postgres.enabled); its password and DATABASE_URL are secrets.
+  # Bundled Postgres (postgres.enabled); its password is a secret.
   POSTGRES_USER: 'voxel'
   POSTGRES_DB: 'voxel_vault'
 
 # ── Secrets: Vault Secrets Operator, as in loncha ─────────────────────────────────────────────
 # Keys in the KV (all env):
 #   TELEGRAM_CLIENT_SECRET   Telegram OIDC client secret (empty/absent → Telegram login off)
-#   DATABASE_URL             postgres://… (with the bundled Postgres: its Service, user, password)
 #   INVENTORY_DATABASE_URL   separate Inventory runtime connection
 #   WALLET_DATABASE_URL      separate Wallet runtime connection
 #   POSTGRES_PASSWORD        only with the bundled Postgres

@@ -6,7 +6,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/ \
     ./cmd/api ./cmd/wallet-migrate ./cmd/inventory-migrate ./cmd/security-migrate \
     ./cmd/workshop-worker ./cmd/runtime-grants ./cmd/treasury-open \
-    ./cmd/account-restrict ./cmd/restriction-expire ./cmd/economy-seed ./cmd/tax-sweep ./cmd/ledgerctl
+    ./cmd/account-restrict ./cmd/restriction-expire ./cmd/legacy-drop ./cmd/economy-seed ./cmd/tax-sweep ./cmd/ledgerctl
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/ /

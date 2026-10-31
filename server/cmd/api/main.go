@@ -16,15 +16,11 @@ import (
 	"github.com/voxel-vault/api/internal/economyruntime"
 	"github.com/voxel-vault/api/internal/httpapi"
 	"github.com/voxel-vault/api/internal/identityruntime"
-	"github.com/voxel-vault/api/internal/store"
 	"github.com/voxel-vault/api/platform/gatewayhttp"
 )
 
 func run() error {
 	cfg := config.Load()
-	if cfg.DatabaseURL == "" {
-		return fmt.Errorf("DATABASE_URL is required")
-	}
 	if cfg.IdentityDatabaseURL == "" || cfg.SecurityDatabaseURL == "" || cfg.GatewayInternalToken == "" {
 		return fmt.Errorf("Identity, Security and gateway peer credentials are required")
 	}
@@ -34,15 +30,6 @@ func run() error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	db, err := store.OpenRuntime(cfg.DatabaseURL)
-	if err != nil {
-		return err
-	}
-	sqlDB, err := db.DB()
-	if err != nil {
-		return err
-	}
-	defer sqlDB.Close()
 	startup, cancel := context.WithTimeout(ctx, 10*time.Second)
 	rb, err := economyruntime.LoadRulebook(startup, cfg.InventoryDatabaseURL)
 	cancel()
@@ -82,7 +69,7 @@ func run() error {
 	economyDone := make(chan struct{})
 	go func() { defer close(economyDone); runtime.Run(ctx) }()
 	defer func() { stop(); <-economyDone }()
-	api, err := httpapi.New(db, cfg, identityPorts, rb, ports, runtime.Guard.Check)
+	api, err := httpapi.New(cfg, identityPorts, rb, ports, runtime.Guard.Check)
 	if err != nil {
 		return err
 	}

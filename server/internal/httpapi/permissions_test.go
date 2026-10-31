@@ -11,7 +11,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/voxel-vault/api/internal/store"
 	ipg "github.com/voxel-vault/api/inventory/adapters/postgres"
 	inv "github.com/voxel-vault/api/inventory/application"
 	iv1 "github.com/voxel-vault/api/inventory/contracts/v1"
@@ -79,37 +78,9 @@ func TestContextRuntimeWithDedicatedDatabaseRoles(t *testing.T) {
 	f.importItems(t)
 	f.importChests(t)
 	f.fundBuyback(t, 100)
-	// The URLs are derived from the same disposable source connection rather
-	// than any developer or production configuration.
-	var sourceName string
-	if err := f.source.QueryRow(`SELECT current_database()`).Scan(&sourceName); err != nil {
-		t.Fatal(err)
-	}
-	u, err := url.Parse(os.Getenv("TEST_WALLET_DATABASE_URL"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	u.Path = "/" + sourceName
-	source, sourceDSN, sourceRole := runtimeRole(t, f.source, u.String(), "accounts", store.RuntimePrivileges())
 	idb, inventoryDSN, inventoryRole := runtimeRole(t, f.idb, f.idsn, "inventory", ipg.RuntimePrivileges())
 	wdb, walletDSN, walletRole := runtimeRole(t, f.wdb, f.wdsn, "wallet", wpg.RuntimePrivileges())
-	// Auth/ACL startup with runtime credentials must not run migrations or seed
-	// legacy catalog tables. Missing default policy data may still be inserted.
-
-	g, err := store.OpenRuntime(sourceDSN)
-	if err != nil {
-		t.Fatal(err)
-	}
-	gdb, err := g.DB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { gdb.Close() })
-	f.gorm, f.idsn, f.wdsn = g, inventoryDSN, walletDSN
-	// Keep administrator handles for independent assertions only; readiness and
-	// background processing use the restricted connections.
-	adminSource := f.source
-	f.source = source
+	f.idsn, f.wdsn = inventoryDSN, walletDSN
 	f.activate(t)
 	f.startWorker(t)
 	decodeResponse(t, f.request("GET", "/readyz", "", "", ""), 200, nil)
@@ -144,10 +115,6 @@ func TestContextRuntimeWithDedicatedDatabaseRoles(t *testing.T) {
 		db *sql.DB
 		q  string
 	}{
-		{source, `CREATE TABLE public.runtime_probe(id int)`},
-		{source, `ALTER TABLE public.economy_owners ADD COLUMN runtime_probe int`},
-		{source, `SELECT * FROM public.wallet_balances`},
-		{source, `SELECT * FROM public.inventory_items`},
 		{idb, `CREATE TABLE inventory.runtime_probe(id int)`},
 		{idb, `DELETE FROM inventory.items`},
 		{idb, `UPDATE inventory.opening_baseline SET digest='bad'`},
@@ -164,13 +131,7 @@ func TestContextRuntimeWithDedicatedDatabaseRoles(t *testing.T) {
 	} {
 		assertDeniedSQL(t, c.db, c.q)
 	}
-	// Additional grants are rejected, including column-only privileges that a
-	// table-level privilege check would miss. No grant is silently revoked.
-	httpExec(t, adminSource, `GRANT SELECT(value) ON public.wallet_balances TO `+pgx.Identifier{sourceRole}.Sanitize())
-	if err := postgrespermissions.Apply(context.Background(), adminSource, sourceRole, store.RuntimePrivileges()); err == nil {
-		t.Fatal("unexpected column-level legacy Wallet access accepted")
-	}
-	httpExec(t, adminSource, `REVOKE SELECT(value) ON public.wallet_balances FROM `+pgx.Identifier{sourceRole}.Sanitize())
+	// An additional grant is rejected: nothing is silently revoked.
 	httpExec(t, f.wdb, `GRANT UPDATE ON ledger.opening_baseline TO `+pgx.Identifier{walletRole}.Sanitize())
 	if err := postgrespermissions.Apply(context.Background(), f.wdb, walletRole, wpg.RuntimePrivileges()); err == nil {
 		t.Fatal("mutable opening baseline privilege accepted")

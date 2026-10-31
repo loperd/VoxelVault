@@ -25,7 +25,7 @@ flowchart LR
 | `src/adapters/inbound/react/` | Screens and interaction components |
 | `src/adapters/outbound/` | API data, browser storage/scheduling, chest/world rendering and audio |
 | `src/composition/`, `src/main.tsx` | Frontend dependency composition and runtime ownership |
-| `server/internal/httpapi/`, `server/internal/store/` | HTTP/authentication and database adapters |
+| `server/internal/httpapi/` | HTTP/authentication adapters |
 | `packages/blockworld/` | Reusable world engine, independent of the application |
 | `tools/mc-import/` | Offline schematic importer |
 | `tests/`, `server/**/**_test.go` | Executable behavior and boundary checks |
@@ -34,7 +34,7 @@ flowchart LR
 
 [Bounded contexts and sagas](contexts.md) is the accepted target for autonomous Inventory, Wallet, Identity/Profile and future Shop. There must be no shared transactions, tables, repositories or domain models across those boundaries. Application integration is through consumer-owned ports and translation adapters.
 
-The legacy economy engine is removed; the API serves only the Inventory and Wallet contexts. The mutable `wallet_balances` table is not a ledger; it is an unused leftover until the legacy tables are dropped.
+The legacy economy engine is removed; the API serves only the Inventory and Wallet contexts. The mutable `wallet_balances` table is not a ledger; it was dropped with the other legacy tables.
 
 ## Runtime ownership
 

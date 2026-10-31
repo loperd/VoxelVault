@@ -22,7 +22,7 @@ npm run test:all
 npm run build
 ```
 
-Run `go test ./...` and `go vet ./...` from `server/` for backend changes. Database integration tests need `TEST_DATABASE_URL`. A successful build does not establish mobile performance or deployment success.
+Run `go test ./...` and `go vet ./...` from `server/` for backend changes. Database integration tests need `TEST_WALLET_DATABASE_URL`, a connection that may create disposable databases. A successful build does not establish mobile performance or deployment success.
 
 ## Documentation
 

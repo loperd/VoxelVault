@@ -37,7 +37,7 @@ env:
   TELEGRAM_REDIRECT_URL: 'https://voxelvault.mono.place/api/v1/auth/telegram/callback'
 
 # KV-v2 secret/prod/voxel-vault must hold every key BEFORE the upgrade (TELEGRAM_CLIENT_SECRET,
-# DATABASE_URL, POSTGRES_PASSWORD with the bundled database); role voxel-vault-prod bound to the SA.
+# POSTGRES_PASSWORD with the bundled database); role voxel-vault-prod bound to the SA.
 secrets:
   source: vso
   vso:
